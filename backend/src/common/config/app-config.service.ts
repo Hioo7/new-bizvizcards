@@ -60,4 +60,24 @@ export class AppConfigService {
   get smtpFrom(): string {
     return this.env.SMTP_FROM;
   }
+
+  get minioEndpoint(): string {
+    return this.env.MINIO_ENDPOINT;
+  }
+
+  get minioRegion(): string {
+    return this.env.MINIO_REGION;
+  }
+
+  get minioAccessKeyId(): string {
+    return this.env.MINIO_ACCESS_KEY_ID;
+  }
+
+  get minioSecretAccessKey(): string {
+    return this.env.MINIO_SECRET_ACCESS_KEY;
+  }
+
+  get minioBucket(): string {
+    return this.env.MINIO_BUCKET;
+  }
 }

@@ -5,9 +5,18 @@ import { AppConfigModule } from './common/config/app-config.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './common/auth/auth.module';
 import { GuardsModule } from './common/guards/guards.module';
+import { MediaModule } from './common/media/media.module';
+import { CustomersModule } from './modules/customers/customers.module';
 
 @Module({
-  imports: [AppConfigModule, PrismaModule, AuthModule, GuardsModule],
+  imports: [
+    AppConfigModule,
+    PrismaModule,
+    AuthModule,
+    GuardsModule,
+    MediaModule,
+    CustomersModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

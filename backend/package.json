@@ -18,9 +18,11 @@
     "test:cov": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json",
-    "reconcile:auth-accounts": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/reconcile-orphaned-accounts.ts"
+    "reconcile:auth-accounts": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/reconcile-orphaned-accounts.ts",
+    "seed:super-admin": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-super-admin.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1081.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
@@ -41,6 +43,7 @@
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.2.0",
     "@types/node": "^24.0.0",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.0",

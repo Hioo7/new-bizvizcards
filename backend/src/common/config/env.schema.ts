@@ -19,6 +19,12 @@ export const envSchema = z.object({
   SMTP_USER: z.string().min(1),
   SMTP_PASSWORD: z.string().min(1),
   SMTP_FROM: z.string().email(),
+
+  MINIO_ENDPOINT: z.string().url(),
+  MINIO_REGION: z.string().min(1).default('us-east-1'),
+  MINIO_ACCESS_KEY_ID: z.string().min(1),
+  MINIO_SECRET_ACCESS_KEY: z.string().min(1),
+  MINIO_BUCKET: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;

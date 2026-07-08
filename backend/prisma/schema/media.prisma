@@ -1,0 +1,18 @@
+enum ImageSource {
+  MINIO
+
+  @@map("ImageSource")
+}
+
+model ImageMedia {
+  id           String      @id @db.Uuid
+  source       ImageSource
+  storageKey   String
+  originalName String
+  extension    String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  customer     Customer?
+
+  @@map("ImageMedia")
+}

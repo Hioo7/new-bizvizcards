@@ -26,6 +26,45 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio
+    container_name: cards-app-minio
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # One-shot: creates the media bucket if it doesn't already exist, then
+  # exits. Bucket provisioning stays here (infra), not in backend app code, so
+  # the backend's own S3 credentials never need bucket-admin permissions.
+  # Also grants anonymous read-only access to the "pfp" prefix (nginx routes
+  # /media/ straight to MinIO for reads — see nginx/default.conf — so that
+  # prefix must be publicly readable; nothing else in the bucket is).
+  mc-init:
+    image: minio/mc
+    container_name: cards-app-mc-init
+    env_file:
+      - ./backend/.env
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+      mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" &&
+      mc mb --ignore-existing local/$$MINIO_BUCKET &&
+      mc anonymous set download local/$$MINIO_BUCKET/pfp
+      "
+
   # backend:
   #   build:
   #     context: ./backend
@@ -59,3 +98,4 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:

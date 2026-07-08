@@ -15,6 +15,10 @@ describe('AppConfigService', () => {
     SMTP_USER: 'smtp-user',
     SMTP_PASSWORD: 'smtp-password',
     SMTP_FROM: 'no-reply@example.com',
+    MINIO_ENDPOINT: 'http://localhost:9000',
+    MINIO_ACCESS_KEY_ID: 'minio-access-key',
+    MINIO_SECRET_ACCESS_KEY: 'minio-secret-key',
+    MINIO_BUCKET: 'cards-app-media',
   };
 
   let originalEnv: NodeJS.ProcessEnv;
@@ -49,6 +53,11 @@ describe('AppConfigService', () => {
     expect(config.smtpUser).toBe(validEnv.SMTP_USER);
     expect(config.smtpPassword).toBe(validEnv.SMTP_PASSWORD);
     expect(config.smtpFrom).toBe(validEnv.SMTP_FROM);
+    expect(config.minioEndpoint).toBe(validEnv.MINIO_ENDPOINT);
+    expect(config.minioRegion).toBe('us-east-1');
+    expect(config.minioAccessKeyId).toBe(validEnv.MINIO_ACCESS_KEY_ID);
+    expect(config.minioSecretAccessKey).toBe(validEnv.MINIO_SECRET_ACCESS_KEY);
+    expect(config.minioBucket).toBe(validEnv.MINIO_BUCKET);
   });
 
   it('throws when a secret is shorter than 32 characters', () => {

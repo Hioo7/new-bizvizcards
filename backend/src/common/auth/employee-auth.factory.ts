@@ -2,6 +2,13 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin, emailOTP } from 'better-auth/plugins';
 import { PrismaClient } from '../../generated/prisma/client';
+import { EMPLOYEE_ROLE } from '../constants/roles.constants';
+import {
+  adminRole,
+  employeeAccessControl,
+  employeeRole,
+  superAdminRole,
+} from './access-control';
 import {
   EMPLOYEE_AUTH_BASE_PATH,
   EMPLOYEE_AUTH_COOKIE_PREFIX,
@@ -56,7 +63,16 @@ export function createEmployeeAuth(deps: CreateEmployeeAuthDeps) {
       },
     },
     plugins: [
-      admin(),
+      admin({
+        ac: employeeAccessControl,
+        roles: {
+          [EMPLOYEE_ROLE.EMPLOYEE]: employeeRole,
+          [EMPLOYEE_ROLE.ADMIN]: adminRole,
+          [EMPLOYEE_ROLE.SUPER_ADMIN]: superAdminRole,
+        },
+        defaultRole: EMPLOYEE_ROLE.EMPLOYEE,
+        adminRoles: [EMPLOYEE_ROLE.ADMIN, EMPLOYEE_ROLE.SUPER_ADMIN],
+      }),
       emailOTP({
         disableSignUp: true,
         sendVerificationOTP: ({ email, otp, type }) =>
