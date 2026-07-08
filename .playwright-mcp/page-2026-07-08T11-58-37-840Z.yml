@@ -1,0 +1,67 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - link "BizVizCards" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "BizVizCards" [ref=e5]
+      - paragraph [ref=e6]: Smarter connections. Better business.
+      - link "Back to home" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - button "Back" [ref=e8]:
+          - img [ref=e9]
+          - generic [ref=e11]: Back
+    - main [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - generic [ref=e16]: ⚡ Smart Digital Cards
+            - heading "Smart Digital Business Cards" [level=2] [ref=e17]:
+              - text: Smart Digital
+              - text: Business Cards
+            - paragraph [ref=e18]: A modern platform for managing professional profiles, contact sharing, and business networking.
+          - img "BizVizCards illustration" [ref=e22]
+          - generic [ref=e23]:
+            - generic [ref=e24]:
+              - generic [ref=e25]: ⚡
+              - text: Instant sharing
+            - generic [ref=e26]:
+              - generic [ref=e27]: 📊
+              - text: Real-time analytics
+        - generic [ref=e28]:
+          - paragraph [ref=e30]:
+            - text: Don't have an account?
+            - link "Sign Up" [ref=e31] [cursor=pointer]:
+              - /url: /user/signup
+          - generic [ref=e32]:
+            - heading "Welcome Back!" [level=1] [ref=e33]
+            - paragraph [ref=e34]: Log in to your BizVizCards account
+          - generic [ref=e35]:
+            - generic [ref=e37]:
+              - textbox "Email Address" [ref=e38]:
+                - /placeholder: " "
+              - generic: Email Address
+              - img [ref=e39]
+            - generic [ref=e42]:
+              - generic [ref=e43]:
+                - textbox "Password" [ref=e44]:
+                  - /placeholder: " "
+                - generic: Password
+                - img [ref=e45]
+                - button "Show password" [ref=e48]:
+                  - img [ref=e49]
+              - link "Forgot password?" [ref=e53] [cursor=pointer]:
+                - /url: "#"
+            - button "Log In" [disabled] [ref=e55]
+          - generic [ref=e58]: or continue with
+          - generic [ref=e60]:
+            - link "Google" [ref=e61] [cursor=pointer]:
+              - /url: /api/carduser/oauth/google
+              - img [ref=e62]
+              - text: Google
+            - button "Apple (soon)" [disabled] [ref=e67]:
+              - img [ref=e68]
+              - text: Apple (soon)
+          - generic [ref=e70]:
+            - img [ref=e71]
+            - text: Your data is secure with us. We never share your information.
+  - alert [ref=e73]

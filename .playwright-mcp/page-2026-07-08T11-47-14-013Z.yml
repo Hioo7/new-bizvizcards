@@ -1,0 +1,41 @@
+- generic [ref=f16e3]:
+  - navigation [ref=f16e4]:
+    - link "BizVizCards" [ref=f16e5] [cursor=pointer]:
+      - /url: /
+      - img "BizVizCards" [ref=f16e6]
+    - paragraph [ref=f16e7]: Smarter connections. Better business.
+    - link "Back to home" [ref=f16e8] [cursor=pointer]:
+      - /url: /
+      - img [ref=f16e9]
+      - generic [ref=f16e11]: Back
+  - main [ref=f16e12]:
+    - generic [ref=f16e13]:
+      - generic [ref=f16e14]:
+        - generic [ref=f16e15]:
+          - generic [ref=f16e16]: ⚡ Smart Digital Cards
+          - heading "Smart Digital Business Cards" [level=2] [ref=f16e17]:
+            - text: Smart Digital
+            - text: Business Cards
+          - paragraph [ref=f16e18]: A modern platform for managing professional profiles, contact sharing, and business networking.
+        - img "BizVizCards illustration" [ref=f16e22]
+        - generic [ref=f16e23]:
+          - generic [ref=f16e24]:
+            - generic [ref=f16e25]: ⚡
+            - text: Instant sharing
+          - generic [ref=f16e26]:
+            - generic [ref=f16e27]: 📊
+            - text: Real-time analytics
+      - generic [ref=f16e28]:
+        - generic [ref=f16e30]: 🔐 Admin Portal
+        - generic [ref=f16e31]:
+          - generic [ref=f16e32]:
+            - heading "Welcome Back!" [level=1] [ref=f16e33]
+            - paragraph [ref=f16e34]: Enter your email to receive a one-time login code.
+          - generic [ref=f16e35]:
+            - generic [ref=f16e37]:
+              - textbox "Email Address" [active] [ref=f16e38]:
+                - /placeholder: " "
+              - generic: Email Address
+              - img [ref=f16e39]
+            - button "Continue with Email" [ref=f16e42] [cursor=pointer]
+        - generic [ref=f16e43]: Restricted area. Authorized personnel only.

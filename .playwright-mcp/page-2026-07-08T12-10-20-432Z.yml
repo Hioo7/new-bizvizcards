@@ -1,0 +1,61 @@
+- generic [ref=f3e3]:
+  - navigation [ref=f3e4]:
+    - link "BizVizCards" [ref=f3e5] [cursor=pointer]:
+      - /url: /
+      - img "BizVizCards" [ref=f3e6]
+    - paragraph [ref=f3e7]: Smarter connections. Better business.
+    - link "Back to home" [ref=f3e8] [cursor=pointer]:
+      - /url: /
+      - img [ref=f3e9]
+      - generic [ref=f3e11]: Back
+  - main [ref=f3e12]:
+    - generic [ref=f3e13]:
+      - generic [ref=f3e14]:
+        - generic [ref=f3e15]:
+          - generic [ref=f3e16]: ⚡ Smart Digital Cards
+          - heading "Smart Digital Business Cards" [level=2] [ref=f3e17]:
+            - text: Smart Digital
+            - text: Business Cards
+          - paragraph [ref=f3e18]: A modern platform for managing professional profiles, contact sharing, and business networking.
+        - img "BizVizCards illustration" [ref=f3e22]
+        - generic [ref=f3e23]:
+          - generic [ref=f3e24]:
+            - generic [ref=f3e25]: ⚡
+            - text: Instant sharing
+          - generic [ref=f3e26]:
+            - generic [ref=f3e27]: 📊
+            - text: Real-time analytics
+      - generic [ref=f3e28]:
+        - paragraph [ref=f3e30]:
+          - text: Don't have an account?
+          - link "Sign Up" [ref=f3e31] [cursor=pointer]:
+            - /url: /signup
+        - generic [ref=f3e32]:
+          - heading "Welcome Back!" [level=1] [ref=f3e33]
+          - paragraph [ref=f3e34]: Log in to your BizVizCards account
+        - generic [ref=f3e35]:
+          - generic [ref=f3e38]:
+            - textbox "Email Address" [ref=f3e39]:
+              - /placeholder: " "
+            - generic: Email Address
+            - img [ref=f3e40]
+          - generic [ref=f3e44]:
+            - generic [ref=f3e45]:
+              - textbox "Password" [ref=f3e46]:
+                - /placeholder: " "
+              - generic: Password
+              - img [ref=f3e47]
+              - button "Show password" [ref=f3e50]:
+                - img [ref=f3e51]
+            - link "Forgot password?" [ref=f3e55] [cursor=pointer]:
+              - /url: /login
+          - button "Log In" [ref=f3e57] [cursor=pointer]
+        - generic [ref=f3e60]: or continue with
+        - generic [ref=f3e63]:
+          - button "Google" [disabled] [ref=f3e64]:
+            - img [ref=f3e65]
+            - text: Google
+          - button "Apple" [disabled] [ref=f3e70]:
+            - img [ref=f3e71]
+            - text: Apple
+        - generic [ref=f3e73]: Your data is secure with us. We never share your information.

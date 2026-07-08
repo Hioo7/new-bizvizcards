@@ -1,0 +1,10 @@
+export { default as Navbar } from "@features/landing/components/Navbar";
+export { default as HeroSection } from "@features/landing/components/HeroSection";
+export { default as HowItWorksSection } from "@features/landing/components/HowItWorksSection";
+export { default as WhoItsForSection } from "@features/landing/components/WhoItsForSection";
+export { default as WhyUsSection } from "@features/landing/components/WhyUsSection";
+export { default as WhyPeopleLoveItSection } from "@features/landing/components/WhyPeopleLoveItSection";
+export { default as CtaBanner } from "@features/landing/components/CtaBanner";
+export { default as TestimonialsSection } from "@features/landing/components/TestimonialsSection";
+export { default as ContactSection } from "@features/landing/components/ContactSection";
+export { default as Footer } from "@features/landing/components/Footer";

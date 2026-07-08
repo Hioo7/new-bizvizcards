@@ -1,0 +1,5 @@
+[     256ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=809f5eeb:14335
+[ 1463498ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/src/features/auth/components/FormTextField.tsx?t=1783510742437:0
+[ 1463500ms] [ERROR] [vite] Failed to reload /src/features/auth/components/FormTextField.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:524
+[ 1463513ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/src/features/auth/components/FormErrorRibbon.tsx?t=1783510742439:0
+[ 1463514ms] [ERROR] [vite] Failed to reload /src/features/auth/components/FormErrorRibbon.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:524

@@ -1,0 +1,252 @@
+- generic [ref=f6e3]:
+  - navigation [ref=f6e4]:
+    - generic [ref=f6e5]:
+      - link "BizVizCards" [ref=f6e6] [cursor=pointer]:
+        - /url: /
+        - img "BizVizCards" [ref=f6e7]
+      - button "Open menu" [ref=f6e8]:
+        - img [ref=f6e9]
+  - generic [ref=f6e11]:
+    - generic [ref=f6e12]:
+      - generic [ref=f6e13]: ⚡ A Smarter Business Card
+      - heading "Still using paper cards? Most of them end up in the bin." [level=1] [ref=f6e14]:
+        - generic [ref=f6e15]: Still
+        - generic [ref=f6e16]: using
+        - generic [ref=f6e17]: paper
+        - generic [ref=f6e18]: cards?
+        - generic [ref=f6e19]: Most
+        - generic [ref=f6e20]: of
+        - generic [ref=f6e21]: them
+        - generic [ref=f6e22]: end
+        - generic [ref=f6e23]: up
+        - generic [ref=f6e24]: in
+        - generic [ref=f6e25]: the
+        - generic [ref=f6e26]: bin.
+      - paragraph [ref=f6e27]: Nearly 9 in 10 paper business cards are thrown away within a week. Go digital — one tap, saved forever.
+      - generic [ref=f6e28]:
+        - link "Get Your Card" [ref=f6e30] [cursor=pointer]:
+          - /url: /signup
+        - link "Order For My Team" [ref=f6e32] [cursor=pointer]:
+          - /url: "#contact"
+    - img "BizVizCards" [ref=f6e34]
+  - generic [ref=f6e36]:
+    - generic [ref=f6e37]:
+      - heading "How It Works?" [level=2] [ref=f6e38]
+      - paragraph [ref=f6e39]: From tap to pipeline in seconds
+    - generic [ref=f6e40]:
+      - generic [ref=f6e41]:
+        - generic [ref=f6e42]: "1"
+        - heading "Tap" [level=3] [ref=f6e43]
+        - paragraph [ref=f6e44]: Hold the card to any smartphone. No app. No friction.
+        - img "Tap" [ref=f6e46]
+      - generic [ref=f6e47]:
+        - generic [ref=f6e48]: "2"
+        - heading "Exchange" [level=3] [ref=f6e49]
+        - paragraph [ref=f6e50]: Your profile appears instantly. One tap back, and the connection is saved.
+        - img "Exchange" [ref=f6e52]
+      - generic [ref=f6e53]:
+        - generic [ref=f6e54]: "3"
+        - heading "Sync" [level=3] [ref=f6e55]
+        - paragraph [ref=f6e56]: Every contact flows into your dashboard tagged, mapped, ready for follow-up.
+        - img "Sync" [ref=f6e58]
+  - generic [ref=f6e60]:
+    - generic [ref=f6e61]:
+      - heading "Who It's For?" [level=2] [ref=f6e62]
+      - paragraph [ref=f6e63]: One card. Every kind of professional.
+    - generic [ref=f6e64]:
+      - generic [ref=f6e65]:
+        - img "Founders" [ref=f6e67]
+        - generic [ref=f6e68]:
+          - heading "Founders" [level=3] [ref=f6e69]
+          - paragraph [ref=f6e70]: Walk into every room already looking like the company you're building toward.
+      - generic [ref=f6e71]:
+        - img "Executives" [ref=f6e73]
+        - generic [ref=f6e74]:
+          - heading "Executives" [level=3] [ref=f6e75]
+          - paragraph [ref=f6e76]: Hand over something people actually keep. Something that says serious before you do.
+      - generic [ref=f6e77]:
+        - img "Consultants & Freelancers" [ref=f6e79]
+        - generic [ref=f6e80]:
+          - heading "Consultants & Freelancers" [level=3] [ref=f6e81]
+          - paragraph [ref=f6e82]: Your network is your livelihood. Treat it like it.
+      - generic [ref=f6e83]:
+        - img "Sales Teams" [ref=f6e85]
+        - generic [ref=f6e86]:
+          - heading "Sales Teams" [level=3] [ref=f6e87]
+          - paragraph [ref=f6e88]: Stop wondering what happened at the event. Start seeing it.
+  - generic [ref=f6e90]:
+    - generic [ref=f6e91]:
+      - heading "Why Us?" [level=2] [ref=f6e92]
+      - paragraph [ref=f6e93]: One card. Every kind of professional.
+    - generic [ref=f6e94]:
+      - generic [ref=f6e95]:
+        - generic [ref=f6e96]:
+          - heading "Advanced Dashboard" [level=3] [ref=f6e97]
+          - paragraph [ref=f6e98]: A central command center for all your networking activities and analytics.
+        - img "Advanced Dashboard" [ref=f6e100]
+      - generic [ref=f6e101]:
+        - generic [ref=f6e102]:
+          - heading "Universal QR" [level=3] [ref=f6e103]
+          - paragraph [ref=f6e104]: For devices without NFC, a sleek QR code ensures no one is left out.
+        - img "Universal QR" [ref=f6e106]
+      - generic [ref=f6e107]:
+        - generic [ref=f6e108]:
+          - heading "Live Profiles" [level=3] [ref=f6e109]
+          - paragraph [ref=f6e110]: Update your info anytime without reprinting cards.
+        - img "Live Profiles" [ref=f6e112]
+      - generic [ref=f6e113]:
+        - generic [ref=f6e114]:
+          - heading "Auto-Updates" [level=3] [ref=f6e115]
+          - paragraph [ref=f6e116]: Changed your number? Your contacts' address books update automatically.
+        - img "Auto-Updates" [ref=f6e118]
+  - generic [ref=f6e120]:
+    - generic [ref=f6e121]:
+      - heading "Why People Love It?" [level=2] [ref=f6e122]
+      - paragraph [ref=f6e123]: This is what it feels like to never lose a contact again.
+    - generic [ref=f6e124]:
+      - generic [ref=f6e125]:
+        - img [ref=f6e127]
+        - heading "Two-way exchange" [level=3] [ref=f6e132]
+        - paragraph [ref=f6e133]: Get their contact directly back to your dashboard with one click.
+      - generic [ref=f6e134]:
+        - img [ref=f6e136]
+        - heading "Organized contacts" [level=3] [ref=f6e141]
+        - paragraph [ref=f6e142]: Auto-tag and categorize new contacts based on the event or job role.
+      - generic [ref=f6e143]:
+        - img [ref=f6e145]
+        - heading "Export capability" [level=3] [ref=f6e148]
+        - paragraph [ref=f6e149]: One-click export to Salesforce, HubSpot, and 1500+ platforms.
+      - generic [ref=f6e150]:
+        - img [ref=f6e152]
+        - heading "Network map" [level=3] [ref=f6e154]
+        - paragraph [ref=f6e155]: Visualize where your network is growing globally with our heat map platform.
+      - generic [ref=f6e156]:
+        - img [ref=f6e158]
+        - heading "Logo customization" [level=3] [ref=f6e164]
+        - paragraph [ref=f6e165]: Give cards a premium look with high definition company logo definition.
+      - generic [ref=f6e166]:
+        - img [ref=f6e168]
+        - heading "Universal QR" [level=3] [ref=f6e174]
+        - paragraph [ref=f6e175]: Fully responsive and clear, works on every smartphone ever made.
+      - generic [ref=f6e176]:
+        - img [ref=f6e178]
+        - heading "Analytics" [level=3] [ref=f6e180]
+        - paragraph [ref=f6e181]: Track views, taps, and conversion rates for every team member in real time.
+      - generic [ref=f6e182]:
+        - img [ref=f6e184]
+        - heading "Team dashboard" [level=3] [ref=f6e188]
+        - paragraph [ref=f6e189]: Admin controls to manage branding and permissions for the entire company.
+  - generic [ref=f6e191]:
+    - heading "Start making connections that last." [level=2] [ref=f6e192]
+    - paragraph [ref=f6e193]: Join thousands of professionals — from solo founders to growing sales teams — who never lose a contact again.
+    - generic [ref=f6e194]:
+      - link "Get Your Card" [ref=f6e196] [cursor=pointer]:
+        - /url: /signup
+      - link "Talk To Our Team" [ref=f6e198] [cursor=pointer]:
+        - /url: "#contact"
+  - generic [ref=f6e200]:
+    - generic [ref=f6e201]:
+      - heading "Testimonials" [level=2] [ref=f6e202]
+      - paragraph [ref=f6e203]: What our customers think about us!
+    - generic [ref=f6e204]:
+      - generic [ref=f6e205]:
+        - generic [ref=f6e206]:
+          - img [ref=f6e207]
+          - img [ref=f6e209]
+          - img [ref=f6e211]
+          - img [ref=f6e213]
+          - img [ref=f6e215]
+        - paragraph [ref=f6e217]: "\"This is the first time networking actually felt modern. I've closed more deals because clients are genuinely impressed the moment I tap their phone. It's an instant conversation starter.\""
+        - generic [ref=f6e218]:
+          - img "Dorthy Sharma" [ref=f6e220]
+          - generic [ref=f6e221]:
+            - paragraph [ref=f6e222]: Dorthy Sharma
+            - paragraph [ref=f6e223]: Senior Design Director
+      - button "Previous testimonial" [ref=f6e224]:
+        - img [ref=f6e225]
+      - button "Next testimonial" [ref=f6e227]:
+        - img [ref=f6e228]
+  - generic [ref=f6e231]:
+    - generic [ref=f6e232]:
+      - heading "Contact Us" [level=2] [ref=f6e233]
+      - paragraph [ref=f6e234]: Join professionals who have already made the switch to the architectural authority of digital identities.
+    - generic [ref=f6e236]:
+      - generic [ref=f6e237]:
+        - generic [ref=f6e238]:
+          - generic [ref=f6e239]: Name
+          - textbox "Name" [ref=f6e240]:
+            - /placeholder: e.g. Mayank Sharma
+        - generic [ref=f6e241]:
+          - generic [ref=f6e242]: Email
+          - textbox "Email" [ref=f6e243]:
+            - /placeholder: example@gmail.com
+        - generic [ref=f6e244]:
+          - generic [ref=f6e245]: Contact No.
+          - textbox "Contact No." [ref=f6e246]:
+            - /placeholder: +91 8807232627
+      - generic [ref=f6e247]:
+        - generic [ref=f6e248]: Message
+        - textbox "Message" [ref=f6e249]:
+          - /placeholder: Ask anything
+      - button "Send Message" [ref=f6e250]
+  - contentinfo [ref=f6e251]:
+    - generic [ref=f6e252]:
+      - generic [ref=f6e253]:
+        - generic [ref=f6e254]:
+          - img "BizVizCards" [ref=f6e255]
+          - paragraph [ref=f6e256]: Modern technology to help businesses transform their digital identity and design.
+        - generic [ref=f6e257]:
+          - heading "Why Us" [level=4] [ref=f6e258]
+          - list [ref=f6e259]:
+            - listitem [ref=f6e260]:
+              - link "Features" [ref=f6e261] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e262]:
+              - link "Dashboard" [ref=f6e263] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e264]:
+              - link "Analytics" [ref=f6e265] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e266]:
+              - link "Security" [ref=f6e267] [cursor=pointer]:
+                - /url: "#"
+        - generic [ref=f6e268]:
+          - heading "Services" [level=4] [ref=f6e269]
+          - list [ref=f6e270]:
+            - listitem [ref=f6e271]:
+              - link "NFC Cards" [ref=f6e272] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e273]:
+              - link "QR Cards" [ref=f6e274] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e275]:
+              - link "Team Plans" [ref=f6e276] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e277]:
+              - link "Enterprise" [ref=f6e278] [cursor=pointer]:
+                - /url: "#"
+        - generic [ref=f6e279]:
+          - heading "Resources" [level=4] [ref=f6e280]
+          - list [ref=f6e281]:
+            - listitem [ref=f6e282]:
+              - link "Blog" [ref=f6e283] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e284]:
+              - link "Privacy Policy" [ref=f6e285] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e286]:
+              - link "Terms of Service" [ref=f6e287] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f6e288]:
+              - link "FAQs" [ref=f6e289] [cursor=pointer]:
+                - /url: "#"
+        - generic [ref=f6e290]:
+          - heading "Contact Us" [level=4] [ref=f6e291]
+          - list [ref=f6e292]:
+            - listitem [ref=f6e293]:
+              - link "business@blueticksinnovations.com" [ref=f6e294] [cursor=pointer]:
+                - /url: mailto:business@blueticksinnovations.com
+            - listitem [ref=f6e295]:
+              - link "+91 63637 97685" [ref=f6e296] [cursor=pointer]:
+                - /url: tel:+916363797685
+      - generic [ref=f6e297]: © 2026 BizVizCards. All rights reserved.
