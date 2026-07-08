@@ -1,0 +1,68 @@
+// Generated/patched by `npx auth generate --config prisma/auth-cli/customer-auth.cli-config.ts
+// --output prisma/schema/customer-auth.prisma`. Review diffs before accepting;
+// avoid hand-editing fields Better Auth owns (the back-relation to Customer
+// below is the one deliberate exception — Prisma requires it and the CLI
+// doesn't know to add it).
+model CustomerAccount {
+  id                  String               @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  name                String
+  email               String
+  emailVerified       Boolean              @default(false)
+  image               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  customersessions    CustomerSession[]
+  customercredentials CustomerCredential[]
+  customer            Customer?
+
+  @@unique([email])
+  @@map("CustomerAccount")
+}
+
+model CustomerSession {
+  id              String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  expiresAt       DateTime
+  token           String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  ipAddress       String?
+  userAgent       String?
+  userId          String          @db.Uuid
+  customeraccount CustomerAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("CustomerSession")
+}
+
+model CustomerCredential {
+  id                    String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  accountId             String
+  providerId            String
+  userId                String          @db.Uuid
+  customeraccount       CustomerAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([userId])
+  @@map("CustomerCredential")
+}
+
+model CustomerVerification {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("CustomerVerification")
+}

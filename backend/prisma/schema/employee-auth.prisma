@@ -1,0 +1,74 @@
+// Generated/patched by `npx auth generate --config prisma/auth-cli/employee-auth.cli-config.ts
+// --output prisma/schema/employee-auth.prisma`. Review diffs before accepting;
+// avoid hand-editing fields Better Auth owns (the back-relation to Employee
+// below is the one deliberate exception — Prisma requires it and the CLI
+// doesn't know to add it). EmployeeCredential stays empty under admin()+emailOTP()
+// alone (OTP sign-in creates no credential row) — expected, not a bug.
+model EmployeeAccount {
+  id                  String               @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  name                String
+  email               String
+  emailVerified       Boolean              @default(false)
+  image               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  role                String?
+  banned              Boolean?             @default(false)
+  banReason           String?
+  banExpires          DateTime?
+  employeesessions    EmployeeSession[]
+  employeecredentials EmployeeCredential[]
+  employee            Employee?
+
+  @@unique([email])
+  @@map("EmployeeAccount")
+}
+
+model EmployeeSession {
+  id              String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  expiresAt       DateTime
+  token           String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  ipAddress       String?
+  userAgent       String?
+  userId          String          @db.Uuid
+  employeeaccount EmployeeAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy  String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("EmployeeSession")
+}
+
+model EmployeeCredential {
+  id                    String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  accountId             String
+  providerId            String
+  userId                String          @db.Uuid
+  employeeaccount       EmployeeAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([userId])
+  @@map("EmployeeCredential")
+}
+
+model EmployeeVerification {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("EmployeeVerification")
+}

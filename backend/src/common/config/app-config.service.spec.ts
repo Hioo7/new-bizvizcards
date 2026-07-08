@@ -1,0 +1,67 @@
+import { AppConfigService } from './app-config.service';
+
+describe('AppConfigService', () => {
+  const validEnv = {
+    NODE_ENV: 'test',
+    PORT: '3000',
+    DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
+    TEST_DATABASE_URL: 'postgresql://user:pass@localhost:5432/db_test',
+    BETTER_AUTH_STAFF_SECRET: 'a'.repeat(32),
+    BETTER_AUTH_CUSTOMER_SECRET: 'b'.repeat(32),
+    BETTER_AUTH_URL: 'http://localhost:3000',
+    SMTP_HOST: 'smtp.example.com',
+    SMTP_PORT: '587',
+    SMTP_SECURE: 'false',
+    SMTP_USER: 'smtp-user',
+    SMTP_PASSWORD: 'smtp-password',
+    SMTP_FROM: 'no-reply@example.com',
+  };
+
+  let originalEnv: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    originalEnv = { ...process.env };
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it('parses a valid environment and exposes typed getters', () => {
+    process.env = { ...validEnv };
+
+    const config = new AppConfigService();
+
+    expect(config.nodeEnv).toBe('test');
+    expect(config.port).toBe(3000);
+    expect(config.databaseUrl).toBe(validEnv.DATABASE_URL);
+    expect(config.testDatabaseUrl).toBe(validEnv.TEST_DATABASE_URL);
+    expect(config.betterAuthStaffSecret).toBe(
+      validEnv.BETTER_AUTH_STAFF_SECRET,
+    );
+    expect(config.betterAuthCustomerSecret).toBe(
+      validEnv.BETTER_AUTH_CUSTOMER_SECRET,
+    );
+    expect(config.betterAuthUrl).toBe(validEnv.BETTER_AUTH_URL);
+    expect(config.smtpHost).toBe(validEnv.SMTP_HOST);
+    expect(config.smtpPort).toBe(587);
+    expect(config.smtpSecure).toBe(false);
+    expect(config.smtpUser).toBe(validEnv.SMTP_USER);
+    expect(config.smtpPassword).toBe(validEnv.SMTP_PASSWORD);
+    expect(config.smtpFrom).toBe(validEnv.SMTP_FROM);
+  });
+
+  it('throws when a secret is shorter than 32 characters', () => {
+    process.env = { ...validEnv, BETTER_AUTH_STAFF_SECRET: 'too-short' };
+
+    expect(() => new AppConfigService()).toThrow();
+  });
+
+  it('throws when DATABASE_URL is missing', () => {
+    const withoutDatabaseUrl: Partial<typeof validEnv> = { ...validEnv };
+    delete withoutDatabaseUrl.DATABASE_URL;
+    process.env = { ...withoutDatabaseUrl };
+
+    expect(() => new AppConfigService()).toThrow();
+  });
+});
