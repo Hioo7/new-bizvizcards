@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { ImageMediaService } from '../../../common/media/image-media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CustomerModel } from '../../../generated/prisma/models';
-import { PFP_STORAGE_KEY_PREFIX } from '../customers.constants';
+import {
+  CUSTOMER_LIST_DEFAULT_PAGE,
+  CUSTOMER_LIST_DEFAULT_PAGE_SIZE,
+  PFP_STORAGE_KEY_PREFIX,
+} from '../customers.constants';
+import type { ListCustomersQueryDto } from '../dto/list-customers-query.dto';
 
 export interface ProfilePictureUpload {
   buffer: Buffer;
@@ -16,6 +21,20 @@ export interface ProfilePictureReplaceResult {
   pfpUrl: string;
 }
 
+export interface CustomerListItem {
+  id: string;
+  name: string;
+  email: string;
+  pfpUrl: string | null;
+}
+
+export interface CustomerListResult {
+  customers: CustomerListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 @Injectable()
 export class CustomersService {
   constructor(
@@ -25,6 +44,47 @@ export class CustomersService {
 
   getByAccountId(accountId: string): Promise<CustomerModel> {
     return this.prisma.customer.findUniqueOrThrow({ where: { accountId } });
+  }
+
+  async list(query: ListCustomersQueryDto): Promise<CustomerListResult> {
+    const page = query.page ?? CUSTOMER_LIST_DEFAULT_PAGE;
+    const pageSize = query.pageSize ?? CUSTOMER_LIST_DEFAULT_PAGE_SIZE;
+
+    const where = {
+      ...(query.search && {
+        account: {
+          OR: [
+            { name: { contains: query.search, mode: 'insensitive' as const } },
+            { email: { contains: query.search, mode: 'insensitive' as const } },
+          ],
+        },
+      }),
+    };
+
+    const [customers, total] = await Promise.all([
+      this.prisma.customer.findMany({
+        where,
+        include: { account: true, pfpMedia: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.customer.count({ where }),
+    ]);
+
+    return {
+      customers: customers.map((customer) => ({
+        id: customer.id,
+        name: customer.account.name,
+        email: customer.account.email,
+        pfpUrl: customer.pfpMedia
+          ? this.imageMediaService.getPublicUrl(customer.pfpMedia)
+          : null,
+      })),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async replaceProfilePicture(

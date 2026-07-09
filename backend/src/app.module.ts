@@ -8,6 +8,7 @@ import { GuardsModule } from './common/guards/guards.module';
 import { MediaModule } from './common/media/media.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { StaffModule } from './modules/staff/staff.module';
+import { SmartCardsModule } from './modules/smart-cards/smart-cards.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { StaffModule } from './modules/staff/staff.module';
     MediaModule,
     CustomersModule,
     StaffModule,
+    SmartCardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,0 +1,155 @@
+enum SmartCardTemplateKey {
+  INTERIOR_DESIGN_TEMPLATE
+  INTERIOR_DESIGN_TEMPLATE_2
+  INTERIOR_DESIGN_TEMPLATE_3
+
+  @@map("SmartCardTemplateKey")
+}
+
+model SmartCardTemplate {
+  id             String               @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  key            SmartCardTemplateKey @unique
+  name           String
+  previewMediaId String?              @unique @db.Uuid
+  previewMedia   ImageMedia?          @relation(fields: [previewMediaId], references: [id], onDelete: SetNull)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  cards SmartCard[]
+
+  @@map("SmartCardTemplate")
+}
+
+model SmartCard {
+  id                  String            @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId          String?           @db.Uuid
+  customer            Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  templateId          String            @db.Uuid
+  template            SmartCardTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  endpoint            String            @unique
+  createdByEmployeeId String?           @db.Uuid
+  createdByEmployee   Employee?         @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  profile      SmartCardProfile?
+  contact      SmartCardContact?
+  socialMedia  SmartCardSocialMedia?
+  founder      SmartCardFounder?
+  services     SmartCardService[]
+  testimonials SmartCardTestimonial[]
+  galleries    SmartCardGallery[]
+
+  @@index([customerId])
+  @@index([templateId])
+  @@index([createdByEmployeeId])
+  @@map("SmartCard")
+}
+
+model SmartCardProfile {
+  smartCardId String      @id @db.Uuid
+  smartCard   SmartCard   @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  companyName String?
+  tagline     String?
+  subTagline  String?
+  aboutText   String?
+  logoMediaId String?     @unique @db.Uuid
+  logoMedia   ImageMedia? @relation(fields: [logoMediaId], references: [id], onDelete: SetNull)
+
+  @@map("SmartCardProfile")
+}
+
+model SmartCardContact {
+  smartCardId   String    @id @db.Uuid
+  smartCard     SmartCard @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  contactNumber String?
+  email         String?
+  address       String?
+
+  @@map("SmartCardContact")
+}
+
+model SmartCardSocialMedia {
+  smartCardId String    @id @db.Uuid
+  smartCard   SmartCard @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  whatsapp    String?
+  instagram   String?
+  facebook    String?
+  linkedIn    String?
+  twitter     String?
+  youtube     String?
+  googleMap   String?
+  website     String?
+  other       String?
+
+  @@map("SmartCardSocialMedia")
+}
+
+model SmartCardFounder {
+  smartCardId    String      @id @db.Uuid
+  smartCard      SmartCard   @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  name           String?
+  title          String?
+  imageMediaId   String?     @unique @db.Uuid
+  image          ImageMedia? @relation(fields: [imageMediaId], references: [id], onDelete: SetNull)
+  experience     Int?
+  projects       Int?
+  satisfaction   Int?
+  introText      String?
+  philosophyText String?
+  quote          String?
+
+  @@map("SmartCardFounder")
+}
+
+model SmartCardService {
+  id           String      @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  smartCardId  String      @db.Uuid
+  smartCard    SmartCard   @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  title        String?
+  description  String?
+  imageMediaId String?     @unique @db.Uuid
+  image        ImageMedia? @relation(fields: [imageMediaId], references: [id], onDelete: SetNull)
+  order        Int         @default(0)
+
+  @@index([smartCardId])
+  @@map("SmartCardService")
+}
+
+model SmartCardTestimonial {
+  id          String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  smartCardId String    @db.Uuid
+  smartCard   SmartCard @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  name        String?
+  initials    String?
+  text        String?
+  order       Int       @default(0)
+
+  @@index([smartCardId])
+  @@map("SmartCardTestimonial")
+}
+
+model SmartCardGallery {
+  id          String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  smartCardId String    @db.Uuid
+  smartCard   SmartCard @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  title       String?
+  order       Int       @default(0)
+
+  images SmartCardGalleryImage[]
+
+  @@index([smartCardId])
+  @@map("SmartCardGallery")
+}
+
+model SmartCardGalleryImage {
+  id           String           @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  galleryId    String           @db.Uuid
+  gallery      SmartCardGallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  imageMediaId String           @unique @db.Uuid
+  image        ImageMedia       @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
+  order        Int              @default(0)
+
+  @@index([galleryId])
+  @@map("SmartCardGalleryImage")
+}

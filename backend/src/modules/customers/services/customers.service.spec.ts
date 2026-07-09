@@ -70,11 +70,12 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     }
   });
 
-  async function seedCustomer() {
+  async function seedCustomer(overrides?: { name?: string; email?: string }) {
     const account = await prisma.customerAccount.create({
       data: {
-        name: 'Test Customer',
-        email: `customers-service-${randomUUID()}@example.com`,
+        name: overrides?.name ?? 'Test Customer',
+        email:
+          overrides?.email ?? `customers-service-${randomUUID()}@example.com`,
         emailVerified: true,
       },
     });
@@ -156,5 +157,66 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     });
     expect(mediaRow).toBeNull();
     expect(fakeProvider.deletedKeys).toHaveLength(1);
+  });
+
+  describe('list', () => {
+    it('paginates customers ordered by newest first', async () => {
+      const suffix = randomUUID();
+      const first = await seedCustomer({ name: `Alpha ${suffix}` });
+      const second = await seedCustomer({ name: `Beta ${suffix}` });
+
+      const result = await service.list({
+        page: 1,
+        pageSize: 1,
+        search: suffix,
+      });
+
+      expect(result.total).toBe(2);
+      expect(result.customers).toHaveLength(1);
+      expect(result.customers[0].id).toBe(second.id);
+
+      const nextPage = await service.list({
+        page: 2,
+        pageSize: 1,
+        search: suffix,
+      });
+      expect(nextPage.customers[0].id).toBe(first.id);
+    });
+
+    it('searches case-insensitively across name and email', async () => {
+      const suffix = randomUUID();
+      const customer = await seedCustomer({
+        name: `Searchable Co ${suffix}`,
+        email: `unique-${suffix}@example.com`,
+      });
+
+      const byName = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: `searchable co ${suffix}`,
+      });
+      expect(byName.customers.map((c) => c.id)).toContain(customer.id);
+
+      const byEmail = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: `UNIQUE-${suffix}`,
+      });
+      expect(byEmail.customers.map((c) => c.id)).toContain(customer.id);
+    });
+
+    it('includes a null pfpUrl when no profile picture is set', async () => {
+      const suffix = randomUUID();
+      const customer = await seedCustomer({ name: `NoPfp ${suffix}` });
+
+      const result = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: suffix,
+      });
+
+      const found = result.customers.find((c) => c.id === customer.id);
+      expect(found?.pfpUrl).toBeNull();
+    });
   });
 });

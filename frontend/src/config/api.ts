@@ -18,3 +18,9 @@ export const STAFF_AUTH_ENDPOINTS = {
 } as const;
 
 export const STAFF_MANAGEMENT_BASE_PATH = "/api/staff";
+
+export const SMART_CARDS_BASE_PATH = "/api/smart-cards";
+
+export const PUBLIC_SMART_CARDS_BASE_PATH = "/api/public/smart-cards";
+
+export const CUSTOMERS_BASE_PATH = "/api/customers";

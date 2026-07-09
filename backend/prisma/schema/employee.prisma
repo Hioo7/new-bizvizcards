@@ -5,5 +5,7 @@ model Employee {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
+  createdSmartCards SmartCard[]
+
   @@map("Employee")
 }

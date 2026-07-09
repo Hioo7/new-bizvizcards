@@ -1,0 +1,21 @@
+import { Module } from '@nestjs/common';
+import { SmartCardsController } from './smart-cards.controller';
+import { SmartCardTemplatesController } from './smart-card-templates.controller';
+import { PublicSmartCardsController } from './public-smart-cards.controller';
+import { SmartCardsService } from './services/smart-cards.service';
+import { SmartCardTemplatesService } from './services/smart-card-templates.service';
+import { SmartCardVCardService } from './services/smart-card-vcard.service';
+
+@Module({
+  controllers: [
+    SmartCardsController,
+    SmartCardTemplatesController,
+    PublicSmartCardsController,
+  ],
+  providers: [
+    SmartCardsService,
+    SmartCardTemplatesService,
+    SmartCardVCardService,
+  ],
+})
+export class SmartCardsModule {}

@@ -14,5 +14,11 @@ model ImageMedia {
   updatedAt    DateTime    @updatedAt
   customer     Customer?
 
+  smartCardTemplate     SmartCardTemplate?
+  smartCardProfile      SmartCardProfile?
+  smartCardFounder      SmartCardFounder?
+  smartCardService      SmartCardService?
+  smartCardGalleryImage SmartCardGalleryImage?
+
   @@map("ImageMedia")
 }

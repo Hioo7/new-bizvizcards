@@ -21,6 +21,3 @@ export const STAFF_ASSIGNABLE_ROLE_OPTIONS: {
   { value: "employee", label: "Employee" },
   { value: "admin", label: "Admin" },
 ];
-
-export const GENERIC_STAFF_ACTION_ERROR_MESSAGE =
-  "Something went wrong. Please try again.";

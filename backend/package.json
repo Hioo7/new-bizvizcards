@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json",
     "reconcile:auth-accounts": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/reconcile-orphaned-accounts.ts",
-    "seed:super-admin": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-super-admin.ts"
+    "seed:super-admin": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-super-admin.ts",
+    "seed:smart-card-templates": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-smart-card-templates.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1081.0",

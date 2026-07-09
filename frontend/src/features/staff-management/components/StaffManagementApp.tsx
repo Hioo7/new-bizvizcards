@@ -4,15 +4,15 @@ import { useStaffAuth } from "@hooks/useStaffAuth";
 import type { StaffMember } from "@app-types/staffAuth";
 import { useStaffList } from "@features/staff-management/hooks/useStaffList";
 import { useStaffMutations } from "@features/staff-management/hooks/useStaffMutations";
-import { useAsyncAction } from "@features/staff-management/hooks/useAsyncAction";
+import { useAsyncAction } from "@hooks/useAsyncAction";
 import { getStaffRowActions } from "@features/staff-management/utils/getStaffRowActions";
 import StaffToolbar from "@features/staff-management/components/StaffToolbar";
 import StaffTable from "@features/staff-management/components/StaffTable";
-import StaffPagination from "@features/staff-management/components/StaffPagination";
+import Pagination from "@components/Pagination";
 import CreateStaffModal from "@features/staff-management/components/CreateStaffModal";
 import EditStaffModal from "@features/staff-management/components/EditStaffModal";
 import BanStaffModal from "@features/staff-management/components/BanStaffModal";
-import ConfirmActionModal from "@features/staff-management/components/ConfirmActionModal";
+import ConfirmActionModal from "@components/ConfirmActionModal";
 import type { CreateStaffValues } from "@features/staff-management/schemas/createStaffSchema";
 import type { EditStaffValues } from "@features/staff-management/schemas/editStaffSchema";
 import type { BanStaffValues } from "@features/staff-management/schemas/banStaffSchema";
@@ -135,7 +135,7 @@ export default function StaffManagementApp() {
         />
       </div>
 
-      <StaffPagination
+      <Pagination
         page={list.page}
         pageSize={list.pageSize}
         total={list.total}

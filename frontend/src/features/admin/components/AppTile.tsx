@@ -4,6 +4,7 @@ import type { AdminAppTile } from "@features/admin/config/appsConfig";
 const TILE_COLOR_CLASSES: Record<AdminAppTile["color"], string> = {
   primary: "bg-primary text-primary-content",
   secondary: "bg-secondary text-secondary-content",
+  accent: "bg-accent text-accent-content",
   neutral: "bg-neutral text-neutral-content",
 };
 

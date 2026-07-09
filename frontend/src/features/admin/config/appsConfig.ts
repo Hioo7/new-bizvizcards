@@ -1,8 +1,8 @@
-import { LogOut, UserCircle, Users } from "lucide-react";
+import { IdCard, LogOut, UserCircle, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "@config/routes";
 
-export type AdminAppTileColor = "primary" | "secondary" | "neutral";
+export type AdminAppTileColor = "primary" | "secondary" | "accent" | "neutral";
 
 export interface AdminAppTile {
   id: string;
@@ -27,6 +27,13 @@ export const ADMIN_APP_TILES: AdminAppTile[] = [
     icon: UserCircle,
     color: "secondary",
     route: ROUTES.adminProfile,
+  },
+  {
+    id: "smart-cards",
+    label: "Smart Cards",
+    icon: IdCard,
+    color: "accent",
+    route: ROUTES.adminSmartCards,
   },
   {
     id: "logout",

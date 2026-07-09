@@ -5,6 +5,14 @@ import { employeeAccessControl } from './statements';
 // a new admin capability to ADMIN_EXTRA_* and super_admin picks it up too.
 const EMPLOYEE_USER_ACTIONS = ['get', 'list'] as const;
 const EMPLOYEE_SESSION_ACTIONS = [] as const;
+const EMPLOYEE_SMART_CARD_TEMPLATE_ACTIONS = ['list', 'get'] as const;
+const EMPLOYEE_SMART_CARD_ACTIONS = [
+  'create',
+  'list',
+  'get',
+  'update',
+] as const;
+const EMPLOYEE_CUSTOMER_ACTIONS = ['list'] as const;
 
 const ADMIN_EXTRA_USER_ACTIONS = [
   'create',
@@ -15,6 +23,7 @@ const ADMIN_EXTRA_USER_ACTIONS = [
   'update',
 ] as const;
 const ADMIN_EXTRA_SESSION_ACTIONS = ['list', 'revoke'] as const;
+const ADMIN_EXTRA_SMART_CARD_ACTIONS = ['delete'] as const;
 
 const SUPER_ADMIN_EXTRA_USER_ACTIONS = [
   'set-role',
@@ -26,11 +35,20 @@ const SUPER_ADMIN_EXTRA_SESSION_ACTIONS = ['delete'] as const;
 export const employeeRole = employeeAccessControl.newRole({
   user: [...EMPLOYEE_USER_ACTIONS],
   session: [...EMPLOYEE_SESSION_ACTIONS],
+  smartCardTemplate: [...EMPLOYEE_SMART_CARD_TEMPLATE_ACTIONS],
+  smartCard: [...EMPLOYEE_SMART_CARD_ACTIONS],
+  customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
 });
 
 export const adminRole = employeeAccessControl.newRole({
   user: [...EMPLOYEE_USER_ACTIONS, ...ADMIN_EXTRA_USER_ACTIONS],
   session: [...EMPLOYEE_SESSION_ACTIONS, ...ADMIN_EXTRA_SESSION_ACTIONS],
+  smartCardTemplate: [...EMPLOYEE_SMART_CARD_TEMPLATE_ACTIONS],
+  smartCard: [
+    ...EMPLOYEE_SMART_CARD_ACTIONS,
+    ...ADMIN_EXTRA_SMART_CARD_ACTIONS,
+  ],
+  customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
 });
 
 export const superAdminRole = employeeAccessControl.newRole({
@@ -44,4 +62,13 @@ export const superAdminRole = employeeAccessControl.newRole({
     ...ADMIN_EXTRA_SESSION_ACTIONS,
     ...SUPER_ADMIN_EXTRA_SESSION_ACTIONS,
   ],
+  smartCardTemplate: [...EMPLOYEE_SMART_CARD_TEMPLATE_ACTIONS],
+  // super_admin gets the same smartCard actions as admin — no super-admin-only
+  // smart-card action exists, so it's spread from the same admin-tier const
+  // rather than duplicated, keeping super_admin ⊇ admin by construction.
+  smartCard: [
+    ...EMPLOYEE_SMART_CARD_ACTIONS,
+    ...ADMIN_EXTRA_SMART_CARD_ACTIONS,
+  ],
+  customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
 });
