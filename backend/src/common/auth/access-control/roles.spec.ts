@@ -20,8 +20,14 @@ describe('employee role hierarchy', () => {
     assertIsSubsetOf(adminRole.statements, superAdminRole.statements);
   });
 
-  it('employee has no user/session management actions', () => {
-    expect(employeeRole.statements.user).toEqual(['get']);
+  it('employee can only view/list, with no user/session management actions', () => {
+    expect(employeeRole.statements.user).toEqual(['get', 'list']);
     expect(employeeRole.statements.session).toEqual([]);
+  });
+
+  it('only super_admin can change a user role', () => {
+    expect(employeeRole.statements.user).not.toContain('set-role');
+    expect(adminRole.statements.user).not.toContain('set-role');
+    expect(superAdminRole.statements.user).toContain('set-role');
   });
 });

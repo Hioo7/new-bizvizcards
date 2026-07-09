@@ -62,7 +62,7 @@ describe('Employee role hierarchy (integration, TEST_DATABASE_URL only)', () => 
     expect(denied.success).toBe(false);
   });
 
-  it('admin is allowed user.create but denied user.delete and impersonate', async () => {
+  it('admin is allowed user.create and user.delete but denied set-role and impersonate', async () => {
     const userId = await seedAccount(EMPLOYEE_ROLE.ADMIN);
 
     const allowedCreate = await auth.api.userHasPermission({
@@ -70,10 +70,15 @@ describe('Employee role hierarchy (integration, TEST_DATABASE_URL only)', () => 
     });
     expect(allowedCreate.success).toBe(true);
 
-    const deniedDelete = await auth.api.userHasPermission({
+    const allowedDelete = await auth.api.userHasPermission({
       body: { userId, permissions: { user: ['delete'] } },
     });
-    expect(deniedDelete.success).toBe(false);
+    expect(allowedDelete.success).toBe(true);
+
+    const deniedSetRole = await auth.api.userHasPermission({
+      body: { userId, permissions: { user: ['set-role'] } },
+    });
+    expect(deniedSetRole.success).toBe(false);
 
     const deniedImpersonate = await auth.api.userHasPermission({
       body: { userId, permissions: { user: ['impersonate'] } },
@@ -81,13 +86,18 @@ describe('Employee role hierarchy (integration, TEST_DATABASE_URL only)', () => 
     expect(deniedImpersonate.success).toBe(false);
   });
 
-  it('super_admin is allowed user.delete and impersonate', async () => {
+  it('super_admin is allowed user.delete, set-role, and impersonate', async () => {
     const userId = await seedAccount(EMPLOYEE_ROLE.SUPER_ADMIN);
 
     const allowedDelete = await auth.api.userHasPermission({
       body: { userId, permissions: { user: ['delete'] } },
     });
     expect(allowedDelete.success).toBe(true);
+
+    const allowedSetRole = await auth.api.userHasPermission({
+      body: { userId, permissions: { user: ['set-role'] } },
+    });
+    expect(allowedSetRole.success).toBe(true);
 
     const allowedImpersonate = await auth.api.userHasPermission({
       body: { userId, permissions: { user: ['impersonate'] } },

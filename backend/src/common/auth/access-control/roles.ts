@@ -3,14 +3,13 @@ import { employeeAccessControl } from './statements';
 // Each tier's array of extra actions is defined once and spread into every
 // higher tier, so super_admin ⊇ admin ⊇ employee holds by construction — add
 // a new admin capability to ADMIN_EXTRA_* and super_admin picks it up too.
-const EMPLOYEE_USER_ACTIONS = ['get'] as const;
+const EMPLOYEE_USER_ACTIONS = ['get', 'list'] as const;
 const EMPLOYEE_SESSION_ACTIONS = [] as const;
 
 const ADMIN_EXTRA_USER_ACTIONS = [
   'create',
-  'list',
-  'set-role',
   'ban',
+  'delete',
   'set-password',
   'set-email',
   'update',
@@ -18,7 +17,7 @@ const ADMIN_EXTRA_USER_ACTIONS = [
 const ADMIN_EXTRA_SESSION_ACTIONS = ['list', 'revoke'] as const;
 
 const SUPER_ADMIN_EXTRA_USER_ACTIONS = [
-  'delete',
+  'set-role',
   'impersonate',
   'impersonate-admins',
 ] as const;

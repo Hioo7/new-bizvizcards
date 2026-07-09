@@ -1,3 +1,5 @@
+export const PROFILE_NAME_MAX_LENGTH = 120;
+
 export const OTP_LENGTH = 6;
 export const RESEND_COOLDOWN_SECONDS = 60;
 export const OTP_EXPIRY_MINUTES = 5;

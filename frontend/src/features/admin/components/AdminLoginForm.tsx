@@ -5,7 +5,8 @@ import AdminPortalBadge from "@features/admin/components/AdminPortalBadge";
 import EmailStep from "@features/admin/components/EmailStep";
 import OtpStep from "@features/admin/components/OtpStep";
 import { useResendCooldown } from "@features/admin/hooks/useResendCooldown";
-import { sendSignInOtp, verifySignInOtp } from "@services/staffAuthService";
+import { sendSignInOtp } from "@services/staffAuthService";
+import { useStaffAuth } from "@hooks/useStaffAuth";
 import { ROUTES } from "@config/routes";
 import {
   GENERIC_SEND_OTP_ERROR_MESSAGE,
@@ -18,6 +19,7 @@ type Step = "email" | "otp";
 
 export default function AdminLoginForm() {
   const navigate = useNavigate();
+  const { signIn } = useStaffAuth();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ export default function AdminLoginForm() {
     setError(null);
     setLoading(true);
     try {
-      await verifySignInOtp({ email, otp: code });
+      await signIn({ email, otp: code });
       navigate(ROUTES.adminHome);
     } catch (err) {
       setError(

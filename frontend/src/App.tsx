@@ -4,6 +4,10 @@ import LoginPage from "@pages/LoginPage";
 import SignupPage from "@pages/SignupPage";
 import AdminLoginPage from "@pages/AdminLoginPage";
 import AdminHomePage from "@pages/AdminHomePage";
+import StaffManagementPage from "@pages/StaffManagementPage";
+import ProfilePage from "@pages/ProfilePage";
+import RequireStaffAuth from "@components/RequireStaffAuth";
+import AdminLayout from "@layouts/AdminLayout";
 import { ROUTES } from "@config/routes";
 
 function App() {
@@ -13,7 +17,14 @@ function App() {
       <Route path={ROUTES.login} element={<LoginPage />} />
       <Route path={ROUTES.signup} element={<SignupPage />} />
       <Route path={ROUTES.adminLogin} element={<AdminLoginPage />} />
-      <Route path={ROUTES.adminHome} element={<AdminHomePage />} />
+
+      <Route element={<RequireStaffAuth />}>
+        <Route element={<AdminLayout />}>
+          <Route path={ROUTES.adminHome} element={<AdminHomePage />} />
+          <Route path={ROUTES.adminStaff} element={<StaffManagementPage />} />
+          <Route path={ROUTES.adminProfile} element={<ProfilePage />} />
+        </Route>
+      </Route>
     </Routes>
   );
 }

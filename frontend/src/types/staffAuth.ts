@@ -31,3 +31,52 @@ export interface StaffSessionResponse {
   session: { token: string } | null;
   user: StaffUser | null;
 }
+
+export type AssignableStaffRole = Exclude<StaffRole, "super_admin">;
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: StaffRole | null;
+  banned: boolean | null;
+  banReason: string | null;
+  banExpires: string | null;
+  createdAt: string;
+}
+
+export interface StaffListResponse {
+  staff: StaffMember[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ListStaffQuery {
+  search?: string;
+  role?: AssignableStaffRole;
+  page: number;
+  pageSize: number;
+}
+
+export interface CreateStaffPayload {
+  email: string;
+  name: string;
+  role: AssignableStaffRole;
+}
+
+export interface UpdateStaffNamePayload {
+  name: string;
+}
+
+export interface SetStaffRolePayload {
+  role: AssignableStaffRole;
+}
+
+export interface BanStaffPayload {
+  banReason?: string;
+}
+
+export interface UpdateStaffProfilePayload {
+  name: string;
+}

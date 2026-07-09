@@ -3,6 +3,8 @@ import { apiRequest } from "@services/apiClient";
 import type {
   StaffAuthSession,
   StaffSessionResponse,
+  StaffUser,
+  UpdateStaffProfilePayload,
   VerifyStaffOtpPayload,
 } from "@app-types/staffAuth";
 
@@ -31,5 +33,14 @@ export function signOutStaff(): Promise<{ success: boolean }> {
 export function getStaffSession(): Promise<StaffSessionResponse> {
   return apiRequest<StaffSessionResponse>(STAFF_AUTH_ENDPOINTS.session, {
     method: "GET",
+  });
+}
+
+export function updateStaffProfile(
+  payload: UpdateStaffProfilePayload,
+): Promise<{ user: StaffUser }> {
+  return apiRequest<{ user: StaffUser }>(STAFF_AUTH_ENDPOINTS.updateProfile, {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }

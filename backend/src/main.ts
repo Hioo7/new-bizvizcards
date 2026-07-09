@@ -5,6 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { toNodeHandler } from 'better-auth/node';
 import { AppModule } from './app.module';
 import { AppConfigService } from './common/config/app-config.service';
+import { BetterAuthApiErrorFilter } from './common/filters/better-auth-api-error.filter';
 import {
   CUSTOMER_AUTH,
   CUSTOMER_AUTH_BASE_PATH,
@@ -33,6 +34,7 @@ async function bootstrap() {
   );
 
   app.use(express.json());
+  app.useGlobalFilters(new BetterAuthApiErrorFilter());
 
   await app.listen(appConfig.port);
 }

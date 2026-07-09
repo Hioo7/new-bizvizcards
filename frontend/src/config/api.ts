@@ -14,4 +14,7 @@ export const STAFF_AUTH_ENDPOINTS = {
   signIn: `${STAFF_AUTH_BASE_PATH}/sign-in/email-otp`,
   signOut: `${STAFF_AUTH_BASE_PATH}/sign-out`,
   session: `${STAFF_AUTH_BASE_PATH}/get-session`,
+  updateProfile: `${STAFF_AUTH_BASE_PATH}/update-user`,
 } as const;
+
+export const STAFF_MANAGEMENT_BASE_PATH = "/api/staff";

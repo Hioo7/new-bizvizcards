@@ -7,6 +7,7 @@ import { AuthModule } from './common/auth/auth.module';
 import { GuardsModule } from './common/guards/guards.module';
 import { MediaModule } from './common/media/media.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { StaffModule } from './modules/staff/staff.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CustomersModule } from './modules/customers/customers.module';
     GuardsModule,
     MediaModule,
     CustomersModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [AppService],
