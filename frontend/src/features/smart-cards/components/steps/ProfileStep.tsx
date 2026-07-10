@@ -41,6 +41,19 @@ const ProfileStep = forwardRef<
 
   return (
     <div className="flex flex-col gap-4">
+      <Controller
+        control={control}
+        name="logo"
+        render={({ field }) => (
+          <ImageSlotField
+            label="Logo"
+            value={field.value}
+            onChange={field.onChange}
+            aspect={1}
+            cropShape="round"
+          />
+        )}
+      />
       <FormTextField
         id="sc-endpoint"
         label="Public link (yoursite.com/smartcard/…)"
@@ -75,19 +88,6 @@ const ProfileStep = forwardRef<
         rows={4}
         registration={register("aboutText")}
         error={errors.aboutText?.message}
-      />
-      <Controller
-        control={control}
-        name="logo"
-        render={({ field }) => (
-          <ImageSlotField
-            label="Logo"
-            value={field.value}
-            onChange={field.onChange}
-            aspect={1}
-            cropShape="round"
-          />
-        )}
       />
     </div>
   );

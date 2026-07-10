@@ -8,7 +8,7 @@ import {
   type UseFormRegister,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Images, Plus, Trash2, X } from "lucide-react";
+import { Images, Plus, Trash2 } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import ImageSlotField from "@features/smart-cards/components/ImageSlotField";
 import EmptyStepState from "@features/smart-cards/components/EmptyStepState";
@@ -90,29 +90,22 @@ function GalleryItemFields({
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {fields.map((imageField, imageIndex) => (
-            <div key={imageField.id} className="flex flex-col gap-1.5">
-              <Controller
-                control={control}
-                name={`galleries.${galleryIndex}.images.${imageIndex}`}
-                render={({ field }) => (
-                  <ImageSlotField
-                    label={`Photo ${imageIndex + 1}`}
-                    value={field.value}
-                    onChange={field.onChange}
-                    aspect={4 / 3}
-                    cropShape="rect"
-                  />
-                )}
-              />
-              <button
-                type="button"
-                onClick={() => remove(imageIndex)}
-                aria-label={`Remove photo ${imageIndex + 1}`}
-                className="flex min-h-9 min-w-9 items-center justify-center self-start rounded-field text-base-content/50 hover:bg-error/10 hover:text-error"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <Controller
+              key={imageField.id}
+              control={control}
+              name={`galleries.${galleryIndex}.images.${imageIndex}`}
+              render={({ field }) => (
+                <ImageSlotField
+                  label={`Photo ${imageIndex + 1}`}
+                  value={field.value}
+                  onChange={field.onChange}
+                  cropShape="rect"
+                  variant="card"
+                  skipCrop
+                  onRemove={() => remove(imageIndex)}
+                />
+              )}
+            />
           ))}
         </div>
       )}

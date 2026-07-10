@@ -1,5 +1,9 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { exchangeContactSchema } from '../leads/dto/exchange-contact.dto';
+import type { ExchangeContactDto } from '../leads/dto/exchange-contact.dto';
+import { LeadsService } from '../leads/services/leads.service';
 import { SmartCardsService } from './services/smart-cards.service';
 import { SmartCardVCardService } from './services/smart-card-vcard.service';
 
@@ -8,11 +12,21 @@ export class PublicSmartCardsController {
   constructor(
     private readonly smartCardsService: SmartCardsService,
     private readonly smartCardVCardService: SmartCardVCardService,
+    private readonly leadsService: LeadsService,
   ) {}
 
   @Get(':endpoint')
   get(@Param('endpoint') endpoint: string) {
     return this.smartCardsService.getByEndpoint(endpoint);
+  }
+
+  @Post(':endpoint/exchange-contact')
+  exchangeContact(
+    @Param('endpoint') endpoint: string,
+    @Body(new ZodValidationPipe(exchangeContactSchema))
+    dto: ExchangeContactDto,
+  ) {
+    return this.leadsService.createFromExchangeContact(endpoint, dto);
   }
 
   @Get(':endpoint/vcard')

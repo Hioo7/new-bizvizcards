@@ -41,16 +41,6 @@ const FounderStep = forwardRef<
 
   return (
     <div className="flex flex-col gap-4">
-      <FormTextField id="sc-founder-name" label="Founder name" icon={User} registration={register("name")} error={errors.name?.message} />
-      <FormTextField id="sc-founder-title" label="Title" icon={Briefcase} registration={register("title")} error={errors.title?.message} />
-      <div className="grid grid-cols-3 gap-3">
-        <FormTextField id="sc-founder-experience" label="Years experience" icon={Award} inputMode="numeric" registration={register("experience")} error={errors.experience?.message} />
-        <FormTextField id="sc-founder-projects" label="Projects" icon={TrendingUp} inputMode="numeric" registration={register("projects")} error={errors.projects?.message} />
-        <FormTextField id="sc-founder-satisfaction" label="Satisfaction %" icon={TrendingUp} inputMode="numeric" registration={register("satisfaction")} error={errors.satisfaction?.message} />
-      </div>
-      <FormTextareaField id="sc-founder-intro" label="Intro" rows={3} registration={register("introText")} error={errors.introText?.message} />
-      <FormTextareaField id="sc-founder-philosophy" label="Philosophy" rows={3} registration={register("philosophyText")} error={errors.philosophyText?.message} />
-      <FormTextareaField id="sc-founder-quote" label="Quote" rows={2} registration={register("quote")} error={errors.quote?.message} />
       <Controller
         control={control}
         name="image"
@@ -64,6 +54,16 @@ const FounderStep = forwardRef<
           />
         )}
       />
+      <FormTextField id="sc-founder-name" label="Founder name" icon={User} registration={register("name")} error={errors.name?.message} />
+      <FormTextField id="sc-founder-title" label="Title" icon={Briefcase} registration={register("title")} error={errors.title?.message} />
+      <div className="grid grid-cols-3 gap-3">
+        <FormTextField id="sc-founder-experience" label="Years experience" icon={Award} inputMode="numeric" registration={register("experience")} error={errors.experience?.message} />
+        <FormTextField id="sc-founder-projects" label="Projects" icon={TrendingUp} inputMode="numeric" registration={register("projects")} error={errors.projects?.message} />
+        <FormTextField id="sc-founder-satisfaction" label="Satisfaction %" icon={TrendingUp} inputMode="numeric" registration={register("satisfaction")} error={errors.satisfaction?.message} />
+      </div>
+      <FormTextareaField id="sc-founder-intro" label="Intro" rows={3} registration={register("introText")} error={errors.introText?.message} />
+      <FormTextareaField id="sc-founder-philosophy" label="Philosophy" rows={3} registration={register("philosophyText")} error={errors.philosophyText?.message} />
+      <FormTextareaField id="sc-founder-quote" label="Quote" rows={2} registration={register("quote")} error={errors.quote?.message} />
     </div>
   );
 });

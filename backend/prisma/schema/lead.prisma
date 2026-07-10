@@ -1,0 +1,45 @@
+model LeadFolder {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId String   @db.Uuid
+  customer   Customer @relation("CustomerLeadFolders", fields: [customerId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  leads               Lead[]
+  defaultForCustomers Customer[] @relation("CustomerDefaultLeadFolder")
+
+  @@index([customerId])
+  @@map("LeadFolder")
+}
+
+model Lead {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId String   @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  sourceSmartCardId String?    @db.Uuid
+  sourceSmartCard   SmartCard? @relation(fields: [sourceSmartCardId], references: [id], onDelete: SetNull)
+
+  folderId String?     @db.Uuid
+  folder   LeadFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  name              String
+  email             String?
+  countryDialCode   String?
+  phoneNumber       String?
+  note              String?
+  company           String?
+  profession        String?
+  location          String?
+  locationLatitude  Float?
+  locationLongitude Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([folderId])
+  @@index([sourceSmartCardId])
+  @@map("Lead")
+}

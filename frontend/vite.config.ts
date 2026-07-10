@@ -26,6 +26,16 @@ export default defineConfig({
         // here to look like a same-origin request to the backend.
         headers: { origin: "http://localhost:3000" },
       },
+      // Uploaded images: the backend returns public URLs as "/media/<bucket>/<key>",
+      // meant to be served directly by MinIO behind a reverse proxy (mirrors the
+      // nginx setup used in production) rather than routed through the backend.
+      // Strip the "/media" prefix so the request lands on MinIO's own path-style
+      // object URL ("/<bucket>/<key>").
+      "/media": {
+        target: "http://localhost:9000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/media/, ""),
+      },
     },
   },
   resolve: {

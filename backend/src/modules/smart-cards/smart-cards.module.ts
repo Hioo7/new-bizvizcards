@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { LeadsModule } from '../leads/leads.module';
 import { SmartCardsController } from './smart-cards.controller';
 import { SmartCardTemplatesController } from './smart-card-templates.controller';
 import { PublicSmartCardsController } from './public-smart-cards.controller';
@@ -7,6 +8,7 @@ import { SmartCardTemplatesService } from './services/smart-card-templates.servi
 import { SmartCardVCardService } from './services/smart-card-vcard.service';
 
 @Module({
+  imports: [LeadsModule],
   controllers: [
     SmartCardsController,
     SmartCardTemplatesController,

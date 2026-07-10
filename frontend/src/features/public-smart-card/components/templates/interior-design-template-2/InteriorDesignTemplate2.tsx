@@ -8,8 +8,8 @@ import { AboutSection } from "@features/public-smart-card/components/templates/i
 import { InquiryModal } from "@features/public-smart-card/components/templates/interior-design-template-2/sections/InquiryModal";
 import { TestimonialsSection } from "@features/public-smart-card/components/templates/interior-design-template-2/sections/TestimonialsSection";
 import { FounderSection } from "@features/public-smart-card/components/templates/interior-design-template-2/sections/FounderSection";
-import { ExchangeContactPopup } from "@features/public-smart-card/components/templates/interior-design-template-2/ExchangeContactPopup";
-import { useExchangeContactTimer } from "@features/public-smart-card/components/templates/interior-design-template-2/useExchangeContactTimer";
+import { ExchangeContactPopup } from "@features/public-smart-card/components/ExchangeContactPopup";
+import { useExchangeContactTimer } from "@features/public-smart-card/hooks/useExchangeContactTimer";
 import type { PublicSmartCard } from "@app-types/smartCard";
 
 function TemplateFooter() {

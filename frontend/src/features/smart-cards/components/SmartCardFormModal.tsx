@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAsyncAction } from "@hooks/useAsyncAction";
 import InteriorDesignForm from "@features/smart-cards/components/interior-design-template/SmartCardForm";
 import InteriorDesignTemplate2Form from "@features/smart-cards/components/interior-design-template-2/SmartCardForm";
@@ -32,6 +32,7 @@ export default function SmartCardFormModal({
   const submitAction = useAsyncAction();
   const { reset: resetSubmitAction } = submitAction;
   const mutations = useSmartCardMutations(templateKey, () => undefined);
+  const [submitCount, setSubmitCount] = useState(0);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -54,13 +55,16 @@ export default function SmartCardFormModal({
           await mutations.create(payload, files);
         }
       },
-      onSuccess,
+      () => {
+        setSubmitCount((count) => count + 1);
+        onSuccess();
+      },
     );
   }
 
   const initialValues: SmartCardFormValues =
     mode === "edit" && card ? smartCardToFormValues(card) : emptySmartCardFormValues();
-  const remountKey = `${mode}-${card?.id ?? "new"}`;
+  const remountKey = `${mode}-${card?.id ?? "new"}-${submitCount}`;
 
   return (
     <dialog ref={dialogRef} className="modal modal-bottom sm:modal-middle" onClose={onClose}>

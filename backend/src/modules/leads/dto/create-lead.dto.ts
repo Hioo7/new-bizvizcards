@@ -1,0 +1,77 @@
+import { z } from 'zod';
+import {
+  LEAD_COMPANY_MAX_LENGTH,
+  LEAD_EMAIL_MAX_LENGTH,
+  LEAD_EMAIL_REGEX,
+  LEAD_LOCATION_LATITUDE_MAX,
+  LEAD_LOCATION_LATITUDE_MIN,
+  LEAD_LOCATION_LONGITUDE_MAX,
+  LEAD_LOCATION_LONGITUDE_MIN,
+  LEAD_LOCATION_MAX_LENGTH,
+  LEAD_NAME_MAX_LENGTH,
+  LEAD_NOTE_MAX_LENGTH,
+  LEAD_PHONE_DIAL_CODE_MAX_LENGTH,
+  LEAD_PHONE_NUMBER_DIGITS_REGEX,
+  LEAD_PHONE_NUMBER_MAX_DIGITS,
+  LEAD_PHONE_NUMBER_MIN_DIGITS,
+  LEAD_PROFESSION_MAX_LENGTH,
+  isPairedOrBothAbsent,
+} from '../leads.constants';
+
+export const createLeadSchema = z
+  .object({
+    name: z.string().trim().min(1).max(LEAD_NAME_MAX_LENGTH),
+    email: z
+      .string()
+      .trim()
+      .max(LEAD_EMAIL_MAX_LENGTH)
+      .regex(LEAD_EMAIL_REGEX)
+      .optional(),
+    countryDialCode: z
+      .string()
+      .trim()
+      .min(1)
+      .max(LEAD_PHONE_DIAL_CODE_MAX_LENGTH)
+      .optional(),
+    phoneNumber: z
+      .string()
+      .trim()
+      .regex(LEAD_PHONE_NUMBER_DIGITS_REGEX)
+      .min(LEAD_PHONE_NUMBER_MIN_DIGITS)
+      .max(LEAD_PHONE_NUMBER_MAX_DIGITS)
+      .optional(),
+    note: z.string().trim().max(LEAD_NOTE_MAX_LENGTH).optional(),
+    company: z.string().trim().max(LEAD_COMPANY_MAX_LENGTH).optional(),
+    profession: z.string().trim().max(LEAD_PROFESSION_MAX_LENGTH).optional(),
+    location: z.string().trim().max(LEAD_LOCATION_MAX_LENGTH).optional(),
+    locationLatitude: z
+      .number()
+      .min(LEAD_LOCATION_LATITUDE_MIN)
+      .max(LEAD_LOCATION_LATITUDE_MAX)
+      .optional(),
+    locationLongitude: z
+      .number()
+      .min(LEAD_LOCATION_LONGITUDE_MIN)
+      .max(LEAD_LOCATION_LONGITUDE_MAX)
+      .optional(),
+    folderId: z.string().uuid().optional(),
+  })
+  .strict()
+  .refine(
+    (value) => isPairedOrBothAbsent(value.countryDialCode, value.phoneNumber),
+    {
+      message: 'countryDialCode and phoneNumber must be provided together',
+      path: ['phoneNumber'],
+    },
+  )
+  .refine(
+    (value) =>
+      isPairedOrBothAbsent(value.locationLatitude, value.locationLongitude),
+    {
+      message:
+        'locationLatitude and locationLongitude must be provided together',
+      path: ['locationLongitude'],
+    },
+  );
+
+export type CreateLeadDto = z.infer<typeof createLeadSchema>;

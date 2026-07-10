@@ -17,7 +17,7 @@ export function ServicesSection({ services }: ServicesSectionProps) {
             className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
           >
             <div className="flex">
-              <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden">
+              <div className="relative w-20 flex-shrink-0 self-stretch overflow-hidden">
                 {item.imageUrl && (
                   <img src={item.imageUrl} alt={item.title ?? ""} className="absolute inset-0 h-full w-full object-cover" />
                 )}

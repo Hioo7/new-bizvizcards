@@ -9,5 +9,11 @@ model Customer {
 
   smartCards SmartCard[]
 
+  defaultLeadFolderId String?     @db.Uuid
+  defaultLeadFolder   LeadFolder? @relation("CustomerDefaultLeadFolder", fields: [defaultLeadFolderId], references: [id], onDelete: SetNull)
+
+  leadFolders LeadFolder[] @relation("CustomerLeadFolders")
+  leads       Lead[]
+
   @@map("Customer")
 }

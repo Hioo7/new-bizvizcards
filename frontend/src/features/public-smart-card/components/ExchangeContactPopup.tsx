@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { smartCardVCardUrl } from "@services/publicSmartCardService";
+import { StickyNote, Trash2 } from "lucide-react";
+import {
+  smartCardVCardUrl,
+  submitExchangeContact,
+} from "@services/publicSmartCardService";
+import { useAsyncAction } from "@hooks/useAsyncAction";
+import ExchangeContactLocationStage from "./ExchangeContactLocationStage";
+import type { GeolocationCoords } from "./ExchangeContactLocationStage";
 
 interface Country {
   iso: string;
@@ -23,6 +30,7 @@ interface FormState {
   dialCode: string;
   phone: string;
   email: string;
+  note: string;
 }
 
 type FieldErrors = Partial<Record<"name" | "phone" | "email", string>>;
@@ -75,6 +83,8 @@ interface ExchangeContactPopupProps {
   onClose: () => void;
 }
 
+type Stage = "form" | "location";
+
 export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeContactPopupProps) {
   const [form, setForm] = useState<FormState>({
     name: "",
@@ -82,8 +92,12 @@ export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeCont
     dialCode: COUNTRIES[0].dial,
     phone: "",
     email: "",
+    note: "",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [stage, setStage] = useState<Stage>("form");
+  const [showNote, setShowNote] = useState(false);
+  const submitAction = useAsyncAction();
 
   if (!isOpen) return null;
 
@@ -91,14 +105,39 @@ export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeCont
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  function handleClose() {
+    setStage("form");
+    setShowNote(false);
+    submitAction.reset();
+    onClose();
+  }
+
+  function handleFormSubmit(event: React.FormEvent) {
     event.preventDefault();
     const nextErrors = validate(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    window.location.href = smartCardVCardUrl(endpoint);
-    onClose();
+    setStage("location");
+  }
+
+  function finalizeSubmit(coords?: GeolocationCoords) {
+    void submitAction.run(
+      () =>
+        submitExchangeContact(endpoint, {
+          name: form.name.trim(),
+          countryDialCode: form.dialCode,
+          phoneNumber: normalizePhone(form.phone),
+          email: form.email.trim() || undefined,
+          note: form.note.trim() || undefined,
+          locationLatitude: coords?.latitude,
+          locationLongitude: coords?.longitude,
+        }),
+      () => {
+        window.location.href = smartCardVCardUrl(endpoint);
+        handleClose();
+      },
+    );
   }
 
   return (
@@ -107,7 +146,7 @@ export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeCont
       role="dialog"
       aria-modal="true"
       aria-label="Contact exchange"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="fixed inset-x-0 bottom-0 z-50"
@@ -115,31 +154,36 @@ export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeCont
       >
         <div className="mx-auto w-full max-w-md">
           <div
-            className="bg-white rounded-t-3xl shadow-2xl border border-white/20 px-5 pt-4 pb-6"
+            className="max-h-[85vh] overflow-y-auto bg-white rounded-t-3xl shadow-2xl border border-white/20 px-5 pt-4 pb-6"
             style={{ background: "linear-gradient(180deg, #ffffff 0%, #f7f7fb 100%)" }}
           >
             <div className="flex justify-center pb-3">
               <div className="h-1.5 w-12 rounded-full bg-gray-300" />
             </div>
 
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold text-gray-900 leading-tight">Share your contact</h2>
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold text-gray-900 leading-tight">
+                {stage === "form" ? "Share your contact" : "Almost done"}
+              </h2>
+              {stage === "form" && (
                 <p className="text-gray-600 text-sm mt-1">
                   Enter your phone number (required) and we&apos;ll save this card to your contacts.
                 </p>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="shrink-0 rounded-full w-9 h-9 grid place-items-center text-gray-700 hover:text-red-500 hover:bg-gray-100 transition"
-                aria-label="Close"
-              >
-                x
-              </button>
+              )}
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            {submitAction.error && (
+              <p className="mt-3 text-sm text-red-600">{submitAction.error}</p>
+            )}
+
+            {stage === "location" ? (
+              <ExchangeContactLocationStage
+                isSubmitting={submitAction.isSubmitting}
+                onShareLocation={(coords) => finalizeSubmit(coords)}
+                onSkip={() => finalizeSubmit()}
+              />
+            ) : (
+            <form onSubmit={handleFormSubmit} className="mt-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-800 mb-1">
                   Your name <span className="text-red-600">*</span>
@@ -213,22 +257,63 @@ export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeCont
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
               </div>
 
+              {!showNote ? (
+                <div className="flex flex-col items-start gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowNote(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-400 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-sm transition"
+                    aria-label="Add a note"
+                    title="Add a note"
+                  >
+                    <StickyNote className="w-5 h-5" />
+                    Add a note
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50">
+                    <div className="text-xs font-semibold text-gray-900">Note (optional)</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNote(false);
+                        update("note", "");
+                      }}
+                      className="shrink-0 ml-3 w-7 h-7 rounded-full grid place-items-center text-gray-700 bg-white border border-gray-200 active:bg-gray-100 transition"
+                      aria-label="Remove note"
+                      title="Remove note"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="px-3 pb-3">
+                    <textarea
+                      rows={2}
+                      placeholder="Type your note..."
+                      className="w-full mt-2 p-3 rounded-2xl border border-gray-200 text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.note}
+                      onChange={(e) => update("note", e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
                 className="w-full text-white py-3 rounded-xl font-semibold transition bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95"
               >
-                Exchange contact
+                Continue
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="w-full py-3 rounded-xl font-semibold border border-gray-200 text-gray-800 bg-white hover:bg-gray-50 transition"
               >
                 Not now
               </button>
-
-              <div className="h-[max(8px,env(safe-area-inset-bottom))]" />
             </form>
+            )}
           </div>
         </div>
       </div>

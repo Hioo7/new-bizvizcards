@@ -1,9 +1,13 @@
 import {
+  CreateBucketCommand,
   DeleteObjectCommand,
+  HeadBucketCommand,
+  PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import type { AppConfigService } from '../../config/app-config.service';
+import { buildPublicReadBucketPolicy } from '../media.constants';
 import { MinioImageStorageProvider } from './minio-image-storage-provider.service';
 
 function createAppConfig(): AppConfigService {
@@ -67,5 +71,47 @@ describe('MinioImageStorageProvider', () => {
     const url = provider.getPublicUrl('pfp/customer-1/abc.jpg');
 
     expect(url).toBe('/media/test-bucket/pfp/customer-1/abc.jpg');
+  });
+
+  describe('onModuleInit', () => {
+    it('applies the public-read policy without creating the bucket when it already exists', async () => {
+      const sendSpy = jest
+        .spyOn(S3Client.prototype, 'send')
+        .mockResolvedValue({} as never);
+      const provider = new MinioImageStorageProvider(createAppConfig());
+
+      await provider.onModuleInit();
+
+      expect(sendSpy).toHaveBeenCalledTimes(2);
+      expect(sendSpy.mock.calls[0][0]).toBeInstanceOf(HeadBucketCommand);
+      expect((sendSpy.mock.calls[0][0] as HeadBucketCommand).input).toEqual({
+        Bucket: 'test-bucket',
+      });
+      expect(sendSpy.mock.calls[1][0]).toBeInstanceOf(PutBucketPolicyCommand);
+      expect(
+        (sendSpy.mock.calls[1][0] as PutBucketPolicyCommand).input,
+      ).toEqual({
+        Bucket: 'test-bucket',
+        Policy: buildPublicReadBucketPolicy('test-bucket'),
+      });
+    });
+
+    it('creates the bucket first when it does not exist yet, then applies the policy', async () => {
+      const sendSpy = jest
+        .spyOn(S3Client.prototype, 'send')
+        .mockRejectedValueOnce(new Error('NotFound'))
+        .mockResolvedValue({} as never);
+      const provider = new MinioImageStorageProvider(createAppConfig());
+
+      await provider.onModuleInit();
+
+      expect(sendSpy).toHaveBeenCalledTimes(3);
+      expect(sendSpy.mock.calls[0][0]).toBeInstanceOf(HeadBucketCommand);
+      expect(sendSpy.mock.calls[1][0]).toBeInstanceOf(CreateBucketCommand);
+      expect((sendSpy.mock.calls[1][0] as CreateBucketCommand).input).toEqual({
+        Bucket: 'test-bucket',
+      });
+      expect(sendSpy.mock.calls[2][0]).toBeInstanceOf(PutBucketPolicyCommand);
+    });
   });
 });
