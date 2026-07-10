@@ -16,6 +16,7 @@ import {
   LEAD_PHONE_NUMBER_MIN_DIGITS,
   LEAD_PROFESSION_MAX_LENGTH,
 } from '../leads.constants';
+import { opportunityStageSchema } from './opportunity-stage.dto';
 
 // Every field is independently optional/nullable: omit to leave unchanged, pass null to clear.
 // Unlike create, a partial update legitimately touches one side of a "paired" field (e.g. just
@@ -78,6 +79,7 @@ export const updateLeadSchema = z
       .nullable()
       .optional(),
     folderId: z.string().uuid().nullable().optional(),
+    stage: opportunityStageSchema.nullable().optional(),
   })
   .strict();
 

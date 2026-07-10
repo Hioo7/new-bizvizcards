@@ -9,6 +9,7 @@ describe('AppConfigService', () => {
     BETTER_AUTH_STAFF_SECRET: 'a'.repeat(32),
     BETTER_AUTH_CUSTOMER_SECRET: 'b'.repeat(32),
     BETTER_AUTH_URL: 'http://localhost:3000',
+    PUBLIC_APP_BASE_URL: 'http://localhost:5173',
     SMTP_HOST: 'smtp.example.com',
     SMTP_PORT: '587',
     SMTP_SECURE: 'false',
@@ -47,6 +48,7 @@ describe('AppConfigService', () => {
       validEnv.BETTER_AUTH_CUSTOMER_SECRET,
     );
     expect(config.betterAuthUrl).toBe(validEnv.BETTER_AUTH_URL);
+    expect(config.publicAppBaseUrl).toBe(validEnv.PUBLIC_APP_BASE_URL);
     expect(config.smtpHost).toBe(validEnv.SMTP_HOST);
     expect(config.smtpPort).toBe(587);
     expect(config.smtpSecure).toBe(false);

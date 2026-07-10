@@ -2,7 +2,10 @@ import { randomUUID } from 'crypto';
 import { NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { SmartCardTemplateKey } from '../../../generated/prisma/client';
+import {
+  LeadSourceType,
+  SmartCardTemplateKey,
+} from '../../../generated/prisma/client';
 import { LeadsService } from './leads.service';
 
 describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
@@ -71,7 +74,7 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
   }
 
   describe('createFromExchangeContact', () => {
-    it('creates a lead linked to the smart card owner and records the source card', async () => {
+    it('creates a lead linked to the smart card owner and records the source type', async () => {
       const customer = await seedCustomer();
       const smartCard = await seedSmartCard(customer.id);
 
@@ -82,7 +85,7 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
       });
 
       expect(lead.customerId).toBe(customer.id);
-      expect(lead.sourceSmartCardId).toBe(smartCard.id);
+      expect(lead.sourcedBy).toBe(LeadSourceType.SMART_CARD);
       expect(lead.folderId).toBeNull();
     });
 
@@ -172,6 +175,15 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   describe('create', () => {
+    it('defaults sourcedBy to MANUAL_ENTRY', async () => {
+      const customer = await seedCustomer();
+
+      const lead = await service.create(customer.id, { name: 'Lead' });
+
+      expect(lead.sourcedBy).toBe(LeadSourceType.MANUAL_ENTRY);
+      expect(lead.stage).toBeNull();
+    });
+
     it('throws NotFoundException when folderId belongs to another customer', async () => {
       const customerA = await seedCustomer();
       const customerB = await seedCustomer();

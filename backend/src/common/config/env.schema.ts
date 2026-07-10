@@ -13,6 +13,12 @@ export const envSchema = z.object({
   BETTER_AUTH_CUSTOMER_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
 
+  // The public-facing origin the app is served from (e.g. the nginx-fronted
+  // host in prod) — used to build absolute URLs (canonical page links, OG
+  // image URLs) that crawlers require. Distinct from BETTER_AUTH_URL, which
+  // is an auth-specific concept.
+  PUBLIC_APP_BASE_URL: z.string().url(),
+
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_SECURE: z.enum(['true', 'false']).transform((value) => value === 'true'),

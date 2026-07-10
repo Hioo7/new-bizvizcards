@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { LeadSourceType } from '../../../generated/prisma/client';
 import type { LeadModel } from '../../../generated/prisma/models';
 import type { CreateLeadDto } from '../dto/create-lead.dto';
 import type { ExchangeContactDto } from '../dto/exchange-contact.dto';
@@ -30,7 +31,7 @@ export class LeadsService {
     return this.prisma.lead.create({
       data: {
         customerId: smartCard.customerId,
-        sourceSmartCardId: smartCard.id,
+        sourcedBy: LeadSourceType.SMART_CARD,
         folderId: smartCard.customer.defaultLeadFolderId ?? undefined,
         name: dto.name,
         email: dto.email,
@@ -69,6 +70,7 @@ export class LeadsService {
     return this.prisma.lead.create({
       data: {
         customerId,
+        sourcedBy: LeadSourceType.MANUAL_ENTRY,
         name: dto.name,
         email: dto.email,
         countryDialCode: dto.countryDialCode,

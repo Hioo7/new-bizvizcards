@@ -87,7 +87,7 @@ describe('Public exchange-contact submission (e2e, TEST_DATABASE_URL only)', () 
     return card;
   }
 
-  it('creates a Lead in the DB, linked to the card owner and the sourcing smart card, filed via the active-folder fallback', async () => {
+  it('creates a Lead in the DB, linked to the card owner and marked as sourced from a smart card, filed via the active-folder fallback', async () => {
     const customer = await seedCustomer();
     const folder = await prisma.leadFolder.create({
       data: { customerId: customer.id, name: 'Active Folder' },
@@ -113,11 +113,11 @@ describe('Public exchange-contact submission (e2e, TEST_DATABASE_URL only)', () 
     const created = response.body as {
       id: string;
       customerId: string;
-      sourceSmartCardId: string;
+      sourcedBy: string;
       folderId: string;
     };
     expect(created.customerId).toBe(customer.id);
-    expect(created.sourceSmartCardId).toBe(smartCard.id);
+    expect(created.sourcedBy).toBe('SMART_CARD');
     expect(created.folderId).toBe(folder.id);
 
     const lead = await prisma.lead.findUniqueOrThrow({
@@ -125,6 +125,21 @@ describe('Public exchange-contact submission (e2e, TEST_DATABASE_URL only)', () 
     });
     expect(lead.name).toBe('Visitor');
     expect(lead.phoneNumber).toBe('9876543210');
+  });
+
+  it('rejects a submission that tries to set sourcedBy or stage directly', async () => {
+    const customer = await seedCustomer();
+    const smartCard = await seedSmartCard(customer.id);
+
+    await request(app.getHttpServer())
+      .post(`/api/public/smart-cards/${smartCard.endpoint}/exchange-contact`)
+      .send({
+        name: 'Visitor',
+        countryDialCode: '91',
+        phoneNumber: '9876543210',
+        sourcedBy: 'MANUAL_ENTRY',
+      })
+      .expect(400);
   });
 
   it('rejects a submission missing the required phone number', async () => {

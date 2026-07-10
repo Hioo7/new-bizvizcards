@@ -39,7 +39,6 @@ model SmartCard {
   services     SmartCardService[]
   testimonials SmartCardTestimonial[]
   galleries    SmartCardGallery[]
-  leads        Lead[]
 
   @@index([customerId])
   @@index([templateId])

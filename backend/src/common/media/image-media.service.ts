@@ -59,4 +59,10 @@ export class ImageMediaService {
       imageMedia.storageKey,
     );
   }
+
+  /** For well-known static assets seeded directly into storage (e.g. a default
+   * fallback image) that have no corresponding ImageMedia DB row. */
+  getPublicUrlForKey(key: string): string {
+    return this.providers[DEFAULT_IMAGE_SOURCE].getPublicUrl(key);
+  }
 }

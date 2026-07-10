@@ -1,9 +1,14 @@
 import { useParams } from "react-router-dom";
-import { SmartCardRenderer, usePublicSmartCard } from "@features/public-smart-card";
+import {
+  SmartCardRenderer,
+  usePublicSmartCard,
+  useSmartCardDocumentMeta,
+} from "@features/public-smart-card";
 
 export default function SmartCardPublicPage() {
   const { endpoint } = useParams<{ endpoint: string }>();
   const { card, isLoading, error } = usePublicSmartCard(endpoint);
+  useSmartCardDocumentMeta(card);
 
   if (isLoading) {
     return (

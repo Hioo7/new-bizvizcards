@@ -1,0 +1,36 @@
+model InternalRedirectRoute {
+  id                  String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  sourcePath          String    @unique
+  targetPath          String
+  enabled             Boolean   @default(true)
+  createdByEmployeeId String?   @db.Uuid
+  createdByEmployee   Employee? @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([createdByEmployeeId])
+  @@map("InternalRedirectRoute")
+}
+
+model ExternalRedirectRoute {
+  id                  String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  sourcePath          String    @unique
+  destinationUrl      String
+  enabled             Boolean   @default(true)
+  createdByEmployeeId String?   @db.Uuid
+  createdByEmployee   Employee? @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([createdByEmployeeId])
+  @@map("ExternalRedirectRoute")
+}
+
+model RestrictedRedirectPath {
+  id        String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  path      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("RestrictedRedirectPath")
+}

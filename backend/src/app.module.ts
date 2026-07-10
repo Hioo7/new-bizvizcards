@@ -9,6 +9,7 @@ import { MediaModule } from './common/media/media.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { SmartCardsModule } from './modules/smart-cards/smart-cards.module';
+import { RedirectsModule } from './modules/redirects/redirects.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SmartCardsModule } from './modules/smart-cards/smart-cards.module';
     CustomersModule,
     StaffModule,
     SmartCardsModule,
+    RedirectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

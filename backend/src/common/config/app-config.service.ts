@@ -37,6 +37,10 @@ export class AppConfigService {
     return this.env.BETTER_AUTH_URL;
   }
 
+  get publicAppBaseUrl(): string {
+    return this.env.PUBLIC_APP_BASE_URL;
+  }
+
   get smtpHost(): string {
     return this.env.SMTP_HOST;
   }

@@ -8,6 +8,7 @@ export const employeeStatements = {
   smartCardTemplate: ['list', 'get'],
   smartCard: ['create', 'list', 'get', 'update', 'delete'],
   customer: ['list'],
+  redirect: ['list', 'get', 'create', 'update', 'delete'],
 } as const;
 
 export const employeeAccessControl = createAccessControl(employeeStatements);

@@ -8,6 +8,7 @@ import StaffManagementPage from "@pages/StaffManagementPage";
 import ProfilePage from "@pages/ProfilePage";
 import SmartCardsPage from "@pages/SmartCardsPage";
 import SmartCardsListPage from "@pages/SmartCardsListPage";
+import RedirectsPage from "@pages/RedirectsPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
 import AdminLayout from "@layouts/AdminLayout";
@@ -32,6 +33,7 @@ function App() {
             path={ROUTES.adminSmartCardsList}
             element={<SmartCardsListPage />}
           />
+          <Route path={ROUTES.adminRedirects} element={<RedirectsPage />} />
         </Route>
       </Route>
     </Routes>

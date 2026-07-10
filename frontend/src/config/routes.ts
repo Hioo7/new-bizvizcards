@@ -8,6 +8,7 @@ export const ROUTES = {
   adminProfile: "/admin/profile",
   adminSmartCards: "/admin/smart-cards",
   adminSmartCardsList: "/admin/smart-cards/:templateKey",
+  adminRedirects: "/admin/redirects",
   smartCardPublic: "/smartcard/:endpoint",
 } as const;
 

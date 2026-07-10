@@ -1,3 +1,34 @@
+enum LeadSourceType {
+  SMART_CARD
+  E_CARD
+  CARD_SCANNER
+  MANUAL_ENTRY
+
+  @@map("LeadSourceType")
+}
+
+enum OpportunityStage {
+  LEAD
+  QUALIFIED_LEAD
+  NEEDS_ANALYSIS
+  PROPOSAL_DEMO
+  NEGOTIATION
+  CLOSED_WON
+  ONBOARDING
+  ACTIVE_RETENTION
+  CHURNED_CLOSED_LOST
+
+  @@map("OpportunityStage")
+}
+
+enum ReminderStatus {
+  PENDING
+  TRIGGERED
+  DISMISSED
+
+  @@map("ReminderStatus")
+}
+
 model LeadFolder {
   id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
   customerId String   @db.Uuid
@@ -18,8 +49,8 @@ model Lead {
   customerId String   @db.Uuid
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  sourceSmartCardId String?    @db.Uuid
-  sourceSmartCard   SmartCard? @relation(fields: [sourceSmartCardId], references: [id], onDelete: SetNull)
+  sourcedBy LeadSourceType    @default(MANUAL_ENTRY)
+  stage     OpportunityStage?
 
   folderId String?     @db.Uuid
   folder   LeadFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
@@ -38,8 +69,38 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  referenceNotes LeadReferenceNote[]
+  reminders      LeadReminder[]
+
   @@index([customerId])
   @@index([folderId])
-  @@index([sourceSmartCardId])
   @@map("Lead")
+}
+
+model LeadReferenceNote {
+  id        String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  leadId    String   @db.Uuid
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadId])
+  @@map("LeadReferenceNote")
+}
+
+model LeadReminder {
+  id        String         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  leadId    String         @db.Uuid
+  lead      Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  title     String
+  text      String?
+  triggerAt DateTime
+  status    ReminderStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([leadId])
+  @@index([status, triggerAt])
+  @@map("LeadReminder")
 }

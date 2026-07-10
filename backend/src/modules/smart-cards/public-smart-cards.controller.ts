@@ -6,12 +6,14 @@ import type { ExchangeContactDto } from '../leads/dto/exchange-contact.dto';
 import { LeadsService } from '../leads/services/leads.service';
 import { SmartCardsService } from './services/smart-cards.service';
 import { SmartCardVCardService } from './services/smart-card-vcard.service';
+import { SmartCardOgPreviewService } from './services/smart-card-og-preview.service';
 
 @Controller('api/public/smart-cards')
 export class PublicSmartCardsController {
   constructor(
     private readonly smartCardsService: SmartCardsService,
     private readonly smartCardVCardService: SmartCardVCardService,
+    private readonly smartCardOgPreviewService: SmartCardOgPreviewService,
     private readonly leadsService: LeadsService,
   ) {}
 
@@ -47,5 +49,18 @@ export class PublicSmartCardsController {
     res.setHeader('Content-Type', 'text/vcard; charset=utf-8');
     res.setHeader('Content-Disposition', `inline; filename="${endpoint}.vcf"`);
     res.send(text);
+  }
+
+  @Get(':endpoint/preview')
+  async preview(
+    @Param('endpoint') endpoint: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const card = await this.smartCardsService.getByEndpoint(endpoint);
+    const fields = this.smartCardOgPreviewService.buildFields(card);
+    const html = this.smartCardOgPreviewService.renderHtml(endpoint, fields);
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
   }
 }

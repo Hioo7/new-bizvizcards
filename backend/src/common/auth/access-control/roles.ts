@@ -13,6 +13,7 @@ const EMPLOYEE_SMART_CARD_ACTIONS = [
   'update',
 ] as const;
 const EMPLOYEE_CUSTOMER_ACTIONS = ['list'] as const;
+const EMPLOYEE_REDIRECT_ACTIONS = ['list', 'get'] as const;
 
 const ADMIN_EXTRA_USER_ACTIONS = [
   'create',
@@ -24,6 +25,7 @@ const ADMIN_EXTRA_USER_ACTIONS = [
 ] as const;
 const ADMIN_EXTRA_SESSION_ACTIONS = ['list', 'revoke'] as const;
 const ADMIN_EXTRA_SMART_CARD_ACTIONS = ['delete'] as const;
+const ADMIN_EXTRA_REDIRECT_ACTIONS = ['create', 'update', 'delete'] as const;
 
 const SUPER_ADMIN_EXTRA_USER_ACTIONS = [
   'set-role',
@@ -38,6 +40,7 @@ export const employeeRole = employeeAccessControl.newRole({
   smartCardTemplate: [...EMPLOYEE_SMART_CARD_TEMPLATE_ACTIONS],
   smartCard: [...EMPLOYEE_SMART_CARD_ACTIONS],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
+  redirect: [...EMPLOYEE_REDIRECT_ACTIONS],
 });
 
 export const adminRole = employeeAccessControl.newRole({
@@ -49,6 +52,7 @@ export const adminRole = employeeAccessControl.newRole({
     ...ADMIN_EXTRA_SMART_CARD_ACTIONS,
   ],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
+  redirect: [...EMPLOYEE_REDIRECT_ACTIONS, ...ADMIN_EXTRA_REDIRECT_ACTIONS],
 });
 
 export const superAdminRole = employeeAccessControl.newRole({
@@ -71,4 +75,8 @@ export const superAdminRole = employeeAccessControl.newRole({
     ...ADMIN_EXTRA_SMART_CARD_ACTIONS,
   ],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
+  // super_admin gets the same redirect actions as admin — no super-admin-only
+  // redirect action exists, so it's spread from the same admin-tier const
+  // rather than duplicated, keeping super_admin ⊇ admin by construction.
+  redirect: [...EMPLOYEE_REDIRECT_ACTIONS, ...ADMIN_EXTRA_REDIRECT_ACTIONS],
 });

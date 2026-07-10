@@ -23,6 +23,14 @@ export const LEAD_FOLDER_DELETE_MODES = ['soft', 'hard'] as const;
 export type LeadFolderDeleteMode = (typeof LEAD_FOLDER_DELETE_MODES)[number];
 export const LEAD_FOLDER_DEFAULT_DELETE_MODE: LeadFolderDeleteMode = 'soft';
 
+export const LEAD_REFERENCE_NOTE_CONTENT_MAX_LENGTH = 2000;
+
+export const LEAD_REMINDER_TITLE_MAX_LENGTH = 150;
+export const LEAD_REMINDER_TEXT_MAX_LENGTH = 2000;
+
+export const REMINDER_DUE_WINDOW_DEFAULT_MINUTES = 0;
+export const REMINDER_DUE_WINDOW_MAX_MINUTES = 10080;
+
 /** True when both values are provided or both are omitted — used to keep paired fields (e.g. lat/lng) in sync. */
 export function isPairedOrBothAbsent(a: unknown, b: unknown): boolean {
   return (a === undefined) === (b === undefined);

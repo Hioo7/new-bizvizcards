@@ -676,3 +676,7 @@ export class SmartCardsService {
     };
   }
 }
+
+export type PublicSmartCard = Awaited<
+  ReturnType<SmartCardsService['getByEndpoint']>
+>;
