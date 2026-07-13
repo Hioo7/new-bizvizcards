@@ -12,6 +12,7 @@ const EMPLOYEE_SMART_CARD_ACTIONS = [
   'get',
   'update',
 ] as const;
+const EMPLOYEE_ECARD_ACTIONS = ['create', 'list', 'get', 'update'] as const;
 const EMPLOYEE_CUSTOMER_ACTIONS = ['list'] as const;
 const EMPLOYEE_REDIRECT_ACTIONS = ['list', 'get'] as const;
 const EMPLOYEE_ORGANISATION_ACTIONS = ['list', 'get'] as const;
@@ -26,6 +27,7 @@ const ADMIN_EXTRA_USER_ACTIONS = [
 ] as const;
 const ADMIN_EXTRA_SESSION_ACTIONS = ['list', 'revoke'] as const;
 const ADMIN_EXTRA_SMART_CARD_ACTIONS = ['delete'] as const;
+const ADMIN_EXTRA_ECARD_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_REDIRECT_ACTIONS = ['create', 'update', 'delete'] as const;
 const ADMIN_EXTRA_ORGANISATION_ACTIONS = ['delete'] as const;
 
@@ -41,6 +43,7 @@ export const employeeRole = employeeAccessControl.newRole({
   session: [...EMPLOYEE_SESSION_ACTIONS],
   smartCardTemplate: [...EMPLOYEE_SMART_CARD_TEMPLATE_ACTIONS],
   smartCard: [...EMPLOYEE_SMART_CARD_ACTIONS],
+  eCard: [...EMPLOYEE_ECARD_ACTIONS],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
   redirect: [...EMPLOYEE_REDIRECT_ACTIONS],
   organisation: [...EMPLOYEE_ORGANISATION_ACTIONS],
@@ -54,6 +57,7 @@ export const adminRole = employeeAccessControl.newRole({
     ...EMPLOYEE_SMART_CARD_ACTIONS,
     ...ADMIN_EXTRA_SMART_CARD_ACTIONS,
   ],
+  eCard: [...EMPLOYEE_ECARD_ACTIONS, ...ADMIN_EXTRA_ECARD_ACTIONS],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
   redirect: [...EMPLOYEE_REDIRECT_ACTIONS, ...ADMIN_EXTRA_REDIRECT_ACTIONS],
   organisation: [
@@ -81,6 +85,10 @@ export const superAdminRole = employeeAccessControl.newRole({
     ...EMPLOYEE_SMART_CARD_ACTIONS,
     ...ADMIN_EXTRA_SMART_CARD_ACTIONS,
   ],
+  // super_admin gets the same eCard actions as admin — no super-admin-only
+  // e-card action exists, so it's spread from the same admin-tier const
+  // rather than duplicated, keeping super_admin ⊇ admin by construction.
+  eCard: [...EMPLOYEE_ECARD_ACTIONS, ...ADMIN_EXTRA_ECARD_ACTIONS],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
   // super_admin gets the same redirect actions as admin — no super-admin-only
   // redirect action exists, so it's spread from the same admin-tier const

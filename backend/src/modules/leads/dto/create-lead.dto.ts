@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
 import {
   LEAD_COMPANY_MAX_LENGTH,
   LEAD_EMAIL_MAX_LENGTH,
@@ -15,7 +16,6 @@ import {
   LEAD_PHONE_NUMBER_MAX_DIGITS,
   LEAD_PHONE_NUMBER_MIN_DIGITS,
   LEAD_PROFESSION_MAX_LENGTH,
-  isPairedOrBothAbsent,
 } from '../leads.constants';
 
 export const createLeadSchema = z

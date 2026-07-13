@@ -30,8 +30,3 @@ export const LEAD_REMINDER_TEXT_MAX_LENGTH = 2000;
 
 export const REMINDER_DUE_WINDOW_DEFAULT_MINUTES = 0;
 export const REMINDER_DUE_WINDOW_MAX_MINUTES = 10080;
-
-/** True when both values are provided or both are omitted — used to keep paired fields (e.g. lat/lng) in sync. */
-export function isPairedOrBothAbsent(a: unknown, b: unknown): boolean {
-  return (a === undefined) === (b === undefined);
-}

@@ -7,6 +7,7 @@ export const employeeStatements = {
   ...defaultStatements,
   smartCardTemplate: ['list', 'get'],
   smartCard: ['create', 'list', 'get', 'update', 'delete'],
+  eCard: ['create', 'list', 'get', 'update', 'delete'],
   customer: ['list'],
   redirect: ['list', 'get', 'create', 'update', 'delete'],
   organisation: ['list', 'get', 'delete'],

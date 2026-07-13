@@ -11,6 +11,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { SmartCardsModule } from './modules/smart-cards/smart-cards.module';
 import { OrganisationsModule } from './modules/organisations/organisations.module';
+import { EcardsModule } from './modules/ecards/ecards.module';
 import { RedirectsModule } from './modules/redirects/redirects.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { RedirectsModule } from './modules/redirects/redirects.module';
     StaffModule,
     SmartCardsModule,
     OrganisationsModule,
+    EcardsModule,
     RedirectsModule,
   ],
   controllers: [AppController],

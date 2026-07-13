@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
 import {
   LEAD_EMAIL_MAX_LENGTH,
   LEAD_EMAIL_REGEX,
@@ -12,7 +13,6 @@ import {
   LEAD_PHONE_NUMBER_DIGITS_REGEX,
   LEAD_PHONE_NUMBER_MAX_DIGITS,
   LEAD_PHONE_NUMBER_MIN_DIGITS,
-  isPairedOrBothAbsent,
 } from '../leads.constants';
 
 export const exchangeContactSchema = z

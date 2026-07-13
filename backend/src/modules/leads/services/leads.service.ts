@@ -28,11 +28,50 @@ export class LeadsService {
       throw new NotFoundException('Smart card not found');
     }
 
+    return this.createLeadFromExchange(
+      smartCard.customerId,
+      smartCard.customer.defaultLeadFolderId,
+      LeadSourceType.SMART_CARD,
+      dto,
+    );
+  }
+
+  async createFromEcardExchangeContact(
+    endpoint: string,
+    dto: ExchangeContactDto,
+  ): Promise<LeadModel> {
+    const ecard = await this.prisma.eCard.findUnique({
+      where: { endpoint },
+      select: {
+        id: true,
+        customerId: true,
+        customer: { select: { defaultLeadFolderId: true } },
+      },
+    });
+
+    if (!ecard) {
+      throw new NotFoundException('E-card not found');
+    }
+
+    return this.createLeadFromExchange(
+      ecard.customerId,
+      ecard.customer.defaultLeadFolderId,
+      LeadSourceType.E_CARD,
+      dto,
+    );
+  }
+
+  private createLeadFromExchange(
+    customerId: string,
+    defaultLeadFolderId: string | null,
+    sourcedBy: LeadSourceType,
+    dto: ExchangeContactDto,
+  ): Promise<LeadModel> {
     return this.prisma.lead.create({
       data: {
-        customerId: smartCard.customerId,
-        sourcedBy: LeadSourceType.SMART_CARD,
-        folderId: smartCard.customer.defaultLeadFolderId ?? undefined,
+        customerId,
+        sourcedBy,
+        folderId: defaultLeadFolderId ?? undefined,
         name: dto.name,
         email: dto.email,
         countryDialCode: dto.countryDialCode,
