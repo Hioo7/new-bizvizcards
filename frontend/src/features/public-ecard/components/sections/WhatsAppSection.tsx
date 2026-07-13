@@ -30,15 +30,16 @@ export function WhatsAppSection({ component }: WhatsAppSectionProps) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="block rounded-3xl border border-indigo-100 bg-indigo-50 px-7 py-7"
+        className="block rounded-3xl border border-indigo-100 bg-indigo-50 px-7 pb-7 pt-4"
       >
-        {/* The source asset is white-on-transparent, made for legacy's dark
-            panel — brightness-0 recolors it to a visible dark silhouette
-            against this light card. */}
+        {/* Source asset is a tall 37x76 sparkle (white-on-transparent, made
+            for legacy's dark panel) — h-auto preserves its native ratio so
+            the tail doesn't squash, and brightness-0 recolors it dark for
+            this light card. */}
         <img
           src={whatsappSparkleIcon}
           alt=""
-          className="h-8 w-8 brightness-0 opacity-30"
+          className="h-16 w-auto brightness-0 opacity-40"
         />
         <p className="mt-3 text-3xl font-bold leading-tight text-gray-900">
           Connect with me on
