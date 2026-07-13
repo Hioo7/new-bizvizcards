@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { Crop, ZoomIn } from "lucide-react";
-import { getCroppedImg } from "@features/smart-cards/utils/cropImage";
+import { getCroppedImg } from "@components/media/cropImage";
 
 interface ImageCropModalProps {
   open: boolean;

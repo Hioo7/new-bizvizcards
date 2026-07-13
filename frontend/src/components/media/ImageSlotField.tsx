@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
-import ImageCropModal from "@features/smart-cards/components/ImageCropModal";
+import ImageCropModal from "@components/media/ImageCropModal";
+import { compressImage } from "@components/media/compressImage";
 import {
-  SMART_CARD_IMAGE_ALLOWED_MIME_TYPES,
-  SMART_CARD_IMAGE_MAX_SIZE_BYTES,
-} from "@features/smart-cards/config/smartCardForm.config";
-import type { ImageFieldValue } from "@features/smart-cards/types/smartCardForm.types";
+  IMAGE_ALLOWED_MIME_TYPES,
+  IMAGE_MAX_SIZE_BYTES,
+} from "@config/media.config";
+import type { ImageFieldValue } from "@app-types/media.types";
 
 interface ImageSlotFieldProps {
   label: string;
@@ -44,6 +45,7 @@ export default function ImageSlotField({
 }: ImageSlotFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pendingImageSrc, setPendingImageSrc] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const objectUrl = useMemo(
     () => (value.file ? URL.createObjectURL(value.file) : null),
@@ -68,13 +70,19 @@ export default function ImageSlotField({
   const showDeleteBadge = onRemove ? true : value.file !== null;
   const handleDelete = onRemove ?? (() => onChange({ ...value, file: null }));
 
-  function handleFileSelected(file: File | undefined) {
+  async function handleFileSelected(file: File | undefined) {
     if (!file) return;
-    if (!SMART_CARD_IMAGE_ALLOWED_MIME_TYPES.includes(file.type)) return;
-    if (file.size > SMART_CARD_IMAGE_MAX_SIZE_BYTES) return;
+    if (!IMAGE_ALLOWED_MIME_TYPES.includes(file.type)) return;
+    if (file.size > IMAGE_MAX_SIZE_BYTES) return;
     if (skipCrop) {
-      onChange({ ...value, file });
-      if (inputRef.current) inputRef.current.value = "";
+      setIsCompressing(true);
+      try {
+        const compressed = await compressImage(file);
+        onChange({ ...value, file: compressed });
+      } finally {
+        setIsCompressing(false);
+        if (inputRef.current) inputRef.current.value = "";
+      }
       return;
     }
     setPendingImageSrc(URL.createObjectURL(file));
@@ -86,20 +94,26 @@ export default function ImageSlotField({
     if (inputRef.current) inputRef.current.value = "";
   }
 
-  function handleCropConfirm(croppedFile: File) {
-    onChange({ ...value, file: croppedFile });
-    if (pendingImageSrc) URL.revokeObjectURL(pendingImageSrc);
-    setPendingImageSrc(null);
-    if (inputRef.current) inputRef.current.value = "";
+  async function handleCropConfirm(croppedFile: File) {
+    setIsCompressing(true);
+    try {
+      const compressed = await compressImage(croppedFile);
+      onChange({ ...value, file: compressed });
+    } finally {
+      setIsCompressing(false);
+      if (pendingImageSrc) URL.revokeObjectURL(pendingImageSrc);
+      setPendingImageSrc(null);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   }
 
   const fileInput = (
     <input
       ref={inputRef}
       type="file"
-      accept={SMART_CARD_IMAGE_ALLOWED_MIME_TYPES.join(",")}
+      accept={IMAGE_ALLOWED_MIME_TYPES.join(",")}
       className="hidden"
-      onChange={(event) => handleFileSelected(event.target.files?.[0])}
+      onChange={(event) => void handleFileSelected(event.target.files?.[0])}
     />
   );
 
@@ -111,7 +125,7 @@ export default function ImageSlotField({
       aspect={aspect ?? 1}
       cropShape={cropShape}
       onCancel={handleCropCancel}
-      onConfirm={handleCropConfirm}
+      onConfirm={(file) => void handleCropConfirm(file)}
     />
   );
 
@@ -121,7 +135,9 @@ export default function ImageSlotField({
         <p className="text-xs font-semibold text-base-content/70">{label}</p>
         <div className="relative h-32 w-32">
           <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-base-300 bg-base-200">
-            {previewUrl ? (
+            {isCompressing ? (
+              <span className="loading loading-spinner loading-sm text-base-content/40" />
+            ) : previewUrl ? (
               <img src={previewUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <ImagePlus className="h-8 w-8 text-base-content/30" />
@@ -164,7 +180,9 @@ export default function ImageSlotField({
         <div
           className={`flex h-full w-full items-center justify-center overflow-hidden border border-base-300 bg-base-200 ${thumbnailShapeClass}`}
         >
-          {previewUrl ? (
+          {isCompressing ? (
+            <span className="loading loading-spinner loading-sm text-base-content/40" />
+          ) : previewUrl ? (
             <img
               src={previewUrl}
               alt=""

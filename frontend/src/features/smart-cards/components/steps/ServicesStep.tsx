@@ -4,11 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2, Wrench } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import FormTextareaField from "@components/forms/FormTextareaField";
-import ImageSlotField from "@features/smart-cards/components/ImageSlotField";
-import EmptyStepState from "@features/smart-cards/components/EmptyStepState";
+import ImageSlotField from "@components/media/ImageSlotField";
+import EmptyStepState from "@components/EmptyStepState";
 import { servicesStepSchema } from "@features/smart-cards/schemas/smartCardStepSchemas";
 import { SMART_CARD_MAX_SERVICES } from "@features/smart-cards/config/smartCardForm.config";
-import { emptyImageField } from "@features/smart-cards/types/smartCardForm.types";
+import { emptyImageField } from "@app-types/media.types";
 import type {
   ServicesStepValues,
   SmartCardStepHandle,

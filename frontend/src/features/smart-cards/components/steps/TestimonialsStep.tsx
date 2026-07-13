@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { MessageSquareQuote, Plus, Trash2 } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import FormTextareaField from "@components/forms/FormTextareaField";
-import EmptyStepState from "@features/smart-cards/components/EmptyStepState";
+import EmptyStepState from "@components/EmptyStepState";
 import { testimonialsStepSchema } from "@features/smart-cards/schemas/smartCardStepSchemas";
 import { SMART_CARD_MAX_TESTIMONIALS } from "@features/smart-cards/config/smartCardForm.config";
 import type {

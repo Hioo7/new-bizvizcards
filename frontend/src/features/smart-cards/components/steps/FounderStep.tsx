@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Award, Briefcase, TrendingUp, User } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import FormTextareaField from "@components/forms/FormTextareaField";
-import ImageSlotField from "@features/smart-cards/components/ImageSlotField";
+import ImageSlotField from "@components/media/ImageSlotField";
 import { founderStepSchema } from "@features/smart-cards/schemas/smartCardStepSchemas";
 import type {
   FounderStepValues,

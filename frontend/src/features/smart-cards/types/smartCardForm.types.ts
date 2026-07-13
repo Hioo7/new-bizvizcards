@@ -1,12 +1,5 @@
-export interface ImageFieldValue {
-  file: File | null;
-  existingMediaId?: string;
-  existingUrl?: string;
-}
-
-export function emptyImageField(): ImageFieldValue {
-  return { file: null };
-}
+import { emptyImageField } from "@app-types/media.types";
+import type { ImageFieldValue } from "@app-types/media.types";
 
 export interface CustomerStepValues {
   customerId: string;

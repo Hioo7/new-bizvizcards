@@ -4,11 +4,9 @@ import {
   smartCardGalleryImageField,
   smartCardServiceImageField,
 } from "@config/smartCardFields";
-import { emptyImageField } from "@features/smart-cards/types/smartCardForm.types";
-import type {
-  ImageFieldValue,
-  SmartCardFormValues,
-} from "@features/smart-cards/types/smartCardForm.types";
+import { emptyImageField } from "@app-types/media.types";
+import type { ImageFieldValue } from "@app-types/media.types";
+import type { SmartCardFormValues } from "@features/smart-cards/types/smartCardForm.types";
 import type {
   CreateSmartCardPayload,
   ImageSlot,

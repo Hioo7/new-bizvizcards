@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Link2, Sparkles } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import FormTextareaField from "@components/forms/FormTextareaField";
-import ImageSlotField from "@features/smart-cards/components/ImageSlotField";
+import ImageSlotField from "@components/media/ImageSlotField";
 import { profileStepSchema } from "@features/smart-cards/schemas/smartCardStepSchemas";
 import type {
   ProfileStepValues,
