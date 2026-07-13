@@ -1,4 +1,11 @@
-import { IdCard, LogOut, Route as RouteIcon, UserCircle, Users } from "lucide-react";
+import {
+  Contact,
+  IdCard,
+  LogOut,
+  Route as RouteIcon,
+  UserCircle,
+  Users,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "@config/routes";
 
@@ -41,6 +48,13 @@ export const ADMIN_APP_TILES: AdminAppTile[] = [
     icon: RouteIcon,
     color: "primary",
     route: ROUTES.adminRedirects,
+  },
+  {
+    id: "e-cards",
+    label: "E-cards",
+    icon: Contact,
+    color: "secondary",
+    route: ROUTES.adminEcards,
   },
   {
     id: "logout",

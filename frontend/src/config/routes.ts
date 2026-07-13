@@ -9,7 +9,10 @@ export const ROUTES = {
   adminSmartCards: "/admin/smart-cards",
   adminSmartCardsList: "/admin/smart-cards/:templateKey",
   adminRedirects: "/admin/redirects",
+  adminEcards: "/admin/e-cards",
+  adminEcardBuilder: "/admin/e-cards/:customerId",
   smartCardPublic: "/smartcard/:endpoint",
+  ecardPublic: "/ecard/:endpoint",
 } as const;
 
 export const LANDING_CONTACT_ANCHOR = `${ROUTES.landing}#contact`;
@@ -20,4 +23,12 @@ export function adminSmartCardsListPath(templateKey: string): string {
 
 export function smartCardPublicPath(endpoint: string): string {
   return `/smartcard/${endpoint}`;
+}
+
+export function adminEcardBuilderPath(customerId: string): string {
+  return `/admin/e-cards/${customerId}`;
+}
+
+export function ecardPublicPath(endpoint: string): string {
+  return `/ecard/${endpoint}`;
 }

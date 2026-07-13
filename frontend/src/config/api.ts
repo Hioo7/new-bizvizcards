@@ -26,3 +26,9 @@ export const PUBLIC_SMART_CARDS_BASE_PATH = "/api/public/smart-cards";
 export const CUSTOMERS_BASE_PATH = "/api/customers";
 
 export const REDIRECTS_BASE_PATH = "/api/redirects";
+
+export const EMPLOYEE_ECARDS_BASE_PATH = "/api/employee/ecards";
+
+export const PUBLIC_ECARDS_BASE_PATH = "/api/public/ecards";
+
+export const EMPLOYEE_ORGANISATIONS_BASE_PATH = "/api/employee/organisations";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, User, UserCheck, X } from "lucide-react";
-import { useCustomerSearch } from "@features/smart-cards/hooks/useCustomerSearch";
+import { useCustomerSearch } from "@hooks/useCustomerSearch";
 import type { Customer } from "@app-types/customer";
 
 interface CustomerPickerProps {

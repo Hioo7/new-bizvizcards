@@ -4,7 +4,7 @@ import type { Customer } from "@app-types/customer";
 import {
   CUSTOMER_SEARCH_DEBOUNCE_MS,
   CUSTOMER_SEARCH_PAGE_SIZE,
-} from "@features/smart-cards/config/smartCardForm.config";
+} from "@config/customerSearch.config";
 
 export interface UseCustomerSearchResult {
   search: string;

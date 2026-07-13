@@ -15,8 +15,6 @@ export const SMART_CARD_MAX_GALLERY_IMAGES = 30;
 
 export const SMART_CARD_LIST_PAGE_SIZE = 20;
 export const SMART_CARD_LIST_SEARCH_DEBOUNCE_MS = 350;
-export const CUSTOMER_SEARCH_DEBOUNCE_MS = 300;
-export const CUSTOMER_SEARCH_PAGE_SIZE = 10;
 
 export type SmartCardFormStepId =
   | "customer"

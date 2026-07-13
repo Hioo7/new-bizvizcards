@@ -1,0 +1,2 @@
+export const CUSTOMER_SEARCH_DEBOUNCE_MS = 300;
+export const CUSTOMER_SEARCH_PAGE_SIZE = 10;

@@ -9,6 +9,8 @@ import ProfilePage from "@pages/ProfilePage";
 import SmartCardsPage from "@pages/SmartCardsPage";
 import SmartCardsListPage from "@pages/SmartCardsListPage";
 import RedirectsPage from "@pages/RedirectsPage";
+import EcardsPage from "@pages/EcardsPage";
+import EcardBuilderPage from "@pages/EcardBuilderPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
 import AdminLayout from "@layouts/AdminLayout";
@@ -34,6 +36,8 @@ function App() {
             element={<SmartCardsListPage />}
           />
           <Route path={ROUTES.adminRedirects} element={<RedirectsPage />} />
+          <Route path={ROUTES.adminEcards} element={<EcardsPage />} />
+          <Route path={ROUTES.adminEcardBuilder} element={<EcardBuilderPage />} />
         </Route>
       </Route>
     </Routes>
