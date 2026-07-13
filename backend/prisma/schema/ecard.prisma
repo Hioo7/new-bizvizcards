@@ -4,6 +4,7 @@ enum ECardComponentType {
   GALLERY
   VIDEO
   TEAM
+  WHATSAPP
 
   @@map("ECardComponentType")
 }
@@ -48,6 +49,7 @@ model ECardComponent {
   gallery     ECardGalleryComponent?
   video       ECardVideoComponent?
   team        ECardTeamComponent?
+  whatsapp    ECardWhatsAppComponent?
 
   @@unique([ecardId, type])
   @@index([ecardId, order])
@@ -70,7 +72,6 @@ model ECardSocialLinksComponent {
   ecardComponentId String         @id @db.Uuid
   ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
 
-  whatsapp  String?
   website   String?
   instagram String?
   facebook  String?
@@ -78,6 +79,16 @@ model ECardSocialLinksComponent {
   linkedIn  String?
 
   @@map("ECardSocialLinksComponent")
+}
+
+model ECardWhatsAppComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  phoneCountryDialCode String
+  phoneNumber          String
+
+  @@map("ECardWhatsAppComponent")
 }
 
 model ECardVideoComponent {

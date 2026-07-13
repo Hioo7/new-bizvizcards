@@ -8,8 +8,8 @@ export const ECARD_PHONE_NUMBER_MAX_DIGITS = 15;
 export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
 
 // One instance of each ECardComponentType per card (ABOUT, SOCIAL_LINKS,
-// GALLERY, VIDEO, TEAM) — see ECardComponent.@@unique([ecardId, type]).
-export const ECARD_MAX_COMPONENTS = 5;
+// GALLERY, VIDEO, TEAM, WHATSAPP) — see ECardComponent.@@unique([ecardId, type]).
+export const ECARD_MAX_COMPONENTS = 6;
 export const ECARD_MAX_SUB_GALLERIES = 10;
 export const ECARD_MAX_GALLERY_IMAGES = 30;
 export const ECARD_MAX_TEAM_MEMBERS = 50;

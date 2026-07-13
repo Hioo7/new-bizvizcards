@@ -175,6 +175,11 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               type: 'TEAM',
               members: [{ organisationMemberId: memberMembership.id }],
             },
+            {
+              type: 'WHATSAPP',
+              phoneCountryDialCode: '91',
+              phoneNumber: '9123456780',
+            },
           ],
         },
         [makeFile('heroProfilePhoto'), makeFile('galleryImage_0_0')],
@@ -183,7 +188,13 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       expect(created.endpoint).toMatch(/^e2e-/);
       expect(created.hero.name).toBe('Jane Doe');
       expect(created.hero.profilePhotoUrl).toContain('/media/test-bucket/');
-      expect(created.components).toHaveLength(5);
+      expect(created.components).toHaveLength(6);
+
+      const whatsapp = created.components.find((c) => c.type === 'WHATSAPP');
+      expect(whatsapp).toMatchObject({
+        phoneCountryDialCode: '91',
+        phoneNumber: '9123456780',
+      });
 
       const about = created.components.find((c) => c.type === 'ABOUT');
       expect(about).toMatchObject({ profession: 'Designer' });

@@ -38,6 +38,7 @@ const FULL_INCLUDE = {
       about: true,
       socialLinks: true,
       video: true,
+      whatsapp: true,
       gallery: {
         include: {
           subGalleries: {
@@ -104,7 +105,6 @@ export interface EcardAboutComponentResponse extends EcardComponentResponseBase 
 
 export interface EcardSocialLinksComponentResponse extends EcardComponentResponseBase {
   type: typeof ECardComponentType.SOCIAL_LINKS;
-  whatsapp: string | null;
   website: string | null;
   instagram: string | null;
   facebook: string | null;
@@ -150,12 +150,19 @@ export interface EcardTeamComponentResponse extends EcardComponentResponseBase {
   members: EcardTeamMemberResponse[];
 }
 
+export interface EcardWhatsAppComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.WHATSAPP;
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
+}
+
 export type EcardComponentResponse =
   | EcardAboutComponentResponse
   | EcardSocialLinksComponentResponse
   | EcardVideoComponentResponse
   | EcardGalleryComponentResponse
-  | EcardTeamComponentResponse;
+  | EcardTeamComponentResponse
+  | EcardWhatsAppComponentResponse;
 
 @Injectable()
 export class EcardsService {
@@ -471,12 +478,20 @@ export class EcardsService {
         await tx.eCardSocialLinksComponent.create({
           data: {
             ecardComponentId,
-            whatsapp: component.whatsapp,
             website: component.website,
             instagram: component.instagram,
             facebook: component.facebook,
             twitter: component.twitter,
             linkedIn: component.linkedIn,
+          },
+        });
+        return;
+      case 'WHATSAPP':
+        await tx.eCardWhatsAppComponent.create({
+          data: {
+            ecardComponentId,
+            phoneCountryDialCode: component.phoneCountryDialCode,
+            phoneNumber: component.phoneNumber,
           },
         });
         return;
@@ -793,12 +808,19 @@ export class EcardsService {
         return {
           ...base,
           type: ECardComponentType.SOCIAL_LINKS,
-          whatsapp: component.socialLinks?.whatsapp ?? null,
           website: component.socialLinks?.website ?? null,
           instagram: component.socialLinks?.instagram ?? null,
           facebook: component.socialLinks?.facebook ?? null,
           twitter: component.socialLinks?.twitter ?? null,
           linkedIn: component.socialLinks?.linkedIn ?? null,
+        };
+      case ECardComponentType.WHATSAPP:
+        return {
+          ...base,
+          type: ECardComponentType.WHATSAPP,
+          phoneCountryDialCode:
+            component.whatsapp?.phoneCountryDialCode ?? null,
+          phoneNumber: component.whatsapp?.phoneNumber ?? null,
         };
       case ECardComponentType.VIDEO:
         return {

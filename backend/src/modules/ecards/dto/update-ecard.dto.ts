@@ -7,6 +7,7 @@ import { updateEcardGalleryComponentSchema } from './components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from './components/social-links.dto';
 import { ecardTeamComponentSchema } from './components/team-member-pick.dto';
 import { ecardVideoComponentSchema } from './components/video.dto';
+import { ecardWhatsAppComponentSchema } from './components/whatsapp.dto';
 import { ecardCoreFields, hasUniqueComponentTypes } from './ecard-core.dto';
 
 const updateEcardComponentSchema = z.discriminatedUnion('type', [
@@ -15,6 +16,7 @@ const updateEcardComponentSchema = z.discriminatedUnion('type', [
   updateEcardGalleryComponentSchema,
   ecardVideoComponentSchema,
   ecardTeamComponentSchema,
+  ecardWhatsAppComponentSchema,
 ]);
 
 // Full-replace PATCH: every save resends the entire desired state (hero

@@ -7,6 +7,7 @@ import { createEcardGalleryComponentSchema } from './components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from './components/social-links.dto';
 import { ecardTeamComponentSchema } from './components/team-member-pick.dto';
 import { ecardVideoComponentSchema } from './components/video.dto';
+import { ecardWhatsAppComponentSchema } from './components/whatsapp.dto';
 import { ecardCoreFields, hasUniqueComponentTypes } from './ecard-core.dto';
 
 const createEcardComponentSchema = z.discriminatedUnion('type', [
@@ -15,6 +16,7 @@ const createEcardComponentSchema = z.discriminatedUnion('type', [
   createEcardGalleryComponentSchema,
   ecardVideoComponentSchema,
   ecardTeamComponentSchema,
+  ecardWhatsAppComponentSchema,
 ]);
 
 const createEcardShape = {
