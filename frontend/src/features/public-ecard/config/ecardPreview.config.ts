@@ -1,0 +1,1 @@
+export const ECARD_ABOUT_TRUNCATE_WORD_COUNT = 32;

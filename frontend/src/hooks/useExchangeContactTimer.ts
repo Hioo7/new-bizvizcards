@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-
-export const EXCHANGE_CONTACT_AUTO_OPEN_DELAY_MS = 5000;
+import { EXCHANGE_CONTACT_AUTO_OPEN_DELAY_MS } from "@config/exchangeContact.config";
 
 export function useExchangeContactTimer(onTrigger: () => void): void {
   const onTriggerRef = useRef(onTrigger);

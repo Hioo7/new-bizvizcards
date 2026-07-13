@@ -8,8 +8,9 @@ import { AboutSection } from "@features/public-smart-card/components/templates/i
 import { InquiryModal } from "@features/public-smart-card/components/templates/interior-design-template-2/sections/InquiryModal";
 import { TestimonialsSection } from "@features/public-smart-card/components/templates/interior-design-template-2/sections/TestimonialsSection";
 import { FounderSection } from "@features/public-smart-card/components/templates/interior-design-template-2/sections/FounderSection";
-import { ExchangeContactPopup } from "@features/public-smart-card/components/ExchangeContactPopup";
-import { useExchangeContactTimer } from "@features/public-smart-card/hooks/useExchangeContactTimer";
+import { ExchangeContactPopup } from "@components/ExchangeContactPopup";
+import { useExchangeContactTimer } from "@hooks/useExchangeContactTimer";
+import { smartCardVCardUrl, submitExchangeContact } from "@services/publicSmartCardService";
 import type { PublicSmartCard } from "@app-types/smartCard";
 
 function TemplateFooter() {
@@ -87,7 +88,8 @@ export function InteriorDesignTemplate2({ card }: InteriorDesignTemplate2Props) 
 
       <ExchangeContactPopup
         isOpen={isExchangeOpen}
-        endpoint={card.endpoint}
+        vcardUrl={smartCardVCardUrl(card.endpoint)}
+        onSubmit={(payload) => submitExchangeContact(card.endpoint, payload)}
         onClose={() => setIsExchangeOpen(false)}
       />
     </div>

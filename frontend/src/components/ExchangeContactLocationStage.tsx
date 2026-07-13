@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, MapPin } from "lucide-react";
-import { EXCHANGE_CONTACT_GEOLOCATION_TIMEOUT_MS } from "@features/public-smart-card/config/exchangeContact.config";
+import { EXCHANGE_CONTACT_GEOLOCATION_TIMEOUT_MS } from "@config/exchangeContact.config";
 
 export interface GeolocationCoords {
   latitude: number;

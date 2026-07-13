@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { StickyNote, Trash2 } from "lucide-react";
-import {
-  smartCardVCardUrl,
-  submitExchangeContact,
-} from "@services/publicSmartCardService";
 import { useAsyncAction } from "@hooks/useAsyncAction";
-import ExchangeContactLocationStage from "./ExchangeContactLocationStage";
-import type { GeolocationCoords } from "./ExchangeContactLocationStage";
+import ExchangeContactLocationStage from "@components/ExchangeContactLocationStage";
+import type { GeolocationCoords } from "@components/ExchangeContactLocationStage";
+import type { ExchangeContactSubmission } from "@app-types/lead";
 
 interface Country {
   iso: string;
@@ -77,15 +74,23 @@ function validate(form: FormState): FieldErrors {
   return errors;
 }
 
-interface ExchangeContactPopupProps {
+export interface ExchangeContactPopupProps {
   isOpen: boolean;
-  endpoint: string;
+  /** URL the visitor's browser is redirected to (to save/open the owner's
+   * contact) once the exchange submission succeeds. */
+  vcardUrl: string;
+  onSubmit: (payload: ExchangeContactSubmission) => Promise<void>;
   onClose: () => void;
 }
 
 type Stage = "form" | "location";
 
-export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeContactPopupProps) {
+export function ExchangeContactPopup({
+  isOpen,
+  vcardUrl,
+  onSubmit,
+  onClose,
+}: ExchangeContactPopupProps) {
   const [form, setForm] = useState<FormState>({
     name: "",
     countryIso: COUNTRIES[0].iso,
@@ -124,7 +129,7 @@ export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeCont
   function finalizeSubmit(coords?: GeolocationCoords) {
     void submitAction.run(
       () =>
-        submitExchangeContact(endpoint, {
+        onSubmit({
           name: form.name.trim(),
           countryDialCode: form.dialCode,
           phoneNumber: normalizePhone(form.phone),
@@ -134,7 +139,7 @@ export function ExchangeContactPopup({ isOpen, endpoint, onClose }: ExchangeCont
           locationLongitude: coords?.longitude,
         }),
       () => {
-        window.location.href = smartCardVCardUrl(endpoint);
+        window.location.href = vcardUrl;
         handleClose();
       },
     );

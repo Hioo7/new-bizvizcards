@@ -12,6 +12,7 @@ import RedirectsPage from "@pages/RedirectsPage";
 import EcardsPage from "@pages/EcardsPage";
 import EcardBuilderPage from "@pages/EcardBuilderPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
+import EcardPublicPage from "@pages/EcardPublicPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
 import AdminLayout from "@layouts/AdminLayout";
 import { ROUTES } from "@config/routes";
@@ -24,6 +25,7 @@ function App() {
       <Route path={ROUTES.signup} element={<SignupPage />} />
       <Route path={ROUTES.adminLogin} element={<AdminLoginPage />} />
       <Route path={ROUTES.smartCardPublic} element={<SmartCardPublicPage />} />
+      <Route path={ROUTES.ecardPublic} element={<EcardPublicPage />} />
 
       <Route element={<RequireStaffAuth />}>
         <Route element={<AdminLayout />}>
