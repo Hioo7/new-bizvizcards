@@ -14,6 +14,7 @@ const EMPLOYEE_SMART_CARD_ACTIONS = [
 ] as const;
 const EMPLOYEE_CUSTOMER_ACTIONS = ['list'] as const;
 const EMPLOYEE_REDIRECT_ACTIONS = ['list', 'get'] as const;
+const EMPLOYEE_ORGANISATION_ACTIONS = ['list', 'get'] as const;
 
 const ADMIN_EXTRA_USER_ACTIONS = [
   'create',
@@ -26,6 +27,7 @@ const ADMIN_EXTRA_USER_ACTIONS = [
 const ADMIN_EXTRA_SESSION_ACTIONS = ['list', 'revoke'] as const;
 const ADMIN_EXTRA_SMART_CARD_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_REDIRECT_ACTIONS = ['create', 'update', 'delete'] as const;
+const ADMIN_EXTRA_ORGANISATION_ACTIONS = ['delete'] as const;
 
 const SUPER_ADMIN_EXTRA_USER_ACTIONS = [
   'set-role',
@@ -41,6 +43,7 @@ export const employeeRole = employeeAccessControl.newRole({
   smartCard: [...EMPLOYEE_SMART_CARD_ACTIONS],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
   redirect: [...EMPLOYEE_REDIRECT_ACTIONS],
+  organisation: [...EMPLOYEE_ORGANISATION_ACTIONS],
 });
 
 export const adminRole = employeeAccessControl.newRole({
@@ -53,6 +56,10 @@ export const adminRole = employeeAccessControl.newRole({
   ],
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
   redirect: [...EMPLOYEE_REDIRECT_ACTIONS, ...ADMIN_EXTRA_REDIRECT_ACTIONS],
+  organisation: [
+    ...EMPLOYEE_ORGANISATION_ACTIONS,
+    ...ADMIN_EXTRA_ORGANISATION_ACTIONS,
+  ],
 });
 
 export const superAdminRole = employeeAccessControl.newRole({
@@ -79,4 +86,12 @@ export const superAdminRole = employeeAccessControl.newRole({
   // redirect action exists, so it's spread from the same admin-tier const
   // rather than duplicated, keeping super_admin ⊇ admin by construction.
   redirect: [...EMPLOYEE_REDIRECT_ACTIONS, ...ADMIN_EXTRA_REDIRECT_ACTIONS],
+  // super_admin gets the same organisation actions as admin — no
+  // super-admin-only organisation action exists, so it's spread from the
+  // same admin-tier const rather than duplicated, keeping
+  // super_admin ⊇ admin by construction.
+  organisation: [
+    ...EMPLOYEE_ORGANISATION_ACTIONS,
+    ...ADMIN_EXTRA_ORGANISATION_ACTIONS,
+  ],
 });

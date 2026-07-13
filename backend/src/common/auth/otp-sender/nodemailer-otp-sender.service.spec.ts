@@ -1,29 +1,14 @@
-import { AppConfigService } from '../../config/app-config.service';
+import { MailerService } from '../../mailer/mailer.service';
 import { NodemailerOtpSender } from './nodemailer-otp-sender.service';
 import { OTP_EMAIL_SUBJECTS } from './otp-sender.constants';
 
-const sendMailMock = jest.fn();
-
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn(() => ({ sendMail: sendMailMock })),
-}));
-
-function createAppConfigStub(): AppConfigService {
+function createMailerStub(): MailerService & { sendMail: jest.Mock } {
   return {
-    smtpHost: 'smtp.example.com',
-    smtpPort: 587,
-    smtpSecure: false,
-    smtpUser: 'user',
-    smtpPassword: 'pass',
-    smtpFrom: 'no-reply@example.com',
-  } as unknown as AppConfigService;
+    sendMail: jest.fn().mockResolvedValue(undefined),
+  } as unknown as MailerService & { sendMail: jest.Mock };
 }
 
 describe('NodemailerOtpSender', () => {
-  beforeEach(() => {
-    sendMailMock.mockReset();
-  });
-
   it.each([
     ['sign-in', OTP_EMAIL_SUBJECTS['sign-in']],
     ['email-verification', OTP_EMAIL_SUBJECTS['email-verification']],
@@ -32,13 +17,12 @@ describe('NodemailerOtpSender', () => {
   ] as const)(
     'sends the correct subject and OTP for type %s',
     async (type, expectedSubject) => {
-      sendMailMock.mockResolvedValue({});
-      const sender = new NodemailerOtpSender(createAppConfigStub());
+      const mailer = createMailerStub();
+      const sender = new NodemailerOtpSender(mailer);
 
       await sender.send({ email: 'user@example.com', otp: '123456', type });
 
-      expect(sendMailMock).toHaveBeenCalledWith({
-        from: 'no-reply@example.com',
+      expect(mailer.sendMail).toHaveBeenCalledWith({
         to: 'user@example.com',
         subject: expectedSubject,
         text: expect.stringContaining('123456') as string,
@@ -47,8 +31,9 @@ describe('NodemailerOtpSender', () => {
   );
 
   it('propagates rejection when sendMail fails', async () => {
-    sendMailMock.mockRejectedValue(new Error('SMTP down'));
-    const sender = new NodemailerOtpSender(createAppConfigStub());
+    const mailer = createMailerStub();
+    mailer.sendMail.mockRejectedValue(new Error('SMTP down'));
+    const sender = new NodemailerOtpSender(mailer);
 
     await expect(
       sender.send({

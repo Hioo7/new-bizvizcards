@@ -15,5 +15,10 @@ model Customer {
   leadFolders LeadFolder[] @relation("CustomerLeadFolders")
   leads       Lead[]
 
+  organisationMembership OrganisationMember?
+  createdOrganisations   Organisation[]       @relation("OrganisationCreatedBy")
+  sentInvites            OrganisationInvite[] @relation("OrganisationInvitesSent")
+  acceptedInvites        OrganisationInvite[] @relation("OrganisationInvitesAccepted")
+
   @@map("Customer")
 }

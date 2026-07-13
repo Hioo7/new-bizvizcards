@@ -1,0 +1,71 @@
+enum OrganisationMemberRole {
+  SPOC
+  MEMBER
+
+  @@map("OrganisationMemberRole")
+}
+
+enum OrganisationMemberStatus {
+  ACTIVE
+  SUSPENDED
+
+  @@map("OrganisationMemberStatus")
+}
+
+enum OrganisationInviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+
+  @@map("OrganisationInviteStatus")
+}
+
+model Organisation {
+  id                  String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  name                String
+  createdByCustomerId String?   @db.Uuid
+  createdByCustomer   Customer? @relation("OrganisationCreatedBy", fields: [createdByCustomerId], references: [id], onDelete: SetNull)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  members OrganisationMember[]
+  invites OrganisationInvite[]
+
+  @@map("Organisation")
+}
+
+model OrganisationMember {
+  id             String                   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  organisationId String                   @db.Uuid
+  organisation   Organisation             @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  customerId     String                   @unique @db.Uuid
+  customer       Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  role           OrganisationMemberRole   @default(MEMBER)
+  status         OrganisationMemberStatus @default(ACTIVE)
+  joinedAt       DateTime                 @default(now())
+
+  @@index([organisationId])
+  @@map("OrganisationMember")
+}
+
+model OrganisationInvite {
+  id                   String                   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  organisationId       String                   @db.Uuid
+  organisation         Organisation             @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  email                String
+  role                 OrganisationMemberRole   @default(MEMBER)
+  token                String                   @unique
+  status               OrganisationInviteStatus @default(PENDING)
+  invitedByCustomerId  String                   @db.Uuid
+  invitedByCustomer    Customer                 @relation("OrganisationInvitesSent", fields: [invitedByCustomerId], references: [id], onDelete: Cascade)
+  acceptedByCustomerId String?                  @db.Uuid
+  acceptedByCustomer   Customer?                @relation("OrganisationInvitesAccepted", fields: [acceptedByCustomerId], references: [id], onDelete: SetNull)
+  expiresAt            DateTime
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  @@index([organisationId])
+  @@index([email])
+  @@map("OrganisationInvite")
+}
