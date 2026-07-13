@@ -22,7 +22,7 @@ import type { ListSmartCardQueryDto } from '../dto/list-smart-card-query.dto';
 import type {
   CreateImageSlotDto,
   UpdateImageSlotDto,
-} from '../dto/image-slot.dto';
+} from '../../../common/validators/image-slot.dto';
 
 const FULL_INCLUDE = {
   profile: { include: { logoMedia: true } },

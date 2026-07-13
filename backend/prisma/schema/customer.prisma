@@ -8,6 +8,7 @@ model Customer {
   updatedAt  DateTime        @updatedAt
 
   smartCards SmartCard[]
+  ecard      ECard?
 
   defaultLeadFolderId String?     @db.Uuid
   defaultLeadFolder   LeadFolder? @relation("CustomerDefaultLeadFolder", fields: [defaultLeadFolderId], references: [id], onDelete: SetNull)

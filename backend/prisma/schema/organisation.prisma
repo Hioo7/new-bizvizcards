@@ -45,6 +45,8 @@ model OrganisationMember {
   status         OrganisationMemberStatus @default(ACTIVE)
   joinedAt       DateTime                 @default(now())
 
+  teamListings ECardTeamMember[]
+
   @@index([organisationId])
   @@map("OrganisationMember")
 }

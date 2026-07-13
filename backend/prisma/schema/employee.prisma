@@ -5,9 +5,10 @@ model Employee {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  createdSmartCards          SmartCard[]
-  createdInternalRedirects   InternalRedirectRoute[]
-  createdExternalRedirects   ExternalRedirectRoute[]
+  createdSmartCards        SmartCard[]
+  createdInternalRedirects InternalRedirectRoute[]
+  createdExternalRedirects ExternalRedirectRoute[]
+  createdEcards            ECard[]
 
   @@map("Employee")
 }

@@ -1,0 +1,149 @@
+enum ECardComponentType {
+  ABOUT
+  SOCIAL_LINKS
+  GALLERY
+  VIDEO
+  TEAM
+
+  @@map("ECardComponentType")
+}
+
+model ECard {
+  id                  String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId          String    @unique @db.Uuid
+  customer            Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  endpoint            String    @unique
+  createdByEmployeeId String?   @db.Uuid
+  createdByEmployee   Employee? @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
+
+  heroCompanyName         String?
+  heroProfilePhotoMediaId String?     @unique @db.Uuid
+  heroProfilePhoto        ImageMedia? @relation(fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
+
+  phoneCountryDialCode     String?
+  phoneNumber              String?
+  isExchangeContactEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  components ECardComponent[]
+
+  @@index([customerId])
+  @@index([createdByEmployeeId])
+  @@map("ECard")
+}
+
+model ECardComponent {
+  id        String             @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardId   String             @db.Uuid
+  ecard     ECard              @relation(fields: [ecardId], references: [id], onDelete: Cascade)
+  type      ECardComponentType
+  order     Int                @default(0)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  about       ECardAboutComponent?
+  socialLinks ECardSocialLinksComponent?
+  gallery     ECardGalleryComponent?
+  video       ECardVideoComponent?
+  team        ECardTeamComponent?
+
+  @@unique([ecardId, type])
+  @@index([ecardId, order])
+  @@map("ECardComponent")
+}
+
+model ECardAboutComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  profession  String?
+  shortNote   String?
+  description String?
+  aboutMe     String?
+
+  @@map("ECardAboutComponent")
+}
+
+model ECardSocialLinksComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  whatsapp  String?
+  website   String?
+  instagram String?
+  facebook  String?
+  twitter   String?
+  linkedIn  String?
+
+  @@map("ECardSocialLinksComponent")
+}
+
+model ECardVideoComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  title    String?
+  videoUrl String
+
+  @@map("ECardVideoComponent")
+}
+
+model ECardGalleryComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  subGalleries ECardSubGallery[]
+
+  @@map("ECardGalleryComponent")
+}
+
+model ECardSubGallery {
+  id                 String                @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  galleryComponentId String                @db.Uuid
+  galleryComponent   ECardGalleryComponent @relation(fields: [galleryComponentId], references: [ecardComponentId], onDelete: Cascade)
+  title              String?
+  order              Int                   @default(0)
+
+  images ECardGalleryImage[]
+
+  @@index([galleryComponentId])
+  @@map("ECardSubGallery")
+}
+
+model ECardGalleryImage {
+  id           String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  subGalleryId String          @db.Uuid
+  subGallery   ECardSubGallery @relation(fields: [subGalleryId], references: [id], onDelete: Cascade)
+  imageMediaId String          @unique @db.Uuid
+  image        ImageMedia      @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
+  order        Int             @default(0)
+
+  @@index([subGalleryId])
+  @@map("ECardGalleryImage")
+}
+
+model ECardTeamComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  title String?
+
+  members ECardTeamMember[]
+
+  @@map("ECardTeamComponent")
+}
+
+model ECardTeamMember {
+  id                   String             @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  teamComponentId      String             @db.Uuid
+  teamComponent        ECardTeamComponent @relation(fields: [teamComponentId], references: [ecardComponentId], onDelete: Cascade)
+  organisationMemberId String             @db.Uuid
+  organisationMember   OrganisationMember @relation(fields: [organisationMemberId], references: [id], onDelete: Cascade)
+  order                Int                @default(0)
+
+  @@unique([teamComponentId, organisationMemberId])
+  @@index([teamComponentId])
+  @@map("ECardTeamMember")
+}

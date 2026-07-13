@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import {
-  SMART_CARD_ENDPOINT_MAX_LENGTH,
-  SMART_CARD_ENDPOINT_MIN_LENGTH,
-  SMART_CARD_ENDPOINT_REGEX,
-} from '../smart-cards.constants';
+  URL_SLUG_MAX_LENGTH,
+  URL_SLUG_MIN_LENGTH,
+  URL_SLUG_REGEX,
+} from '../../../common/constants/slug.constants';
 import { createSmartCardProfileSchema } from './smart-card-profile.dto';
 import { smartCardContactSchema } from './smart-card-contact.dto';
 import { smartCardSocialMediaSchema } from './smart-card-social-media.dto';
@@ -17,9 +17,9 @@ export const createSmartCardSchema = z
     endpoint: z
       .string()
       .trim()
-      .min(SMART_CARD_ENDPOINT_MIN_LENGTH)
-      .max(SMART_CARD_ENDPOINT_MAX_LENGTH)
-      .regex(SMART_CARD_ENDPOINT_REGEX),
+      .min(URL_SLUG_MIN_LENGTH)
+      .max(URL_SLUG_MAX_LENGTH)
+      .regex(URL_SLUG_REGEX),
     customerId: z.uuid().optional(),
     profile: createSmartCardProfileSchema,
     contact: smartCardContactSchema,

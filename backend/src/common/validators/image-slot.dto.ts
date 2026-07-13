@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 // Create: a slot either has no image, or is backed by a file uploaded under
-// this request's positionally-derived field name (see smart-cards.constants.ts) —
-// there is nothing for the client to invent; the field name is fully
-// determined by the slot's position in the payload.
+// this request's positionally-derived field name (see each module's own
+// constants file) — there is nothing for the client to invent; the field
+// name is fully determined by the slot's position in the payload.
 export const createImageSlotSchema = z
   .object({ action: z.literal('upload') })
   .strict();

@@ -4,7 +4,10 @@ import {
   SMART_CARD_TEXT_MEDIUM_MAX_LENGTH,
   SMART_CARD_TEXT_SHORT_MAX_LENGTH,
 } from '../smart-cards.constants';
-import { createImageSlotSchema, updateImageSlotSchema } from './image-slot.dto';
+import {
+  createImageSlotSchema,
+  updateImageSlotSchema,
+} from '../../../common/validators/image-slot.dto';
 
 const profileTextFields = {
   companyName: z

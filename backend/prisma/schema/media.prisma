@@ -20,5 +20,8 @@ model ImageMedia {
   smartCardService      SmartCardService?
   smartCardGalleryImage SmartCardGalleryImage?
 
+  ecard             ECard?
+  ecardGalleryImage ECardGalleryImage?
+
   @@map("ImageMedia")
 }
