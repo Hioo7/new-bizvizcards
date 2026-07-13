@@ -1,4 +1,4 @@
-import { Sparkle } from "lucide-react";
+import whatsappSparkleIcon from "@assets/icons/whatsapp-sparkle.png";
 import { WhatsAppIcon } from "@components/icons/BrandIcons";
 import type { EcardWhatsAppComponent } from "@app-types/ecard";
 
@@ -32,11 +32,18 @@ export function WhatsAppSection({ component }: WhatsAppSectionProps) {
         rel="noopener noreferrer"
         className="block rounded-3xl border border-indigo-100 bg-indigo-50 px-7 py-7"
       >
-        <Sparkle className="h-8 w-8 text-indigo-300" strokeWidth={1.5} />
+        {/* The source asset is white-on-transparent, made for legacy's dark
+            panel — brightness-0 recolors it to a visible dark silhouette
+            against this light card. */}
+        <img
+          src={whatsappSparkleIcon}
+          alt=""
+          className="h-8 w-8 brightness-0 opacity-30"
+        />
         <p className="mt-3 text-3xl font-bold leading-tight text-gray-900">
           Connect with me on
         </p>
-        <p className="mt-1 flex items-center gap-2 text-3xl font-bold leading-tight text-sky-500">
+        <p className="mt-1 flex items-center gap-2 text-3xl font-bold leading-tight text-green-600">
           WhatsApp
           <WhatsAppIcon className="h-8 w-8 text-green-600" />
         </p>
