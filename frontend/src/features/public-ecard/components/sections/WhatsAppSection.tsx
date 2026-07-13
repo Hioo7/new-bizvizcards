@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Sparkle } from "lucide-react";
 import { WhatsAppIcon } from "@components/icons/BrandIcons";
 import type { EcardWhatsAppComponent } from "@app-types/ecard";
 
@@ -12,10 +12,10 @@ function buildWhatsAppLink(dialCode: string, phoneNumber: string): string {
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
-// Mirrors the legacy E-card's WhatsApp CTA panel structure and scale
-// (fixed h-60 card, text-3xl/md:text-5xl heading, w-10 h-10 inline brand
-// icon, rounded-2xl) exactly — only the palette changes, from legacy's
-// near-black panel to the E-card's light theme.
+// Re-themed 1:1 from the legacy E-card's WhatsApp CTA panel (rounded dark
+// card, small outlined sparkle top-left, bold two-line "Connect with me on
+// / WhatsApp" heading, brand icon inline after the word) — only the near-
+// black panel becomes a light card here, nothing else changes.
 export function WhatsAppSection({ component }: WhatsAppSectionProps) {
   if (!component.phoneCountryDialCode || !component.phoneNumber) return null;
 
@@ -26,25 +26,20 @@ export function WhatsAppSection({ component }: WhatsAppSectionProps) {
 
   return (
     <div className="px-6 py-4 bg-white border-b">
-      <a href={href} target="_blank" rel="noopener noreferrer">
-        <div className="w-full h-60 bg-indigo-50 shadow-xl rounded-2xl px-6 border border-indigo-100">
-          <div className="pt-4">
-            <Sparkles className="h-5 w-5 text-indigo-400" />
-          </div>
-          <div>
-            <div>
-              <h1 className="text-3xl md:text-5xl text-gray-800">
-                Connect with me on
-              </h1>
-            </div>
-            <div>
-              <span className="text-indigo-600 flex items-center gap-3 text-3xl md:text-5xl">
-                WhatsApp
-                <WhatsAppIcon className="w-10 h-10 text-green-600" />
-              </span>
-            </div>
-          </div>
-        </div>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block rounded-3xl border border-indigo-100 bg-indigo-50 px-7 py-7"
+      >
+        <Sparkle className="h-8 w-8 text-indigo-300" strokeWidth={1.5} />
+        <p className="mt-3 text-3xl font-bold leading-tight text-gray-900">
+          Connect with me on
+        </p>
+        <p className="mt-1 flex items-center gap-2 text-3xl font-bold leading-tight text-sky-500">
+          WhatsApp
+          <WhatsAppIcon className="h-8 w-8 text-green-600" />
+        </p>
       </a>
     </div>
   );
