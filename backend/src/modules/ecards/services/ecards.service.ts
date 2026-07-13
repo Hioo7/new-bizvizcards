@@ -89,6 +89,74 @@ type FullTeamMember = NonNullable<
   FullEcardComponent['team']
 >['members'][number];
 
+export interface EcardComponentResponseBase {
+  id: string;
+  order: number;
+}
+
+export interface EcardAboutComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.ABOUT;
+  profession: string | null;
+  shortNote: string | null;
+  description: string | null;
+  aboutMe: string | null;
+}
+
+export interface EcardSocialLinksComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.SOCIAL_LINKS;
+  whatsapp: string | null;
+  website: string | null;
+  instagram: string | null;
+  facebook: string | null;
+  twitter: string | null;
+  linkedIn: string | null;
+}
+
+export interface EcardVideoComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.VIDEO;
+  title: string | null;
+  videoUrl: string | null;
+}
+
+export interface EcardGalleryImageResponse {
+  imageMediaId: string;
+  imageUrl: string;
+}
+
+export interface EcardSubGalleryResponse {
+  id: string;
+  title: string | null;
+  images: EcardGalleryImageResponse[];
+}
+
+export interface EcardGalleryComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.GALLERY;
+  subGalleries: EcardSubGalleryResponse[];
+}
+
+export interface EcardTeamMemberResponse {
+  organisationMemberId: string;
+  name: string;
+  email: string;
+  photoUrl: string | null;
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
+  ecardEndpoint: string | null;
+}
+
+export interface EcardTeamComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.TEAM;
+  title: string | null;
+  members: EcardTeamMemberResponse[];
+}
+
+export type EcardComponentResponse =
+  | EcardAboutComponentResponse
+  | EcardSocialLinksComponentResponse
+  | EcardVideoComponentResponse
+  | EcardGalleryComponentResponse
+  | EcardTeamComponentResponse;
+
 @Injectable()
 export class EcardsService {
   constructor(
@@ -703,10 +771,11 @@ export class EcardsService {
     };
   }
 
-  private componentToResponse(component: FullEcardComponent) {
-    const base = {
+  private componentToResponse(
+    component: FullEcardComponent,
+  ): EcardComponentResponse {
+    const base: EcardComponentResponseBase = {
       id: component.id,
-      type: component.type,
       order: component.order,
     };
 
@@ -714,6 +783,7 @@ export class EcardsService {
       case ECardComponentType.ABOUT:
         return {
           ...base,
+          type: ECardComponentType.ABOUT,
           profession: component.about?.profession ?? null,
           shortNote: component.about?.shortNote ?? null,
           description: component.about?.description ?? null,
@@ -722,6 +792,7 @@ export class EcardsService {
       case ECardComponentType.SOCIAL_LINKS:
         return {
           ...base,
+          type: ECardComponentType.SOCIAL_LINKS,
           whatsapp: component.socialLinks?.whatsapp ?? null,
           website: component.socialLinks?.website ?? null,
           instagram: component.socialLinks?.instagram ?? null,
@@ -732,12 +803,14 @@ export class EcardsService {
       case ECardComponentType.VIDEO:
         return {
           ...base,
+          type: ECardComponentType.VIDEO,
           title: component.video?.title ?? null,
           videoUrl: component.video?.videoUrl ?? null,
         };
       case ECardComponentType.GALLERY:
         return {
           ...base,
+          type: ECardComponentType.GALLERY,
           subGalleries: (component.gallery?.subGalleries ?? []).map(
             (subGallery) => ({
               id: subGallery.id,
@@ -752,6 +825,7 @@ export class EcardsService {
       case ECardComponentType.TEAM:
         return {
           ...base,
+          type: ECardComponentType.TEAM,
           title: component.team?.title ?? null,
           members: (component.team?.members ?? []).map((member) =>
             this.teamMemberToResponse(member),
@@ -760,7 +834,9 @@ export class EcardsService {
     }
   }
 
-  private teamMemberToResponse(member: FullTeamMember) {
+  private teamMemberToResponse(
+    member: FullTeamMember,
+  ): EcardTeamMemberResponse {
     const customer = member.organisationMember.customer;
     return {
       organisationMemberId: member.organisationMemberId,
