@@ -11,6 +11,8 @@ export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "WHATSAPP",
 ];
 
+export const ECARD_MAX_COMPONENTS = ECARD_COMPONENT_TYPES.length;
+
 interface EcardComponentMeta {
   label: string;
   icon: LucideIcon;

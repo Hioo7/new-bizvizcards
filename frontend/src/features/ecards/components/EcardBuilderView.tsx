@@ -29,6 +29,7 @@ import GalleryEditSheet from "@features/ecards/components/GalleryEditSheet";
 import TeamEditSheet from "@features/ecards/components/TeamEditSheet";
 import WhatsAppEditSheet from "@features/ecards/components/WhatsAppEditSheet";
 import { useEcardBuilder } from "@features/ecards/hooks/useEcardBuilder";
+import { ECARD_MAX_COMPONENTS } from "@features/ecards/config/ecardBuilder.config";
 import { emptyDraftForType } from "@features/ecards/types/ecardBuilder.types";
 import type { EcardComponentType } from "@app-types/ecard";
 
@@ -153,7 +154,7 @@ export default function EcardBuilderView() {
           {builder.state.components.length === 0 && (
             <EmptyStepState
               icon={Plus}
-              message="No components yet. Add About, Social Links, Gallery, Video, or Team."
+              message="No components yet. Add About, Social Links, Gallery, Video, Team, or WhatsApp."
             />
           )}
 
@@ -180,7 +181,7 @@ export default function EcardBuilderView() {
           <button
             type="button"
             onClick={() => setIsPickingType(true)}
-            disabled={addedTypes.length >= 5}
+            disabled={addedTypes.length >= ECARD_MAX_COMPONENTS}
             className="btn min-h-11 gap-2 rounded-field border border-dashed border-base-300 bg-base-100 text-sm text-base-content hover:bg-base-200 disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
@@ -202,17 +203,19 @@ export default function EcardBuilderView() {
         </>
       )}
 
-      <HeroEditSheet
-        open={editing?.kind === "hero"}
-        draft={builder.state.hero}
-        isSubmitting={false}
-        error={null}
-        onClose={() => setEditing(null)}
-        onSave={(hero) => {
-          builder.setState((state) => ({ ...state, hero }));
-          setEditing(null);
-        }}
-      />
+      {editing?.kind === "hero" && (
+        <HeroEditSheet
+          open
+          draft={builder.state.hero}
+          isSubmitting={false}
+          error={null}
+          onClose={() => setEditing(null)}
+          onSave={(hero) => {
+            builder.setState((state) => ({ ...state, hero }));
+            setEditing(null);
+          }}
+        />
+      )}
 
       {editingComponent?.draft.type === "ABOUT" && (
         <AboutEditSheet
