@@ -19,7 +19,6 @@ interface SocialLinksEditSheetProps {
 }
 
 const FIELDS: { name: keyof SocialLinksSheetValues; label: string }[] = [
-  { name: "whatsapp", label: "WhatsApp link" },
   { name: "website", label: "Website" },
   { name: "instagram", label: "Instagram" },
   { name: "facebook", label: "Facebook" },
@@ -42,7 +41,6 @@ export default function SocialLinksEditSheet({
   } = useForm<SocialLinksSheetValues>({
     resolver: zodResolver(socialLinksSheetSchema),
     defaultValues: {
-      whatsapp: draft.whatsapp,
       website: draft.website,
       instagram: draft.instagram,
       facebook: draft.facebook,

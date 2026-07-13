@@ -3,6 +3,7 @@ import {
   ECARD_ENDPOINT_MAX_LENGTH,
   ECARD_ENDPOINT_MIN_LENGTH,
   ECARD_ENDPOINT_REGEX,
+  ECARD_PHONE_DIAL_CODE_MAX_LENGTH,
   ECARD_PHONE_NUMBER_DIGITS_REGEX,
   ECARD_PHONE_NUMBER_MAX_DIGITS,
   ECARD_PHONE_NUMBER_MIN_DIGITS,
@@ -53,7 +54,6 @@ const urlOrEmpty = z
   .refine((value) => value === "" || /^https?:\/\//.test(value), "Enter a valid URL");
 
 export const socialLinksSheetSchema = z.object({
-  whatsapp: urlOrEmpty,
   website: urlOrEmpty,
   instagram: urlOrEmpty,
   facebook: urlOrEmpty,
@@ -69,7 +69,24 @@ export const videoSheetSchema = z.object({
     .regex(ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN, "Must be a YouTube or Vimeo embed URL"),
 });
 
+// Both fields required (unlike Hero's optional phone) — this component's
+// sole purpose is the phone number the WhatsApp link is built from.
+export const whatsappSheetSchema = z.object({
+  phoneCountryDialCode: z
+    .string()
+    .trim()
+    .min(1, "Required")
+    .max(ECARD_PHONE_DIAL_CODE_MAX_LENGTH),
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(ECARD_PHONE_NUMBER_DIGITS_REGEX, "Digits only")
+    .min(ECARD_PHONE_NUMBER_MIN_DIGITS, `Enter ${ECARD_PHONE_NUMBER_MIN_DIGITS}-${ECARD_PHONE_NUMBER_MAX_DIGITS} digits`)
+    .max(ECARD_PHONE_NUMBER_MAX_DIGITS, `Enter ${ECARD_PHONE_NUMBER_MIN_DIGITS}-${ECARD_PHONE_NUMBER_MAX_DIGITS} digits`),
+});
+
 export type HeroSheetValues = z.infer<typeof heroSheetSchema>;
 export type AboutSheetValues = z.infer<typeof aboutSheetSchema>;
 export type SocialLinksSheetValues = z.infer<typeof socialLinksSheetSchema>;
 export type VideoSheetValues = z.infer<typeof videoSheetSchema>;
+export type WhatsAppSheetValues = z.infer<typeof whatsappSheetSchema>;

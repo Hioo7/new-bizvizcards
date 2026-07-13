@@ -1,4 +1,4 @@
-import { FileText, Images, Link2, Users, Video } from "lucide-react";
+import { FileText, Images, Link2, MessageCircle, Users, Video } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { EcardComponentType } from "@app-types/ecard";
 
@@ -8,6 +8,7 @@ export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "GALLERY",
   "VIDEO",
   "TEAM",
+  "WHATSAPP",
 ];
 
 interface EcardComponentMeta {
@@ -25,7 +26,7 @@ export const ECARD_COMPONENT_META: Record<EcardComponentType, EcardComponentMeta
   SOCIAL_LINKS: {
     label: "Social Links",
     icon: Link2,
-    description: "WhatsApp, website, and social profiles.",
+    description: "Website and social profiles.",
   },
   GALLERY: {
     label: "Gallery",
@@ -42,6 +43,11 @@ export const ECARD_COMPONENT_META: Record<EcardComponentType, EcardComponentMeta
     icon: Users,
     description: "Team members from your organisation.",
   },
+  WHATSAPP: {
+    label: "WhatsApp",
+    icon: MessageCircle,
+    description: "A \"Connect on WhatsApp\" card linking to a chat.",
+  },
 };
 
 export const ECARD_TEXT_SHORT_MAX_LENGTH = 150;
@@ -56,6 +62,7 @@ export const ECARD_ENDPOINT_MIN_LENGTH = 3;
 export const ECARD_ENDPOINT_MAX_LENGTH = 80;
 export const ECARD_ENDPOINT_REGEX = /^[a-z0-9-]+$/;
 
+export const ECARD_PHONE_DIAL_CODE_MAX_LENGTH = 5;
 export const ECARD_PHONE_NUMBER_MIN_DIGITS = 7;
 export const ECARD_PHONE_NUMBER_MAX_DIGITS = 15;
 export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;

@@ -27,6 +27,7 @@ import SocialLinksEditSheet from "@features/ecards/components/SocialLinksEditShe
 import VideoEditSheet from "@features/ecards/components/VideoEditSheet";
 import GalleryEditSheet from "@features/ecards/components/GalleryEditSheet";
 import TeamEditSheet from "@features/ecards/components/TeamEditSheet";
+import WhatsAppEditSheet from "@features/ecards/components/WhatsAppEditSheet";
 import { useEcardBuilder } from "@features/ecards/hooks/useEcardBuilder";
 import { emptyDraftForType } from "@features/ecards/types/ecardBuilder.types";
 import type { EcardComponentType } from "@app-types/ecard";
@@ -294,6 +295,26 @@ export default function EcardBuilderView() {
           open
           customerId={customerId}
           draft={editingComponent.draft}
+          isSubmitting={false}
+          error={null}
+          onClose={() => setEditing(null)}
+          onSave={(draft) => {
+            builder.setState((state) => ({
+              ...state,
+              components: state.components.map((c) =>
+                c.key === editingComponent.key ? { ...c, draft } : c,
+              ),
+            }));
+            setEditing(null);
+          }}
+        />
+      )}
+
+      {editingComponent?.draft.type === "WHATSAPP" && (
+        <WhatsAppEditSheet
+          open
+          draft={editingComponent.draft}
+          heroPhone={builder.state.hero}
           isSubmitting={false}
           error={null}
           onClose={() => setEditing(null)}

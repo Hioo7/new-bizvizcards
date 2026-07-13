@@ -24,7 +24,6 @@ export interface EcardAboutComponent extends EcardComponentBase {
 
 export interface EcardSocialLinksComponent extends EcardComponentBase {
   type: "SOCIAL_LINKS";
-  whatsapp: string | null;
   website: string | null;
   instagram: string | null;
   facebook: string | null;
@@ -70,12 +69,19 @@ export interface EcardTeamComponent extends EcardComponentBase {
   members: EcardTeamMember[];
 }
 
+export interface EcardWhatsAppComponent extends EcardComponentBase {
+  type: "WHATSAPP";
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
+}
+
 export type EcardComponent =
   | EcardAboutComponent
   | EcardSocialLinksComponent
   | EcardVideoComponent
   | EcardGalleryComponent
-  | EcardTeamComponent;
+  | EcardTeamComponent
+  | EcardWhatsAppComponent;
 
 export type EcardComponentType = EcardComponent["type"];
 
@@ -130,7 +136,6 @@ export interface EcardAboutComponentPayload {
 
 export interface EcardSocialLinksComponentPayload {
   type: "SOCIAL_LINKS";
-  whatsapp?: string;
   website?: string;
   instagram?: string;
   facebook?: string;
@@ -160,12 +165,19 @@ export interface EcardTeamComponentPayload {
   members: { organisationMemberId: string }[];
 }
 
+export interface EcardWhatsAppComponentPayload {
+  type: "WHATSAPP";
+  phoneCountryDialCode: string;
+  phoneNumber: string;
+}
+
 export type EcardComponentPayload =
   | EcardAboutComponentPayload
   | EcardSocialLinksComponentPayload
   | EcardVideoComponentPayload
   | EcardGalleryComponentPayload
-  | EcardTeamComponentPayload;
+  | EcardTeamComponentPayload
+  | EcardWhatsAppComponentPayload;
 
 export interface EcardPayload {
   endpoint: string;

@@ -7,6 +7,7 @@ import { SocialLinksSection } from "@features/public-ecard/components/sections/S
 import { GallerySection } from "@features/public-ecard/components/sections/GallerySection";
 import { VideoSection } from "@features/public-ecard/components/sections/VideoSection";
 import { TeamSection } from "@features/public-ecard/components/sections/TeamSection";
+import { WhatsAppSection } from "@features/public-ecard/components/sections/WhatsAppSection";
 import type { Ecard, EcardComponent } from "@app-types/ecard";
 
 function renderComponent(component: EcardComponent) {
@@ -21,6 +22,8 @@ function renderComponent(component: EcardComponent) {
       return <VideoSection key={component.id} component={component} />;
     case "TEAM":
       return <TeamSection key={component.id} component={component} />;
+    case "WHATSAPP":
+      return <WhatsAppSection key={component.id} component={component} />;
   }
 }
 

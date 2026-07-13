@@ -53,7 +53,6 @@ function componentToDraft(component: EcardComponent): ComponentDraft {
     case "SOCIAL_LINKS":
       return {
         type: "SOCIAL_LINKS",
-        whatsapp: component.whatsapp ?? "",
         website: component.website ?? "",
         instagram: component.instagram ?? "",
         facebook: component.facebook ?? "",
@@ -83,6 +82,12 @@ function componentToDraft(component: EcardComponent): ComponentDraft {
         type: "TEAM",
         title: component.title ?? "",
         memberIds: component.members.map((member) => member.organisationMemberId),
+      };
+    case "WHATSAPP":
+      return {
+        type: "WHATSAPP",
+        phoneCountryDialCode: component.phoneCountryDialCode ?? "",
+        phoneNumber: component.phoneNumber ?? "",
       };
   }
 }
@@ -119,7 +124,6 @@ function componentDraftToPayload(
     case "SOCIAL_LINKS":
       return {
         type: "SOCIAL_LINKS",
-        whatsapp: draft.whatsapp.trim() || undefined,
         website: draft.website.trim() || undefined,
         instagram: draft.instagram.trim() || undefined,
         facebook: draft.facebook.trim() || undefined,
@@ -151,6 +155,12 @@ function componentDraftToPayload(
         members: draft.memberIds.map((organisationMemberId) => ({
           organisationMemberId,
         })),
+      };
+    case "WHATSAPP":
+      return {
+        type: "WHATSAPP",
+        phoneCountryDialCode: draft.phoneCountryDialCode.trim(),
+        phoneNumber: draft.phoneNumber.trim(),
       };
   }
   // index is only used to keep the parameter list symmetric with the

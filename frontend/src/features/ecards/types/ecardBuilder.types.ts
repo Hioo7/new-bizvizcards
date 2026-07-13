@@ -31,7 +31,6 @@ export interface AboutComponentDraft {
 
 export interface SocialLinksComponentDraft {
   type: "SOCIAL_LINKS";
-  whatsapp: string;
   website: string;
   instagram: string;
   facebook: string;
@@ -61,12 +60,19 @@ export interface TeamComponentDraft {
   memberIds: string[];
 }
 
+export interface WhatsAppComponentDraft {
+  type: "WHATSAPP";
+  phoneCountryDialCode: string;
+  phoneNumber: string;
+}
+
 export type ComponentDraft =
   | AboutComponentDraft
   | SocialLinksComponentDraft
   | VideoComponentDraft
   | GalleryComponentDraft
-  | TeamComponentDraft;
+  | TeamComponentDraft
+  | WhatsAppComponentDraft;
 
 export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft {
   switch (type) {
@@ -75,7 +81,6 @@ export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft 
     case "SOCIAL_LINKS":
       return {
         type: "SOCIAL_LINKS",
-        whatsapp: "",
         website: "",
         instagram: "",
         facebook: "",
@@ -88,6 +93,8 @@ export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft 
       return { type: "GALLERY", subGalleries: [] };
     case "TEAM":
       return { type: "TEAM", title: "", memberIds: [] };
+    case "WHATSAPP":
+      return { type: "WHATSAPP", phoneCountryDialCode: "", phoneNumber: "" };
   }
 }
 

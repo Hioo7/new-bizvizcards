@@ -5,7 +5,6 @@ import {
   InstagramIcon,
   LinkedInIcon,
   TwitterIcon,
-  WhatsAppIcon,
 } from "@components/icons/BrandIcons";
 import type { EcardSocialLinksComponent } from "@app-types/ecard";
 
@@ -14,7 +13,6 @@ interface SocialLinksSectionProps {
 }
 
 const FIELDS: { key: keyof EcardSocialLinksComponent; icon: ReactNode }[] = [
-  { key: "whatsapp", icon: <WhatsAppIcon className="w-4 h-4 text-green-600" /> },
   { key: "instagram", icon: <InstagramIcon className="w-4 h-4 text-pink-500" /> },
   { key: "facebook", icon: <FacebookIcon className="w-4 h-4 text-blue-600" /> },
   { key: "linkedIn", icon: <LinkedInIcon className="w-4 h-4 text-blue-700" /> },
