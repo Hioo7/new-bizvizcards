@@ -1,18 +1,18 @@
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ImageMediaService } from './image-media.service';
-import { ImageSource } from '../../generated/prisma/client';
+import { MediaService } from './media.service';
+import { MediaSource } from '../../generated/prisma/client';
 import type {
-  ImageStorageProvider,
-  UploadImageParams,
-} from './storage/image-storage-provider.interface';
-import type { ImageStorageProviderRegistry } from './storage/image-storage-provider-registry.provider';
+  MediaStorageProvider,
+  UploadMediaParams,
+} from './storage/media-storage-provider.interface';
+import type { MediaStorageProviderRegistry } from './storage/media-storage-provider-registry.provider';
 
-class FakeImageStorageProvider implements ImageStorageProvider {
-  uploads: UploadImageParams[] = [];
+class FakeMediaStorageProvider implements MediaStorageProvider {
+  uploads: UploadMediaParams[] = [];
   deletedKeys: string[] = [];
 
-  upload(params: UploadImageParams): Promise<void> {
+  upload(params: UploadMediaParams): Promise<void> {
     this.uploads.push(params);
     return Promise.resolve();
   }
@@ -27,10 +27,10 @@ class FakeImageStorageProvider implements ImageStorageProvider {
   }
 }
 
-describe('ImageMediaService (integration, TEST_DATABASE_URL only)', () => {
+describe('MediaService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
-  let fakeProvider: FakeImageStorageProvider;
-  let service: ImageMediaService;
+  let fakeProvider: FakeMediaStorageProvider;
+  let service: MediaService;
   let originalDatabaseUrl: string | undefined;
   const seededIds: string[] = [];
 
@@ -40,11 +40,11 @@ describe('ImageMediaService (integration, TEST_DATABASE_URL only)', () => {
 
     const appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
-    fakeProvider = new FakeImageStorageProvider();
-    const registry: ImageStorageProviderRegistry = {
-      [ImageSource.MINIO]: fakeProvider,
+    fakeProvider = new FakeMediaStorageProvider();
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: fakeProvider,
     };
-    service = new ImageMediaService(prisma, registry);
+    service = new MediaService(prisma, registry);
   });
 
   afterAll(async () => {
@@ -54,41 +54,41 @@ describe('ImageMediaService (integration, TEST_DATABASE_URL only)', () => {
 
   afterEach(async () => {
     if (seededIds.length > 0) {
-      await prisma.imageMedia.deleteMany({ where: { id: { in: seededIds } } });
+      await prisma.media.deleteMany({ where: { id: { in: seededIds } } });
       seededIds.length = 0;
     }
     fakeProvider.uploads = [];
     fakeProvider.deletedKeys = [];
   });
 
-  it('uploads to the storage provider under the given keyPrefix and persists an ImageMedia row', async () => {
-    const imageMedia = await service.upload({
+  it('uploads to the storage provider under the given keyPrefix and persists a Media row', async () => {
+    const media = await service.upload({
       buffer: Buffer.from('fake-image-bytes'),
       contentType: 'image/png',
       originalName: 'avatar.png',
       extension: 'png',
       keyPrefix: 'pfp/customer-1',
     });
-    seededIds.push(imageMedia.id);
+    seededIds.push(media.id);
 
-    expect(imageMedia.source).toBe(ImageSource.MINIO);
-    expect(imageMedia.storageKey).toBe(`pfp/customer-1/${imageMedia.id}.png`);
-    expect(imageMedia.originalName).toBe('avatar.png');
+    expect(media.source).toBe(MediaSource.MINIO);
+    expect(media.storageKey).toBe(`pfp/customer-1/${media.id}.png`);
+    expect(media.originalName).toBe('avatar.png');
     expect(fakeProvider.uploads).toHaveLength(1);
     expect(fakeProvider.uploads[0]).toEqual({
-      key: imageMedia.storageKey,
+      key: media.storageKey,
       buffer: Buffer.from('fake-image-bytes'),
       contentType: 'image/png',
     });
 
-    const persisted = await prisma.imageMedia.findUnique({
-      where: { id: imageMedia.id },
+    const persisted = await prisma.media.findUnique({
+      where: { id: media.id },
     });
     expect(persisted).not.toBeNull();
   });
 
   it('deletes from the storage provider before deleting the DB row', async () => {
-    const imageMedia = await service.upload({
+    const media = await service.upload({
       buffer: Buffer.from('fake-image-bytes'),
       contentType: 'image/png',
       originalName: 'avatar.png',
@@ -96,11 +96,11 @@ describe('ImageMediaService (integration, TEST_DATABASE_URL only)', () => {
       keyPrefix: 'pfp/customer-1',
     });
 
-    await service.delete(imageMedia.id);
+    await service.delete(media.id);
 
-    expect(fakeProvider.deletedKeys).toEqual([imageMedia.storageKey]);
-    const persisted = await prisma.imageMedia.findUnique({
-      where: { id: imageMedia.id },
+    expect(fakeProvider.deletedKeys).toEqual([media.storageKey]);
+    const persisted = await prisma.media.findUnique({
+      where: { id: media.id },
     });
     expect(persisted).toBeNull();
   });
@@ -112,19 +112,17 @@ describe('ImageMediaService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   it('resolves the public URL via the provider matching the media source', async () => {
-    const imageMedia = await service.upload({
+    const media = await service.upload({
       buffer: Buffer.from('fake-image-bytes'),
       contentType: 'image/png',
       originalName: 'avatar.png',
       extension: 'png',
       keyPrefix: 'pfp/customer-1',
     });
-    seededIds.push(imageMedia.id);
+    seededIds.push(media.id);
 
-    const url = service.getPublicUrl(imageMedia);
+    const url = service.getPublicUrl(media);
 
-    expect(url).toBe(
-      `http://localhost:9000/test-bucket/${imageMedia.storageKey}`,
-    );
+    expect(url).toBe(`http://localhost:9000/test-bucket/${media.storageKey}`);
   });
 });

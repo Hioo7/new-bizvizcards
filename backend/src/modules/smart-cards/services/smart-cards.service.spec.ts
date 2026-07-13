@@ -1,24 +1,24 @@
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { ImageMediaService } from '../../../common/media/image-media.service';
+import { MediaService } from '../../../common/media/media.service';
 import {
-  ImageSource,
+  MediaSource,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
 import type {
-  ImageStorageProvider,
-  UploadImageParams,
-} from '../../../common/media/storage/image-storage-provider.interface';
-import type { ImageStorageProviderRegistry } from '../../../common/media/storage/image-storage-provider-registry.provider';
+  MediaStorageProvider,
+  UploadMediaParams,
+} from '../../../common/media/storage/media-storage-provider.interface';
+import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
 import { SmartCardsService } from './smart-cards.service';
 import type { CreateSmartCardDto } from '../dto/create-smart-card.dto';
 
-class FakeImageStorageProvider implements ImageStorageProvider {
+class FakeMediaStorageProvider implements MediaStorageProvider {
   uploadedKeys: string[] = [];
   deletedKeys: string[] = [];
 
-  upload(params: UploadImageParams): Promise<void> {
+  upload(params: UploadMediaParams): Promise<void> {
     this.uploadedKeys.push(params.key);
     return Promise.resolve();
   }
@@ -45,7 +45,7 @@ function makeFile(name: string): Express.Multer.File {
 describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
   let appConfig: AppConfigService;
-  let fakeProvider: FakeImageStorageProvider;
+  let fakeProvider: FakeMediaStorageProvider;
   let service: SmartCardsService;
   let originalDatabaseUrl: string | undefined;
   const seededAccountIds: string[] = [];
@@ -73,12 +73,12 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   beforeEach(() => {
-    fakeProvider = new FakeImageStorageProvider();
-    const registry: ImageStorageProviderRegistry = {
-      [ImageSource.MINIO]: fakeProvider,
+    fakeProvider = new FakeMediaStorageProvider();
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: fakeProvider,
     };
-    const imageMediaService = new ImageMediaService(prisma, registry);
-    service = new SmartCardsService(prisma, imageMediaService);
+    const mediaService = new MediaService(prisma, registry);
+    service = new SmartCardsService(prisma, mediaService);
   });
 
   afterEach(async () => {
@@ -248,7 +248,7 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
       );
 
       expect(updated.profile?.logoMediaId).not.toBe(firstMediaId);
-      const oldMedia = await prisma.imageMedia.findUnique({
+      const oldMedia = await prisma.media.findUnique({
         where: { id: firstMediaId },
       });
       expect(oldMedia).toBeNull();
@@ -292,7 +292,7 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
 
       expect(updated.services).toHaveLength(1);
       expect(updated.services[0].imageMediaId).toBe(keepMediaId);
-      const dropMedia = await prisma.imageMedia.findUnique({
+      const dropMedia = await prisma.media.findUnique({
         where: { id: dropMediaId },
       });
       expect(dropMedia).toBeNull();
@@ -374,7 +374,7 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
         where: { id: created.id },
       });
       expect(cardRow).toBeNull();
-      const mediaRow = await prisma.imageMedia.findUnique({
+      const mediaRow = await prisma.media.findUnique({
         where: { id: mediaId },
       });
       expect(mediaRow).toBeNull();

@@ -1,5 +1,6 @@
 export const ECARD_MULTIPART_DATA_FIELD = "data";
 export const ECARD_HERO_PHOTO_FIELD = "heroProfilePhoto";
+export const ECARD_BROCHURE_FIELD = "brochurePdf";
 
 export function ecardGalleryImageField(
   subGalleryIndex: number,

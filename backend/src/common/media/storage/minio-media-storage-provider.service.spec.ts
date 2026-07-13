@@ -8,7 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import type { AppConfigService } from '../../config/app-config.service';
 import { buildPublicReadBucketPolicy } from '../media.constants';
-import { MinioImageStorageProvider } from './minio-image-storage-provider.service';
+import { MinioMediaStorageProvider } from './minio-media-storage-provider.service';
 
 function createAppConfig(): AppConfigService {
   return {
@@ -20,7 +20,7 @@ function createAppConfig(): AppConfigService {
   } as unknown as AppConfigService;
 }
 
-describe('MinioImageStorageProvider', () => {
+describe('MinioMediaStorageProvider', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -29,7 +29,7 @@ describe('MinioImageStorageProvider', () => {
     const sendSpy = jest
       .spyOn(S3Client.prototype, 'send')
       .mockResolvedValue({} as never);
-    const provider = new MinioImageStorageProvider(createAppConfig());
+    const provider = new MinioMediaStorageProvider(createAppConfig());
 
     await provider.upload({
       key: 'pfp/customer-1/abc.jpg',
@@ -52,7 +52,7 @@ describe('MinioImageStorageProvider', () => {
     const sendSpy = jest
       .spyOn(S3Client.prototype, 'send')
       .mockResolvedValue({} as never);
-    const provider = new MinioImageStorageProvider(createAppConfig());
+    const provider = new MinioMediaStorageProvider(createAppConfig());
 
     await provider.delete('pfp/customer-1/abc.jpg');
 
@@ -66,7 +66,7 @@ describe('MinioImageStorageProvider', () => {
   });
 
   it('builds a public URL from the bucket and key, with no network call', () => {
-    const provider = new MinioImageStorageProvider(createAppConfig());
+    const provider = new MinioMediaStorageProvider(createAppConfig());
 
     const url = provider.getPublicUrl('pfp/customer-1/abc.jpg');
 
@@ -78,7 +78,7 @@ describe('MinioImageStorageProvider', () => {
       const sendSpy = jest
         .spyOn(S3Client.prototype, 'send')
         .mockResolvedValue({} as never);
-      const provider = new MinioImageStorageProvider(createAppConfig());
+      const provider = new MinioMediaStorageProvider(createAppConfig());
 
       await provider.onModuleInit();
 
@@ -101,7 +101,7 @@ describe('MinioImageStorageProvider', () => {
         .spyOn(S3Client.prototype, 'send')
         .mockRejectedValueOnce(new Error('NotFound'))
         .mockResolvedValue({} as never);
-      const provider = new MinioImageStorageProvider(createAppConfig());
+      const provider = new MinioMediaStorageProvider(createAppConfig());
 
       await provider.onModuleInit();
 

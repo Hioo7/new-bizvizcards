@@ -6,7 +6,7 @@ export function ogPreviewFallbackDescription(title: string): string {
 
 // A card with no uploaded logo still gets a thumbnail in link previews,
 // rather than omitting og:image entirely — resolved through the same
-// ImageMediaService/storage-provider public-URL path used for real uploads.
+// MediaService/storage-provider public-URL path used for real uploads.
 export const DEFAULT_OG_IMAGE_STORAGE_KEY = 'defaults/og-preview-fallback.png';
 
 export const OG_IMAGE_WIDTH = 1200;

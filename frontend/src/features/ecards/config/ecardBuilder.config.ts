@@ -1,4 +1,12 @@
-import { FileText, Images, Link2, MessageCircle, Users, Video } from "lucide-react";
+import {
+  BookOpen,
+  FileText,
+  Images,
+  Link2,
+  MessageCircle,
+  Users,
+  Video,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { EcardComponentType } from "@app-types/ecard";
 
@@ -9,6 +17,7 @@ export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "VIDEO",
   "TEAM",
   "WHATSAPP",
+  "BROCHURE",
 ];
 
 export const ECARD_MAX_COMPONENTS = ECARD_COMPONENT_TYPES.length;
@@ -50,6 +59,11 @@ export const ECARD_COMPONENT_META: Record<EcardComponentType, EcardComponentMeta
     icon: MessageCircle,
     description: "A \"Connect on WhatsApp\" card linking to a chat.",
   },
+  BROCHURE: {
+    label: "Brochure",
+    icon: BookOpen,
+    description: "A button linking to an uploaded PDF brochure.",
+  },
 };
 
 export const ECARD_TEXT_SHORT_MAX_LENGTH = 150;
@@ -71,3 +85,6 @@ export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
 
 export const ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN =
   /^https:\/\/(www\.)?(youtube\.com\/embed\/|youtube-nocookie\.com\/embed\/|player\.vimeo\.com\/video\/)/;
+
+export const ECARD_BROCHURE_ALLOWED_MIME_TYPES = ["application/pdf"];
+export const ECARD_BROCHURE_MAX_SIZE_BYTES = 10 * 1024 * 1024;

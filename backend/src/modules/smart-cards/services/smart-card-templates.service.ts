@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ImageMediaService } from '../../../common/media/image-media.service';
+import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { SmartCardTemplateKey } from '../../../generated/prisma/client';
 
@@ -14,7 +14,7 @@ export interface SmartCardTemplateSummary {
 export class SmartCardTemplatesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly imageMediaService: ImageMediaService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async list(): Promise<SmartCardTemplateSummary[]> {
@@ -37,14 +37,14 @@ export class SmartCardTemplatesService {
     id: string;
     key: SmartCardTemplateKey;
     name: string;
-    previewMedia: Parameters<ImageMediaService['getPublicUrl']>[0] | null;
+    previewMedia: Parameters<MediaService['getPublicUrl']>[0] | null;
   }): SmartCardTemplateSummary {
     return {
       id: template.id,
       key: template.key,
       name: template.name,
       previewImageUrl: template.previewMedia
-        ? this.imageMediaService.getPublicUrl(template.previewMedia)
+        ? this.mediaService.getPublicUrl(template.previewMedia)
         : null,
     };
   }

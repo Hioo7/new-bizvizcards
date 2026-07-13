@@ -11,7 +11,7 @@ model SmartCardTemplate {
   key            SmartCardTemplateKey @unique
   name           String
   previewMediaId String?              @unique @db.Uuid
-  previewMedia   ImageMedia?          @relation(fields: [previewMediaId], references: [id], onDelete: SetNull)
+  previewMedia   Media?               @relation(fields: [previewMediaId], references: [id], onDelete: SetNull)
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
@@ -47,14 +47,14 @@ model SmartCard {
 }
 
 model SmartCardProfile {
-  smartCardId String      @id @db.Uuid
-  smartCard   SmartCard   @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  smartCardId String    @id @db.Uuid
+  smartCard   SmartCard @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
   companyName String?
   tagline     String?
   subTagline  String?
   aboutText   String?
-  logoMediaId String?     @unique @db.Uuid
-  logoMedia   ImageMedia? @relation(fields: [logoMediaId], references: [id], onDelete: SetNull)
+  logoMediaId String?   @unique @db.Uuid
+  logoMedia   Media?    @relation(fields: [logoMediaId], references: [id], onDelete: SetNull)
 
   @@map("SmartCardProfile")
 }
@@ -86,12 +86,12 @@ model SmartCardSocialMedia {
 }
 
 model SmartCardFounder {
-  smartCardId    String      @id @db.Uuid
-  smartCard      SmartCard   @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  smartCardId    String    @id @db.Uuid
+  smartCard      SmartCard @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
   name           String?
   title          String?
-  imageMediaId   String?     @unique @db.Uuid
-  image          ImageMedia? @relation(fields: [imageMediaId], references: [id], onDelete: SetNull)
+  imageMediaId   String?   @unique @db.Uuid
+  image          Media?    @relation(fields: [imageMediaId], references: [id], onDelete: SetNull)
   experience     Int?
   projects       Int?
   satisfaction   Int?
@@ -103,14 +103,14 @@ model SmartCardFounder {
 }
 
 model SmartCardService {
-  id           String      @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
-  smartCardId  String      @db.Uuid
-  smartCard    SmartCard   @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  id           String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  smartCardId  String    @db.Uuid
+  smartCard    SmartCard @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
   title        String?
   description  String?
-  imageMediaId String?     @unique @db.Uuid
-  image        ImageMedia? @relation(fields: [imageMediaId], references: [id], onDelete: SetNull)
-  order        Int         @default(0)
+  imageMediaId String?   @unique @db.Uuid
+  image        Media?    @relation(fields: [imageMediaId], references: [id], onDelete: SetNull)
+  order        Int       @default(0)
 
   @@index([smartCardId])
   @@map("SmartCardService")
@@ -147,7 +147,7 @@ model SmartCardGalleryImage {
   galleryId    String           @db.Uuid
   gallery      SmartCardGallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
   imageMediaId String           @unique @db.Uuid
-  image        ImageMedia       @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
+  image        Media            @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
   order        Int              @default(0)
 
   @@index([galleryId])

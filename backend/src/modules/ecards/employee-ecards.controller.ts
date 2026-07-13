@@ -2,9 +2,7 @@ import {
   Body,
   Controller,
   Delete,
-  FileTypeValidator,
   Get,
-  MaxFileSizeValidator,
   Param,
   ParseFilePipe,
   Patch,
@@ -27,22 +25,15 @@ import { listEcardQuerySchema } from './dto/list-ecard-query.dto';
 import type { ListEcardQueryDto } from './dto/list-ecard-query.dto';
 import { updateEcardSchema } from './dto/update-ecard.dto';
 import type { UpdateEcardDto } from './dto/update-ecard.dto';
-import {
-  ECARD_IMAGE_ALLOWED_MIME_TYPE_PATTERN,
-  ECARD_IMAGE_MAX_SIZE_BYTES,
-  ECARD_MULTIPART_DATA_FIELD,
-} from './ecards.constants';
+import { ECARD_MULTIPART_DATA_FIELD } from './ecards.constants';
 import { EcardsService } from './services/ecards.service';
-import { assertValidImageExtensions } from './utils/assert-valid-image-extensions';
+import { assertValidEcardFiles } from './utils/assert-valid-ecard-files';
 import { parseMultipartJson } from './utils/parse-multipart-json';
 
-const FILE_VALIDATION_PIPE = new ParseFilePipe({
-  validators: [
-    new MaxFileSizeValidator({ maxSize: ECARD_IMAGE_MAX_SIZE_BYTES }),
-    new FileTypeValidator({ fileType: ECARD_IMAGE_ALLOWED_MIME_TYPE_PATTERN }),
-  ],
-  fileIsRequired: false,
-});
+// Per-field mime/extension/size rules (image vs brochure PDF) are enforced
+// by assertValidEcardFiles below — a single blanket ParseFilePipe validator
+// can't express "different rules per field", so this pipe only checks shape.
+const FILE_VALIDATION_PIPE = new ParseFilePipe({ fileIsRequired: false });
 
 @Controller('api/employee/ecards')
 @UseGuards(EmployeeAuthGuard, PermissionsGuard)
@@ -72,7 +63,7 @@ export class EmployeeEcardsController {
     @UploadedFiles(FILE_VALIDATION_PIPE) files: Express.Multer.File[],
     @Body(ECARD_MULTIPART_DATA_FIELD) rawData: string,
   ) {
-    assertValidImageExtensions(files);
+    assertValidEcardFiles(files);
     const dto = parseMultipartJson<CreateEcardAsEmployeeDto>(
       createEcardAsEmployeeSchema,
       rawData,
@@ -92,7 +83,7 @@ export class EmployeeEcardsController {
     @UploadedFiles(FILE_VALIDATION_PIPE) files: Express.Multer.File[],
     @Body(ECARD_MULTIPART_DATA_FIELD) rawData: string,
   ) {
-    assertValidImageExtensions(files);
+    assertValidEcardFiles(files);
     const dto = parseMultipartJson<UpdateEcardDto>(updateEcardSchema, rawData);
     return this.ecardsService.updateById(id, dto, files);
   }

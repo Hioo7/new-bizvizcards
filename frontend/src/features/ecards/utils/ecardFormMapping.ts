@@ -1,4 +1,8 @@
-import { ECARD_HERO_PHOTO_FIELD, ecardGalleryImageField } from "@config/ecardFields";
+import {
+  ECARD_BROCHURE_FIELD,
+  ECARD_HERO_PHOTO_FIELD,
+  ecardGalleryImageField,
+} from "@config/ecardFields";
 import type {
   Ecard,
   EcardComponent,
@@ -89,6 +93,17 @@ function componentToDraft(component: EcardComponent): ComponentDraft {
         phoneCountryDialCode: component.phoneCountryDialCode ?? "",
         phoneNumber: component.phoneNumber ?? "",
       };
+    case "BROCHURE":
+      return {
+        type: "BROCHURE",
+        pdf: component.pdfMediaId
+          ? {
+              file: null,
+              existingMediaId: component.pdfMediaId,
+              existingUrl: component.pdfUrl ?? undefined,
+            }
+          : { file: null },
+      };
   }
 }
 
@@ -162,6 +177,13 @@ function componentDraftToPayload(
         phoneCountryDialCode: draft.phoneCountryDialCode.trim(),
         phoneNumber: draft.phoneNumber.trim(),
       };
+    case "BROCHURE": {
+      const pdf = buildImageSlot(draft.pdf, ECARD_BROCHURE_FIELD, files);
+      if (!pdf) {
+        throw new Error("Brochure component requires an uploaded PDF");
+      }
+      return { type: "BROCHURE", pdf };
+    }
   }
   // index is only used to keep the parameter list symmetric with the
   // caller's map(); no per-component numbering is needed in the payload.

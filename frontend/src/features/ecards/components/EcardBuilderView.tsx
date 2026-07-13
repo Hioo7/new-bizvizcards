@@ -28,6 +28,7 @@ import VideoEditSheet from "@features/ecards/components/VideoEditSheet";
 import GalleryEditSheet from "@features/ecards/components/GalleryEditSheet";
 import TeamEditSheet from "@features/ecards/components/TeamEditSheet";
 import WhatsAppEditSheet from "@features/ecards/components/WhatsAppEditSheet";
+import BrochureEditSheet from "@features/ecards/components/BrochureEditSheet";
 import { useEcardBuilder } from "@features/ecards/hooks/useEcardBuilder";
 import { ECARD_MAX_COMPONENTS } from "@features/ecards/config/ecardBuilder.config";
 import { emptyDraftForType } from "@features/ecards/types/ecardBuilder.types";
@@ -154,7 +155,7 @@ export default function EcardBuilderView() {
           {builder.state.components.length === 0 && (
             <EmptyStepState
               icon={Plus}
-              message="No components yet. Add About, Social Links, Gallery, Video, Team, or WhatsApp."
+              message="No components yet. Add About, Social Links, Gallery, Video, Team, WhatsApp, or Brochure."
             />
           )}
 
@@ -318,6 +319,25 @@ export default function EcardBuilderView() {
           open
           draft={editingComponent.draft}
           heroPhone={builder.state.hero}
+          isSubmitting={false}
+          error={null}
+          onClose={() => setEditing(null)}
+          onSave={(draft) => {
+            builder.setState((state) => ({
+              ...state,
+              components: state.components.map((c) =>
+                c.key === editingComponent.key ? { ...c, draft } : c,
+              ),
+            }));
+            setEditing(null);
+          }}
+        />
+      )}
+
+      {editingComponent?.draft.type === "BROCHURE" && (
+        <BrochureEditSheet
+          open
+          draft={editingComponent.draft}
           isSubmitting={false}
           error={null}
           onClose={() => setEditing(null)}

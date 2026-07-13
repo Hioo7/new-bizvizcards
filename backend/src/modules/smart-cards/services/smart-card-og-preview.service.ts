@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../../common/config/app-config.service';
-import { ImageMediaService } from '../../../common/media/image-media.service';
+import { MediaService } from '../../../common/media/media.service';
 import type { PublicSmartCard } from './smart-cards.service';
 import {
   ogPreviewFieldsRegistry,
@@ -25,7 +25,7 @@ function escapeHtml(value: string): string {
 @Injectable()
 export class SmartCardOgPreviewService {
   constructor(
-    private readonly imageMediaService: ImageMediaService,
+    private readonly mediaService: MediaService,
     private readonly appConfig: AppConfigService,
   ) {}
 
@@ -79,9 +79,7 @@ export class SmartCardOgPreviewService {
   }
 
   private defaultImageUrl(): string {
-    return this.imageMediaService.getPublicUrlForKey(
-      DEFAULT_OG_IMAGE_STORAGE_KEY,
-    );
+    return this.mediaService.getPublicUrlForKey(DEFAULT_OG_IMAGE_STORAGE_KEY);
   }
 
   private toAbsoluteUrl(url: string): string {

@@ -1,11 +1,11 @@
-export interface UploadImageParams {
+export interface UploadMediaParams {
   key: string;
   buffer: Buffer;
   contentType: string;
 }
 
-export interface ImageStorageProvider {
-  upload(params: UploadImageParams): Promise<void>;
+export interface MediaStorageProvider {
+  upload(params: UploadMediaParams): Promise<void>;
   delete(key: string): Promise<void>;
   getPublicUrl(key: string): string;
 }

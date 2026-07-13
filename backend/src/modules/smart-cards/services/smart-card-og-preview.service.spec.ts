@@ -1,5 +1,5 @@
 import { AppConfigService } from '../../../common/config/app-config.service';
-import type { ImageMediaService } from '../../../common/media/image-media.service';
+import type { MediaService } from '../../../common/media/media.service';
 import { SmartCardTemplateKey } from '../../../generated/prisma/client';
 import type { PublicSmartCard } from './smart-cards.service';
 import { SmartCardOgPreviewService } from './smart-card-og-preview.service';
@@ -27,15 +27,15 @@ function makeCard(
 
 describe('SmartCardOgPreviewService', () => {
   let appConfig: AppConfigService;
-  let fakeImageMediaService: ImageMediaService;
+  let fakeMediaService: MediaService;
   let service: SmartCardOgPreviewService;
 
   beforeAll(() => {
     appConfig = new AppConfigService();
-    fakeImageMediaService = {
+    fakeMediaService = {
       getPublicUrlForKey: (key: string) => `/media/test-bucket/${key}`,
-    } as ImageMediaService;
-    service = new SmartCardOgPreviewService(fakeImageMediaService, appConfig);
+    } as MediaService;
+    service = new SmartCardOgPreviewService(fakeMediaService, appConfig);
   });
 
   describe('buildFields', () => {

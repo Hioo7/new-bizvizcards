@@ -1,15 +1,15 @@
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { ImageMediaService } from '../../../common/media/image-media.service';
+import { MediaService } from '../../../common/media/media.service';
 import {
-  ImageSource,
+  MediaSource,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
-import type { ImageStorageProviderRegistry } from '../../../common/media/storage/image-storage-provider-registry.provider';
-import type { ImageStorageProvider } from '../../../common/media/storage/image-storage-provider.interface';
+import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
+import type { MediaStorageProvider } from '../../../common/media/storage/media-storage-provider.interface';
 import { SmartCardTemplatesService } from './smart-card-templates.service';
 
-class FakeImageStorageProvider implements ImageStorageProvider {
+class FakeMediaStorageProvider implements MediaStorageProvider {
   upload(): Promise<void> {
     return Promise.resolve();
   }
@@ -41,12 +41,12 @@ describe('SmartCardTemplatesService (integration, TEST_DATABASE_URL only)', () =
       });
     }
 
-    const registry: ImageStorageProviderRegistry = {
-      [ImageSource.MINIO]: new FakeImageStorageProvider(),
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: new FakeMediaStorageProvider(),
     };
     service = new SmartCardTemplatesService(
       prisma,
-      new ImageMediaService(prisma, registry),
+      new MediaService(prisma, registry),
     );
   });
 

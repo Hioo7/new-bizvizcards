@@ -13,15 +13,15 @@ import {
   buildPublicReadBucketPolicy,
 } from '../media.constants';
 import {
-  ImageStorageProvider,
-  UploadImageParams,
-} from './image-storage-provider.interface';
+  MediaStorageProvider,
+  UploadMediaParams,
+} from './media-storage-provider.interface';
 
 @Injectable()
-export class MinioImageStorageProvider
-  implements ImageStorageProvider, OnModuleInit
+export class MinioMediaStorageProvider
+  implements MediaStorageProvider, OnModuleInit
 {
-  private readonly logger = new Logger(MinioImageStorageProvider.name);
+  private readonly logger = new Logger(MinioMediaStorageProvider.name);
   private readonly client: S3Client;
   private readonly bucket: string;
 
@@ -65,7 +65,7 @@ export class MinioImageStorageProvider
     this.logger.log(`MinIO bucket "${this.bucket}" ready (public-read).`);
   }
 
-  async upload({ key, buffer, contentType }: UploadImageParams): Promise<void> {
+  async upload({ key, buffer, contentType }: UploadMediaParams): Promise<void> {
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,

@@ -66,13 +66,19 @@ export interface WhatsAppComponentDraft {
   phoneNumber: string;
 }
 
+export interface BrochureComponentDraft {
+  type: "BROCHURE";
+  pdf: ImageFieldValue;
+}
+
 export type ComponentDraft =
   | AboutComponentDraft
   | SocialLinksComponentDraft
   | VideoComponentDraft
   | GalleryComponentDraft
   | TeamComponentDraft
-  | WhatsAppComponentDraft;
+  | WhatsAppComponentDraft
+  | BrochureComponentDraft;
 
 export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft {
   switch (type) {
@@ -95,6 +101,8 @@ export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft 
       return { type: "TEAM", title: "", memberIds: [] };
     case "WHATSAPP":
       return { type: "WHATSAPP", phoneCountryDialCode: "", phoneNumber: "" };
+    case "BROCHURE":
+      return { type: "BROCHURE", pdf: emptyImageField() };
   }
 }
 

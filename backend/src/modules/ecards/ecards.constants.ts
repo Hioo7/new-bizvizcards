@@ -8,8 +8,9 @@ export const ECARD_PHONE_NUMBER_MAX_DIGITS = 15;
 export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
 
 // One instance of each ECardComponentType per card (ABOUT, SOCIAL_LINKS,
-// GALLERY, VIDEO, TEAM, WHATSAPP) — see ECardComponent.@@unique([ecardId, type]).
-export const ECARD_MAX_COMPONENTS = 6;
+// GALLERY, VIDEO, TEAM, WHATSAPP, BROCHURE) — see
+// ECardComponent.@@unique([ecardId, type]).
+export const ECARD_MAX_COMPONENTS = 7;
 export const ECARD_MAX_SUB_GALLERIES = 10;
 export const ECARD_MAX_GALLERY_IMAGES = 30;
 export const ECARD_MAX_TEAM_MEMBERS = 50;
@@ -25,9 +26,14 @@ export const ECARD_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 export const ECARD_IMAGE_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 export const ECARD_IMAGE_ALLOWED_MIME_TYPE_PATTERN = /^image\/(jpeg|png|webp)$/;
 
+export const ECARD_BROCHURE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+export const ECARD_BROCHURE_ALLOWED_EXTENSIONS = ['pdf'];
+export const ECARD_BROCHURE_ALLOWED_MIME_TYPE_PATTERN = /^application\/pdf$/;
+
 export const ECARD_MULTIPART_DATA_FIELD = 'data';
 export const ECARD_HERO_PHOTO_FIELD = 'heroProfilePhoto';
 export const ECARD_GALLERY_IMAGE_FIELD_PREFIX = 'galleryImage_';
+export const ECARD_BROCHURE_FIELD = 'brochurePdf';
 
 export function ecardGalleryImageField(
   subGalleryIndex: number,

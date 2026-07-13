@@ -1,14 +1,14 @@
 // Standalone script (dev tooling, not app runtime) — uploads the default
 // Open Graph fallback image (shown in link previews for cards with no
 // uploaded logo) to the well-known storage key every SmartCardOgPreviewService
-// instance resolves via ImageMediaService.getPublicUrlForKey(). Not tied to
-// any ImageMedia DB row — it's a static asset, seeded once, safe to re-run.
+// instance resolves via MediaService.getPublicUrlForKey(). Not tied to
+// any Media DB row — it's a static asset, seeded once, safe to re-run.
 // Run via `npm run seed:og-preview-image`.
 import 'dotenv/config';
 import { readFileSync, existsSync } from 'fs';
 import { join, extname } from 'path';
 import { AppConfigService } from '../../src/common/config/app-config.service';
-import { MinioImageStorageProvider } from '../../src/common/media/storage/minio-image-storage-provider.service';
+import { MinioMediaStorageProvider } from '../../src/common/media/storage/minio-media-storage-provider.service';
 import { DEFAULT_OG_IMAGE_STORAGE_KEY } from '../../src/modules/smart-cards/smart-card-og-preview.constants';
 
 const SOURCE_IMAGE_PATH = join(
@@ -40,7 +40,7 @@ async function main() {
   }
 
   const appConfig = new AppConfigService();
-  const provider = new MinioImageStorageProvider(appConfig);
+  const provider = new MinioMediaStorageProvider(appConfig);
   await provider.onModuleInit();
 
   await provider.upload({

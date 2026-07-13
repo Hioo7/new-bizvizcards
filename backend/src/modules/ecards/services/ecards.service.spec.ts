@@ -1,20 +1,20 @@
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
-import { ImageMediaService } from '../../../common/media/image-media.service';
-import type { ImageStorageProviderRegistry } from '../../../common/media/storage/image-storage-provider-registry.provider';
+import { MediaService } from '../../../common/media/media.service';
+import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
 import type {
-  ImageStorageProvider,
-  UploadImageParams,
-} from '../../../common/media/storage/image-storage-provider.interface';
+  MediaStorageProvider,
+  UploadMediaParams,
+} from '../../../common/media/storage/media-storage-provider.interface';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { ImageSource } from '../../../generated/prisma/client';
+import { MediaSource } from '../../../generated/prisma/client';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
 import { EcardsService } from './ecards.service';
 
-class FakeImageStorageProvider implements ImageStorageProvider {
+class FakeMediaStorageProvider implements MediaStorageProvider {
   deletedKeys: string[] = [];
 
-  upload(params: UploadImageParams): Promise<void> {
+  upload(params: UploadMediaParams): Promise<void> {
     void params;
     return Promise.resolve();
   }
@@ -42,10 +42,23 @@ function makeFile(
   } as Express.Multer.File;
 }
 
+function makePdfFile(
+  fieldname: string,
+  content = 'fake-pdf-bytes',
+): Express.Multer.File {
+  return {
+    fieldname,
+    originalname: 'brochure.pdf',
+    mimetype: 'application/pdf',
+    buffer: Buffer.from(content),
+    size: content.length,
+  } as Express.Multer.File;
+}
+
 describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
-  let fakeProvider: FakeImageStorageProvider;
-  let imageMediaService: ImageMediaService;
+  let fakeProvider: FakeMediaStorageProvider;
+  let mediaService: MediaService;
   let organisationsService: OrganisationsService;
   let service: EcardsService;
   let originalDatabaseUrl: string | undefined;
@@ -68,12 +81,12 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   beforeEach(() => {
-    fakeProvider = new FakeImageStorageProvider();
-    const registry: ImageStorageProviderRegistry = {
-      [ImageSource.MINIO]: fakeProvider,
+    fakeProvider = new FakeMediaStorageProvider();
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: fakeProvider,
     };
-    imageMediaService = new ImageMediaService(prisma, registry);
-    service = new EcardsService(prisma, imageMediaService);
+    mediaService = new MediaService(prisma, registry);
+    service = new EcardsService(prisma, mediaService);
   });
 
   afterEach(async () => {
@@ -180,15 +193,29 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               phoneCountryDialCode: '91',
               phoneNumber: '9123456780',
             },
+            {
+              type: 'BROCHURE',
+              pdf: { action: 'upload' },
+            },
           ],
         },
-        [makeFile('heroProfilePhoto'), makeFile('galleryImage_0_0')],
+        [
+          makeFile('heroProfilePhoto'),
+          makeFile('galleryImage_0_0'),
+          makePdfFile('brochurePdf'),
+        ],
       );
 
       expect(created.endpoint).toMatch(/^e2e-/);
       expect(created.hero.name).toBe('Jane Doe');
       expect(created.hero.profilePhotoUrl).toContain('/media/test-bucket/');
-      expect(created.components).toHaveLength(6);
+      expect(created.components).toHaveLength(7);
+
+      const brochure = created.components.find((c) => c.type === 'BROCHURE');
+      expect(brochure).toMatchObject({
+        fileName: 'brochure.pdf',
+      });
+      expect(brochure?.pdfUrl).toContain('/media/test-bucket/');
 
       const whatsapp = created.components.find((c) => c.type === 'WHATSAPP');
       expect(whatsapp).toMatchObject({
@@ -364,7 +391,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const createdGallery = created.components.find(
         (c) => c.type === 'GALLERY',
       );
-      const keptImageMediaId = createdGallery?.subGalleries[0].images[0]
+      const keptMediaId = createdGallery?.subGalleries[0].images[0]
         .imageMediaId as string;
 
       const updated = await service.updateByCustomerId(
@@ -381,7 +408,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               type: 'GALLERY',
               subGalleries: [
                 {
-                  images: [{ action: 'keep', mediaId: keptImageMediaId }],
+                  images: [{ action: 'keep', mediaId: keptMediaId }],
                 },
               ],
             },
@@ -399,19 +426,106 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         (c) => c.type === 'GALLERY',
       );
       expect(updatedGallery?.subGalleries[0].images[0].imageMediaId).toBe(
-        keptImageMediaId,
+        keptMediaId,
       );
       expect(updated.hero.profilePhotoMediaId).not.toBe(originalHeroMediaId);
       expect(fakeProvider.deletedKeys.length).toBeGreaterThan(0);
 
-      // the replaced hero photo's ImageMedia row is gone
+      // the replaced hero photo's Media row is gone
       await expect(
-        prisma.imageMedia.findUnique({ where: { id: originalHeroMediaId } }),
+        prisma.media.findUnique({ where: { id: originalHeroMediaId } }),
       ).resolves.toBeNull();
       // the kept gallery image's row survives
       await expect(
-        prisma.imageMedia.findUnique({ where: { id: keptImageMediaId } }),
+        prisma.media.findUnique({ where: { id: keptMediaId } }),
       ).resolves.not.toBeNull();
+    });
+
+    it('keeps the same brochure PDF on update when the slot action is "keep"', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `brochure-keep-${randomUUID()}`,
+          components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
+        },
+        [makePdfFile('brochurePdf')],
+      );
+      const brochureMediaId = created.components.find(
+        (c) => c.type === 'BROCHURE',
+      )?.pdfMediaId as string;
+
+      const updated = await service.updateByCustomerId(
+        customer.id,
+        {
+          endpoint: created.endpoint,
+          components: [
+            {
+              type: 'BROCHURE',
+              pdf: { action: 'keep', mediaId: brochureMediaId },
+            },
+          ],
+        },
+        [],
+      );
+
+      const updatedBrochure = updated.components.find(
+        (c) => c.type === 'BROCHURE',
+      );
+      expect(updatedBrochure?.pdfMediaId).toBe(brochureMediaId);
+      expect(fakeProvider.deletedKeys).toHaveLength(0);
+    });
+
+    it('replaces the brochure PDF on update and orphans the old one', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `brochure-replace-${randomUUID()}`,
+          components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
+        },
+        [makePdfFile('brochurePdf')],
+      );
+      const originalMediaId = created.components.find(
+        (c) => c.type === 'BROCHURE',
+      )?.pdfMediaId as string;
+
+      const updated = await service.updateByCustomerId(
+        customer.id,
+        {
+          endpoint: created.endpoint,
+          components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
+        },
+        [makePdfFile('brochurePdf')],
+      );
+
+      const updatedMediaId = updated.components.find(
+        (c) => c.type === 'BROCHURE',
+      )?.pdfMediaId;
+      expect(updatedMediaId).not.toBe(originalMediaId);
+      await expect(
+        prisma.media.findUnique({ where: { id: originalMediaId } }),
+      ).resolves.toBeNull();
+    });
+
+    it('rejects a BROCHURE upload slot whose file is missing from the request', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        { endpoint: `brochure-missing-${randomUUID()}`, components: [] },
+        [],
+      );
+
+      await expect(
+        service.updateByCustomerId(
+          customer.id,
+          {
+            endpoint: created.endpoint,
+            components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
+          },
+          [],
+        ),
+      ).rejects.toThrow('Missing uploaded file for field "brochurePdf"');
     });
 
     it('rejects a "keep" slot referencing a mediaId that does not belong to this card', async () => {
@@ -473,7 +587,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         prisma.eCard.findUnique({ where: { customerId: customer.id } }),
       ).resolves.toBeNull();
       await expect(
-        prisma.imageMedia.findUnique({ where: { id: mediaId } }),
+        prisma.media.findUnique({ where: { id: mediaId } }),
       ).resolves.toBeNull();
     });
   });

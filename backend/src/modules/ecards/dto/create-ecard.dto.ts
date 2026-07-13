@@ -3,6 +3,7 @@ import { createImageSlotSchema } from '../../../common/validators/image-slot.dto
 import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
 import { ECARD_MAX_COMPONENTS } from '../ecards.constants';
 import { ecardAboutComponentSchema } from './components/about.dto';
+import { createEcardBrochureComponentSchema } from './components/brochure.dto';
 import { createEcardGalleryComponentSchema } from './components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from './components/social-links.dto';
 import { ecardTeamComponentSchema } from './components/team-member-pick.dto';
@@ -17,6 +18,7 @@ const createEcardComponentSchema = z.discriminatedUnion('type', [
   ecardVideoComponentSchema,
   ecardTeamComponentSchema,
   ecardWhatsAppComponentSchema,
+  createEcardBrochureComponentSchema,
 ]);
 
 const createEcardShape = {

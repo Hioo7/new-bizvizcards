@@ -5,6 +5,7 @@ enum ECardComponentType {
   VIDEO
   TEAM
   WHATSAPP
+  BROCHURE
 
   @@map("ECardComponentType")
 }
@@ -18,8 +19,8 @@ model ECard {
   createdByEmployee   Employee? @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
 
   heroCompanyName         String?
-  heroProfilePhotoMediaId String?     @unique @db.Uuid
-  heroProfilePhoto        ImageMedia? @relation(fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
+  heroProfilePhotoMediaId String? @unique @db.Uuid
+  heroProfilePhoto        Media?  @relation(fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
 
   phoneCountryDialCode     String?
   phoneNumber              String?
@@ -50,6 +51,7 @@ model ECardComponent {
   video       ECardVideoComponent?
   team        ECardTeamComponent?
   whatsapp    ECardWhatsAppComponent?
+  brochure    ECardBrochureComponent?
 
   @@unique([ecardId, type])
   @@index([ecardId, order])
@@ -128,11 +130,21 @@ model ECardGalleryImage {
   subGalleryId String          @db.Uuid
   subGallery   ECardSubGallery @relation(fields: [subGalleryId], references: [id], onDelete: Cascade)
   imageMediaId String          @unique @db.Uuid
-  image        ImageMedia      @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
+  image        Media           @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
   order        Int             @default(0)
 
   @@index([subGalleryId])
   @@map("ECardGalleryImage")
+}
+
+model ECardBrochureComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  pdfMediaId String @unique @db.Uuid
+  pdf        Media  @relation(fields: [pdfMediaId], references: [id], onDelete: Restrict)
+
+  @@map("ECardBrochureComponent")
 }
 
 model ECardTeamComponent {

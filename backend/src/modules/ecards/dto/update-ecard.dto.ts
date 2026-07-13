@@ -3,6 +3,7 @@ import { updateImageSlotSchema } from '../../../common/validators/image-slot.dto
 import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
 import { ECARD_MAX_COMPONENTS } from '../ecards.constants';
 import { ecardAboutComponentSchema } from './components/about.dto';
+import { updateEcardBrochureComponentSchema } from './components/brochure.dto';
 import { updateEcardGalleryComponentSchema } from './components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from './components/social-links.dto';
 import { ecardTeamComponentSchema } from './components/team-member-pick.dto';
@@ -17,6 +18,7 @@ const updateEcardComponentSchema = z.discriminatedUnion('type', [
   ecardVideoComponentSchema,
   ecardTeamComponentSchema,
   ecardWhatsAppComponentSchema,
+  updateEcardBrochureComponentSchema,
 ]);
 
 // Full-replace PATCH: every save resends the entire desired state (hero

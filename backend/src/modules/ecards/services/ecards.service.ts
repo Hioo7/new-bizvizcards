@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ImageMediaService } from '../../../common/media/image-media.service';
+import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { ECardComponentType } from '../../../generated/prisma/client';
 import type {
@@ -22,6 +22,7 @@ import type {
   UpdateEcardDto,
 } from '../dto/update-ecard.dto';
 import {
+  ECARD_BROCHURE_FIELD,
   ECARD_HERO_PHOTO_FIELD,
   ECARD_LIST_DEFAULT_PAGE,
   ECARD_LIST_DEFAULT_PAGE_SIZE,
@@ -39,6 +40,7 @@ const FULL_INCLUDE = {
       socialLinks: true,
       video: true,
       whatsapp: true,
+      brochure: { include: { pdf: true } },
       gallery: {
         include: {
           subGalleries: {
@@ -156,19 +158,27 @@ export interface EcardWhatsAppComponentResponse extends EcardComponentResponseBa
   phoneNumber: string | null;
 }
 
+export interface EcardBrochureComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.BROCHURE;
+  pdfMediaId: string | null;
+  pdfUrl: string | null;
+  fileName: string | null;
+}
+
 export type EcardComponentResponse =
   | EcardAboutComponentResponse
   | EcardSocialLinksComponentResponse
   | EcardVideoComponentResponse
   | EcardGalleryComponentResponse
   | EcardTeamComponentResponse
-  | EcardWhatsAppComponentResponse;
+  | EcardWhatsAppComponentResponse
+  | EcardBrochureComponentResponse;
 
 @Injectable()
 export class EcardsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly imageMediaService: ImageMediaService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async getByCustomerId(customerId: string) {
@@ -328,6 +338,15 @@ export class EcardsService {
       fileMap,
       keyPrefix,
     );
+    const brochureComponent = dto.components.find(
+      (component) => component.type === 'BROCHURE',
+    );
+    const brochureMediaId = await this.resolveUploadSlot(
+      brochureComponent?.pdf,
+      ECARD_BROCHURE_FIELD,
+      fileMap,
+      `${keyPrefix}/brochure`,
+    );
 
     await this.prisma.$transaction(async (tx) => {
       if (heroMediaId) {
@@ -351,6 +370,7 @@ export class EcardsService {
           componentRow.id,
           component,
           galleryMediaIds,
+          brochureMediaId,
         );
       }
     });
@@ -394,9 +414,19 @@ export class EcardsService {
       keyPrefix,
       existingMediaIds,
     );
+    const brochureComponent = dto.components.find(
+      (component) => component.type === 'BROCHURE',
+    );
+    const brochureMediaId = await this.resolveUpdateSlot(
+      brochureComponent?.pdf,
+      ECARD_BROCHURE_FIELD,
+      fileMap,
+      `${keyPrefix}/brochure`,
+      existingMediaIds,
+    );
 
     const newMediaIds = new Set(
-      [heroMediaId, ...galleryMediaIds.flat()].filter(
+      [heroMediaId, brochureMediaId, ...galleryMediaIds.flat()].filter(
         (mediaId): mediaId is string => Boolean(mediaId),
       ),
     );
@@ -435,12 +465,13 @@ export class EcardsService {
           componentRow.id,
           component,
           galleryMediaIds,
+          brochureMediaId,
         );
       }
     });
 
     await Promise.allSettled(
-      orphanedMediaIds.map((mediaId) => this.imageMediaService.delete(mediaId)),
+      orphanedMediaIds.map((mediaId) => this.mediaService.delete(mediaId)),
     );
 
     return this.getById(existing.id);
@@ -450,7 +481,7 @@ export class EcardsService {
     const mediaIds = this.collectMediaIds(existing);
     await this.prisma.eCard.delete({ where: { id: existing.id } });
     await Promise.allSettled(
-      mediaIds.map((mediaId) => this.imageMediaService.delete(mediaId)),
+      mediaIds.map((mediaId) => this.mediaService.delete(mediaId)),
     );
   }
 
@@ -461,6 +492,7 @@ export class EcardsService {
     ecardComponentId: string,
     component: EcardComponentInputDto | UpdateEcardComponentInputDto,
     galleryMediaIds: (string | undefined)[][],
+    brochureMediaId: string | undefined,
   ): Promise<void> {
     switch (component.type) {
       case 'ABOUT':
@@ -550,6 +582,16 @@ export class EcardsService {
         }
         return;
       }
+      case 'BROCHURE':
+        if (!brochureMediaId) {
+          throw new BadRequestException(
+            'Missing uploaded PDF for brochure component',
+          );
+        }
+        await tx.eCardBrochureComponent.create({
+          data: { ecardComponentId, pdfMediaId: brochureMediaId },
+        });
+        return;
     }
   }
 
@@ -632,7 +674,7 @@ export class EcardsService {
         `Missing uploaded file for field "${fieldName}"`,
       );
     }
-    const media = await this.imageMediaService.upload({
+    const media = await this.mediaService.upload({
       buffer: file.buffer,
       contentType: file.mimetype,
       originalName: file.originalname,
@@ -756,6 +798,7 @@ export class EcardsService {
             subGallery.images.map((image) => image.imageMediaId),
           ) ?? [],
       ),
+      ...card.components.map((component) => component.brochure?.pdfMediaId),
     ];
     return ids.filter((id): id is string => Boolean(id));
   }
@@ -774,7 +817,7 @@ export class EcardsService {
         companyName: card.heroCompanyName,
         profilePhotoMediaId: card.heroProfilePhotoMediaId,
         profilePhotoUrl: card.heroProfilePhoto
-          ? this.imageMediaService.getPublicUrl(card.heroProfilePhoto)
+          ? this.mediaService.getPublicUrl(card.heroProfilePhoto)
           : null,
         phoneCountryDialCode: card.phoneCountryDialCode,
         phoneNumber: card.phoneNumber,
@@ -839,7 +882,7 @@ export class EcardsService {
               title: subGallery.title,
               images: subGallery.images.map((image) => ({
                 imageMediaId: image.imageMediaId,
-                imageUrl: this.imageMediaService.getPublicUrl(image.image),
+                imageUrl: this.mediaService.getPublicUrl(image.image),
               })),
             }),
           ),
@@ -853,6 +896,16 @@ export class EcardsService {
             this.teamMemberToResponse(member),
           ),
         };
+      case ECardComponentType.BROCHURE:
+        return {
+          ...base,
+          type: ECardComponentType.BROCHURE,
+          pdfMediaId: component.brochure?.pdfMediaId ?? null,
+          pdfUrl: component.brochure?.pdf
+            ? this.mediaService.getPublicUrl(component.brochure.pdf)
+            : null,
+          fileName: component.brochure?.pdf?.originalName ?? null,
+        };
     }
   }
 
@@ -865,7 +918,7 @@ export class EcardsService {
       name: customer.account.name,
       email: customer.account.email,
       photoUrl: customer.pfpMedia
-        ? this.imageMediaService.getPublicUrl(customer.pfpMedia)
+        ? this.mediaService.getPublicUrl(customer.pfpMedia)
         : null,
       phoneCountryDialCode: customer.ecard?.phoneCountryDialCode ?? null,
       phoneNumber: customer.ecard?.phoneNumber ?? null,

@@ -75,13 +75,21 @@ export interface EcardWhatsAppComponent extends EcardComponentBase {
   phoneNumber: string | null;
 }
 
+export interface EcardBrochureComponent extends EcardComponentBase {
+  type: "BROCHURE";
+  pdfMediaId: string | null;
+  pdfUrl: string | null;
+  fileName: string | null;
+}
+
 export type EcardComponent =
   | EcardAboutComponent
   | EcardSocialLinksComponent
   | EcardVideoComponent
   | EcardGalleryComponent
   | EcardTeamComponent
-  | EcardWhatsAppComponent;
+  | EcardWhatsAppComponent
+  | EcardBrochureComponent;
 
 export type EcardComponentType = EcardComponent["type"];
 
@@ -121,7 +129,7 @@ export interface OrganisationMemberSummary {
 
 /** Mirrors the backend's discriminated image-slot DTO — 'upload' expects a
  * same-request file under the slot's positional field name, 'keep' points
- * back at an already-uploaded ImageMedia id. */
+ * back at an already-uploaded Media id. */
 export type ImageSlotPayload =
   | { action: "upload" }
   | { action: "keep"; mediaId: string };
@@ -171,13 +179,19 @@ export interface EcardWhatsAppComponentPayload {
   phoneNumber: string;
 }
 
+export interface EcardBrochureComponentPayload {
+  type: "BROCHURE";
+  pdf: ImageSlotPayload;
+}
+
 export type EcardComponentPayload =
   | EcardAboutComponentPayload
   | EcardSocialLinksComponentPayload
   | EcardVideoComponentPayload
   | EcardGalleryComponentPayload
   | EcardTeamComponentPayload
-  | EcardWhatsAppComponentPayload;
+  | EcardWhatsAppComponentPayload
+  | EcardBrochureComponentPayload;
 
 export interface EcardPayload {
   endpoint: string;

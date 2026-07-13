@@ -1,12 +1,12 @@
-enum ImageSource {
+enum MediaSource {
   MINIO
 
-  @@map("ImageSource")
+  @@map("MediaSource")
 }
 
-model ImageMedia {
+model Media {
   id           String      @id @db.Uuid
-  source       ImageSource
+  source       MediaSource
   storageKey   String
   originalName String
   extension    String
@@ -22,6 +22,7 @@ model ImageMedia {
 
   ecard             ECard?
   ecardGalleryImage ECardGalleryImage?
+  ecardBrochure     ECardBrochureComponent?
 
-  @@map("ImageMedia")
+  @@map("Media")
 }

@@ -3,7 +3,7 @@ model Customer {
   accountId  String          @unique @db.Uuid
   account    CustomerAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   pfpMediaId String?         @unique @db.Uuid
-  pfpMedia   ImageMedia?     @relation(fields: [pfpMediaId], references: [id], onDelete: SetNull)
+  pfpMedia   Media?          @relation(fields: [pfpMediaId], references: [id], onDelete: SetNull)
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
 

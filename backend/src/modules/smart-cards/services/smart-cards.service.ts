@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { ImageMediaService } from '../../../common/media/image-media.service';
+import { MediaService } from '../../../common/media/media.service';
 import { SmartCardTemplateKey } from '../../../generated/prisma/client';
 import {
   SMART_CARD_STORAGE_KEY_PREFIX,
@@ -58,7 +58,7 @@ const PUBLIC_INCLUDE = {
 export class SmartCardsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly imageMediaService: ImageMediaService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async list(templateKey: SmartCardTemplateKey, query: ListSmartCardQueryDto) {
@@ -449,7 +449,7 @@ export class SmartCardsService {
     });
 
     await Promise.allSettled(
-      orphanedMediaIds.map((mediaId) => this.imageMediaService.delete(mediaId)),
+      orphanedMediaIds.map((mediaId) => this.mediaService.delete(mediaId)),
     );
 
     return this.getById(templateKey, existing.id);
@@ -461,7 +461,7 @@ export class SmartCardsService {
 
     await this.prisma.smartCard.delete({ where: { id: existing.id } });
     await Promise.allSettled(
-      mediaIds.map((mediaId) => this.imageMediaService.delete(mediaId)),
+      mediaIds.map((mediaId) => this.mediaService.delete(mediaId)),
     );
 
     return { success: true };
@@ -542,7 +542,7 @@ export class SmartCardsService {
         `Missing uploaded file for field "${fieldName}"`,
       );
     }
-    const media = await this.imageMediaService.upload({
+    const media = await this.mediaService.upload({
       buffer: file.buffer,
       contentType: file.mimetype,
       originalName: file.originalname,
@@ -613,7 +613,7 @@ export class SmartCardsService {
             aboutText: card.profile.aboutText,
             logoMediaId: card.profile.logoMediaId,
             logoUrl: card.profile.logoMedia
-              ? this.imageMediaService.getPublicUrl(card.profile.logoMedia)
+              ? this.mediaService.getPublicUrl(card.profile.logoMedia)
               : null,
           }
         : null,
@@ -649,7 +649,7 @@ export class SmartCardsService {
             quote: card.founder.quote,
             imageMediaId: card.founder.imageMediaId,
             imageUrl: card.founder.image
-              ? this.imageMediaService.getPublicUrl(card.founder.image)
+              ? this.mediaService.getPublicUrl(card.founder.image)
               : null,
           }
         : null,
@@ -658,7 +658,7 @@ export class SmartCardsService {
         description: service.description,
         imageMediaId: service.imageMediaId,
         imageUrl: service.image
-          ? this.imageMediaService.getPublicUrl(service.image)
+          ? this.mediaService.getPublicUrl(service.image)
           : null,
       })),
       testimonials: card.testimonials.map((testimonial) => ({
@@ -670,7 +670,7 @@ export class SmartCardsService {
         title: gallery.title,
         images: gallery.images.map((image) => ({
           imageMediaId: image.imageMediaId,
-          imageUrl: this.imageMediaService.getPublicUrl(image.image),
+          imageUrl: this.mediaService.getPublicUrl(image.image),
         })),
       })),
     };

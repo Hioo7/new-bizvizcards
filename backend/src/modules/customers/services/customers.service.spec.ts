@@ -1,20 +1,20 @@
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { ImageMediaService } from '../../../common/media/image-media.service';
-import { ImageSource } from '../../../generated/prisma/client';
+import { MediaService } from '../../../common/media/media.service';
+import { MediaSource } from '../../../generated/prisma/client';
 import type {
-  ImageStorageProvider,
-  UploadImageParams,
-} from '../../../common/media/storage/image-storage-provider.interface';
-import type { ImageStorageProviderRegistry } from '../../../common/media/storage/image-storage-provider-registry.provider';
+  MediaStorageProvider,
+  UploadMediaParams,
+} from '../../../common/media/storage/media-storage-provider.interface';
+import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
 import { CustomersService } from './customers.service';
 
-class FakeImageStorageProvider implements ImageStorageProvider {
+class FakeMediaStorageProvider implements MediaStorageProvider {
   uploadedKeys: string[] = [];
   deletedKeys: string[] = [];
 
-  upload(params: UploadImageParams): Promise<void> {
+  upload(params: UploadMediaParams): Promise<void> {
     this.uploadedKeys.push(params.key);
     return Promise.resolve();
   }
@@ -32,7 +32,7 @@ class FakeImageStorageProvider implements ImageStorageProvider {
 describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
   let appConfig: AppConfigService;
-  let fakeProvider: FakeImageStorageProvider;
+  let fakeProvider: FakeMediaStorageProvider;
   let service: CustomersService;
   let originalDatabaseUrl: string | undefined;
   const seededAccountIds: string[] = [];
@@ -51,17 +51,17 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   beforeEach(() => {
-    fakeProvider = new FakeImageStorageProvider();
-    const registry: ImageStorageProviderRegistry = {
-      [ImageSource.MINIO]: fakeProvider,
+    fakeProvider = new FakeMediaStorageProvider();
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: fakeProvider,
     };
-    const imageMediaService = new ImageMediaService(prisma, registry);
-    service = new CustomersService(prisma, imageMediaService);
+    const mediaService = new MediaService(prisma, registry);
+    service = new CustomersService(prisma, mediaService);
   });
 
   afterEach(async () => {
     if (seededAccountIds.length > 0) {
-      // ImageMedia rows are unlinked/deleted by the service under test as
+      // Media rows are unlinked/deleted by the service under test as
       // part of each flow; deleting the account cascades the Customer row.
       await prisma.customerAccount.deleteMany({
         where: { id: { in: seededAccountIds } },
@@ -103,7 +103,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     expect(afterFirstUpload.customer.pfpMediaId).not.toBeNull();
     expect(fakeProvider.deletedKeys).toHaveLength(0);
     const firstMediaId = afterFirstUpload.customer.pfpMediaId as string;
-    const firstMediaRow = await prisma.imageMedia.findUniqueOrThrow({
+    const firstMediaRow = await prisma.media.findUniqueOrThrow({
       where: { id: firstMediaId },
     });
     expect(firstMediaRow.storageKey).toBe(
@@ -123,7 +123,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     expect(afterSecondUpload.customer.pfpMediaId).not.toBe(firstMediaId);
     // The old media's row is gone (deleted after the new one was linked) and
     // its storage key was deleted from the provider.
-    const oldMediaRow = await prisma.imageMedia.findUnique({
+    const oldMediaRow = await prisma.media.findUnique({
       where: { id: firstMediaId },
     });
     expect(oldMediaRow).toBeNull();
@@ -152,7 +152,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     const result = await service.removeProfilePicture(customer.id);
 
     expect(result.pfpMediaId).toBeNull();
-    const mediaRow = await prisma.imageMedia.findUnique({
+    const mediaRow = await prisma.media.findUnique({
       where: { id: mediaId },
     });
     expect(mediaRow).toBeNull();

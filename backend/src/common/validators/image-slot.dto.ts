@@ -8,7 +8,7 @@ export const createImageSlotSchema = z
   .object({ action: z.literal('upload') })
   .strict();
 
-// Update: additionally allows referencing an existing ImageMedia row to keep
+// Update: additionally allows referencing an existing Media row to keep
 // unchanged. The service (not the schema) verifies the mediaId actually
 // belongs to this card's current tree before trusting it — never trust a
 // client-supplied id blindly.

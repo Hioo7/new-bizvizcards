@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ImageMediaService } from '../../../common/media/image-media.service';
+import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CustomerModel } from '../../../generated/prisma/models';
 import {
@@ -39,7 +39,7 @@ export interface CustomerListResult {
 export class CustomersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly imageMediaService: ImageMediaService,
+    private readonly mediaService: MediaService,
   ) {}
 
   getByAccountId(accountId: string): Promise<CustomerModel> {
@@ -78,7 +78,7 @@ export class CustomersService {
         name: customer.account.name,
         email: customer.account.email,
         pfpUrl: customer.pfpMedia
-          ? this.imageMediaService.getPublicUrl(customer.pfpMedia)
+          ? this.mediaService.getPublicUrl(customer.pfpMedia)
           : null,
       })),
       total,
@@ -95,11 +95,11 @@ export class CustomersService {
       where: { id: customerId },
     });
 
-    const newMedia = await this.imageMediaService.upload({
+    const newMedia = await this.mediaService.upload({
       ...upload,
       keyPrefix: `${PFP_STORAGE_KEY_PREFIX}/${customerId}`,
     });
-    const pfpUrl = this.imageMediaService.getPublicUrl(newMedia);
+    const pfpUrl = this.mediaService.getPublicUrl(newMedia);
 
     const updated = await this.prisma.customer.update({
       where: { id: customerId },
@@ -107,7 +107,7 @@ export class CustomersService {
     });
 
     if (existing.pfpMediaId) {
-      await this.imageMediaService.delete(existing.pfpMediaId);
+      await this.mediaService.delete(existing.pfpMediaId);
     }
 
     return { customer: updated, pfpUrl };
@@ -127,7 +127,7 @@ export class CustomersService {
       data: { pfpMediaId: null },
     });
 
-    await this.imageMediaService.delete(existing.pfpMediaId);
+    await this.mediaService.delete(existing.pfpMediaId);
 
     return updated;
   }
