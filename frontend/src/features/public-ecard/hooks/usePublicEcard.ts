@@ -4,12 +4,14 @@ import type { Ecard } from "@app-types/ecard";
 
 export interface UsePublicEcardResult {
   card: Ecard | null;
+  viewEventId: string | null;
   isLoading: boolean;
   error: string | null;
 }
 
 export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResult {
   const [card, setCard] = useState<Ecard | null>(null);
+  const [viewEventId, setViewEventId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +24,10 @@ export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResu
       setError(null);
       try {
         const result = await getPublicEcard(endpoint as string);
-        if (!cancelled) setCard(result);
+        if (!cancelled) {
+          setCard(result.card);
+          setViewEventId(result.viewEventId);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "E-card not found.");
@@ -38,5 +43,5 @@ export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResu
     };
   }, [endpoint]);
 
-  return { card, isLoading, error };
+  return { card, viewEventId, isLoading, error };
 }

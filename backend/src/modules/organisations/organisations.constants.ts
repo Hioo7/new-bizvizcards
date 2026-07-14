@@ -1,6 +1,10 @@
 export const ORGANISATION_NAME_MAX_LENGTH = 150;
 export const ORGANISATION_MAX_MEMBERS = 200;
 
+// A sanity guardrail against unbounded creation, not a product-mandated
+// limit — a customer can now belong to (or create) multiple organisations.
+export const ORGANISATION_MAX_MEMBERSHIPS_PER_CUSTOMER = 10;
+
 export const ORGANISATION_LIST_DEFAULT_PAGE = 1;
 export const ORGANISATION_LIST_DEFAULT_PAGE_SIZE = 20;
 export const ORGANISATION_LIST_MAX_PAGE_SIZE = 100;

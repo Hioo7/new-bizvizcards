@@ -31,6 +31,25 @@ export const envSchema = z.object({
   MINIO_ACCESS_KEY_ID: z.string().min(1),
   MINIO_SECRET_ACCESS_KEY: z.string().min(1),
   MINIO_BUCKET: z.string().min(1),
+
+  // Not required — the "Add to Google Wallet" feature is optional
+  // infrastructure that isn't provisioned in every environment yet. Left
+  // unset, EcardGoogleWalletService throws a clear config error when called
+  // rather than the app failing to boot.
+  GOOGLE_WALLET_ISSUER_ID: z.string().optional(),
+  GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL: z.string().optional(),
+  GOOGLE_WALLET_PRIVATE_KEY: z.string().optional(),
+
+  // Not required — same reasoning as the Google Wallet vars above, for the
+  // "Add to Apple Wallet" feature. APPLE_WALLET_KEY_PASSPHRASE is optional
+  // even among these, since not every Pass Type Certificate private key is
+  // passphrase-protected.
+  APPLE_WALLET_PASS_TYPE_ID: z.string().optional(),
+  APPLE_WALLET_TEAM_ID: z.string().optional(),
+  APPLE_WALLET_CERT_PEM: z.string().optional(),
+  APPLE_WALLET_KEY_PEM: z.string().optional(),
+  APPLE_WALLET_WWDR_PEM: z.string().optional(),
+  APPLE_WALLET_KEY_PASSPHRASE: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -29,22 +29,12 @@ export class OrganisationMembersService {
     private readonly organisationsService: OrganisationsService,
   ) {}
 
-  async list(customerId: string): Promise<OrganisationMemberListItem[]> {
-    const { organisation } =
-      await this.organisationsService.getMembershipOrThrow(customerId);
-    return this.listByOrganisationId(organisation.id);
-  }
-
-  async listByCustomerIdForEmployee(
+  async list(
     customerId: string,
+    organisationId: string,
   ): Promise<OrganisationMemberListItem[]> {
-    const membership = await this.prisma.organisationMember.findUnique({
-      where: { customerId },
-    });
-    if (!membership) {
-      return [];
-    }
-    return this.listByOrganisationId(membership.organisationId);
+    await this.organisationsService.assertIsMember(customerId, organisationId);
+    return this.listByOrganisationId(organisationId);
   }
 
   async listByOrganisationId(
@@ -72,13 +62,10 @@ export class OrganisationMembersService {
     memberId: string,
     dto: UpdateMemberDto,
   ): Promise<OrganisationMemberModel> {
-    const { organisation } =
-      await this.organisationsService.getMembershipOrThrow(customerId);
-    await this.organisationsService.assertIsSpoc(customerId, organisation.id);
-
-    const member = await this.getMemberInOrganisationOrThrow(
-      organisation.id,
-      memberId,
+    const member = await this.getMemberOrThrow(memberId);
+    await this.organisationsService.assertIsSpoc(
+      customerId,
+      member.organisationId,
     );
 
     if (
@@ -86,7 +73,7 @@ export class OrganisationMembersService {
       member.role === OrganisationMemberRole.SPOC &&
       dto.role !== OrganisationMemberRole.SPOC
     ) {
-      await this.assertNotLastSpoc(organisation.id, memberId);
+      await this.assertNotLastSpoc(member.organisationId, memberId);
     }
 
     return this.prisma.organisationMember.update({
@@ -99,29 +86,11 @@ export class OrganisationMembersService {
   }
 
   async remove(customerId: string, memberId: string): Promise<void> {
-    const { organisation } =
-      await this.organisationsService.getMembershipOrThrow(customerId);
-    await this.organisationsService.assertIsSpoc(customerId, organisation.id);
-
-    const member = await this.getMemberInOrganisationOrThrow(
-      organisation.id,
-      memberId,
+    const member = await this.getMemberOrThrow(memberId);
+    await this.organisationsService.assertIsSpoc(
+      customerId,
+      member.organisationId,
     );
-
-    if (member.role === OrganisationMemberRole.SPOC) {
-      await this.assertNotLastSpoc(organisation.id, memberId);
-    }
-
-    await this.prisma.organisationMember.delete({ where: { id: memberId } });
-  }
-
-  async removeForEmployee(memberId: string): Promise<void> {
-    const member = await this.prisma.organisationMember.findUnique({
-      where: { id: memberId },
-    });
-    if (!member) {
-      throw new NotFoundException('Organisation member not found');
-    }
 
     if (member.role === OrganisationMemberRole.SPOC) {
       await this.assertNotLastSpoc(member.organisationId, memberId);
@@ -130,14 +99,23 @@ export class OrganisationMembersService {
     await this.prisma.organisationMember.delete({ where: { id: memberId } });
   }
 
-  private async getMemberInOrganisationOrThrow(
-    organisationId: string,
+  async removeForEmployee(memberId: string): Promise<void> {
+    const member = await this.getMemberOrThrow(memberId);
+
+    if (member.role === OrganisationMemberRole.SPOC) {
+      await this.assertNotLastSpoc(member.organisationId, memberId);
+    }
+
+    await this.prisma.organisationMember.delete({ where: { id: memberId } });
+  }
+
+  private async getMemberOrThrow(
     memberId: string,
   ): Promise<OrganisationMemberModel> {
     const member = await this.prisma.organisationMember.findUnique({
       where: { id: memberId },
     });
-    if (!member || member.organisationId !== organisationId) {
+    if (!member) {
       throw new NotFoundException('Organisation member not found');
     }
     return member;

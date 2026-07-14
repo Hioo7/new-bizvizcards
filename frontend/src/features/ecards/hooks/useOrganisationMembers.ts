@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listOrganisationMembersByCustomer } from "@services/organisationService";
+import { listOrganisationMembers } from "@services/organisationService";
 import type { OrganisationMemberSummary } from "@app-types/ecard";
 
 export interface UseOrganisationMembersResult {
@@ -9,20 +9,37 @@ export interface UseOrganisationMembersResult {
 }
 
 export function useOrganisationMembers(
-  customerId: string,
+  organisationId: string | null,
 ): UseOrganisationMembersResult {
   const [members, setMembers] = useState<OrganisationMemberSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(organisationId !== null);
   const [error, setError] = useState<string | null>(null);
 
+  // Tracks which organisationId the current `members` was last reset for, so
+  // a prop change back to null (no organisation linked) can reset
+  // synchronously during render — React's documented "adjust state when a
+  // prop changes" pattern — rather than via an effect, since it's a pure,
+  // synchronous reset with no async work involved.
+  const [resetForId, setResetForId] = useState(organisationId);
+  if (organisationId !== resetForId && organisationId === null) {
+    setResetForId(null);
+    setMembers([]);
+    setIsLoading(false);
+    setError(null);
+  }
+
   useEffect(() => {
+    if (organisationId === null) return;
+
     let cancelled = false;
 
     async function load() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await listOrganisationMembersByCustomer(customerId);
+        const response = await listOrganisationMembers(
+          organisationId as string,
+        );
         if (cancelled) return;
         setMembers(response);
       } catch (err) {
@@ -40,7 +57,7 @@ export function useOrganisationMembers(
     return () => {
       cancelled = true;
     };
-  }, [customerId]);
+  }, [organisationId]);
 
   return { members, isLoading, error };
 }

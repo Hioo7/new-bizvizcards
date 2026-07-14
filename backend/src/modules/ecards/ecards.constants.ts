@@ -47,3 +47,17 @@ export const ECARD_STORAGE_KEY_PREFIX = 'ecards';
 export const ECARD_LIST_DEFAULT_PAGE = 1;
 export const ECARD_LIST_DEFAULT_PAGE_SIZE = 20;
 export const ECARD_LIST_MAX_PAGE_SIZE = 100;
+
+// A sanity guardrail against unbounded creation, not a product-mandated
+// limit — comfortably covers "a personal card + a few branded org cards"
+// while ruling out runaway/accidental creation.
+export const ECARD_MAX_PER_CUSTOMER = 20;
+
+// Shared generic label used wherever an ecard needs a human-readable
+// fallback/category name outside its own hero data — e.g. the OG-preview
+// fallback title and the Google/Apple Wallet passes' title.
+export const ECARD_GENERIC_LABEL = 'Digital Business Card';
+
+// Shared brand color used by both wallet integrations (Google Wallet's
+// hexBackgroundColor, Apple Wallet's backgroundColor).
+export const ECARD_WALLET_BRAND_COLOR_HEX = '#2D2DE0';

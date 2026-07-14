@@ -1,26 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { MediaService } from '../../../common/media/media.service';
+import {
+  DEFAULT_OG_IMAGE_STORAGE_KEY,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_WIDTH,
+} from '../../../common/constants/og-preview.constants';
+import { escapeHtml } from '../../../common/utils/html-escape.util';
+import { toAbsoluteUrl } from '../../../common/utils/absolute-url.util';
 import type { PublicSmartCard } from './smart-cards.service';
 import {
   ogPreviewFieldsRegistry,
   type OgPreviewFields,
 } from '../templates/og-preview-registry';
-import {
-  DEFAULT_OG_IMAGE_STORAGE_KEY,
-  OG_IMAGE_HEIGHT,
-  OG_IMAGE_WIDTH,
-  SMART_CARD_PUBLIC_PAGE_PATH_PREFIX,
-} from '../smart-card-og-preview.constants';
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+import { SMART_CARD_PUBLIC_PAGE_PATH_PREFIX } from '../smart-card-og-preview.constants';
 
 @Injectable()
 export class SmartCardOgPreviewService {
@@ -41,7 +34,8 @@ export class SmartCardOgPreviewService {
 
   renderHtml(endpoint: string, fields: OgPreviewFields): string {
     const canonicalUrl = `${this.appConfig.publicAppBaseUrl}${SMART_CARD_PUBLIC_PAGE_PATH_PREFIX}/${endpoint}`;
-    const imageUrl = this.toAbsoluteUrl(
+    const imageUrl = toAbsoluteUrl(
+      this.appConfig.publicAppBaseUrl,
       fields.imageUrl ?? this.defaultImageUrl(),
     );
 
@@ -80,12 +74,5 @@ export class SmartCardOgPreviewService {
 
   private defaultImageUrl(): string {
     return this.mediaService.getPublicUrlForKey(DEFAULT_OG_IMAGE_STORAGE_KEY);
-  }
-
-  private toAbsoluteUrl(url: string): string {
-    if (/^https?:\/\//.test(url)) {
-      return url;
-    }
-    return `${this.appConfig.publicAppBaseUrl}${url}`;
   }
 }

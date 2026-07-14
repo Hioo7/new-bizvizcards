@@ -21,6 +21,9 @@ import type {
 export function ecardToBuilderState(card: Ecard): EcardBuilderState {
   return {
     hero: {
+      name: card.hero.name,
+      email: card.hero.email,
+      organisationId: card.organisationId,
       companyName: card.hero.companyName ?? "",
       photo: card.hero.profilePhotoMediaId
         ? {
@@ -208,6 +211,9 @@ export function buildEcardSubmission(state: EcardBuilderState): EcardSubmission 
 
   const payload: EcardPayload = {
     endpoint: state.hero.endpoint.trim(),
+    heroName: state.hero.name.trim(),
+    heroEmail: state.hero.email.trim(),
+    organisationId: state.hero.organisationId ?? undefined,
     heroCompanyName: state.hero.companyName.trim() || undefined,
     phoneCountryDialCode: state.hero.phoneCountryDialCode.trim() || undefined,
     phoneNumber: state.hero.phoneNumber.trim() || undefined,

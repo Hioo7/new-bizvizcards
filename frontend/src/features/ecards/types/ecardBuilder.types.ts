@@ -2,22 +2,28 @@ import { emptyImageField } from "@app-types/media.types";
 import type { ImageFieldValue } from "@app-types/media.types";
 
 export interface EcardHeroDraft {
+  name: string;
+  email: string;
   companyName: string;
   photo: ImageFieldValue;
   phoneCountryDialCode: string;
   phoneNumber: string;
   isExchangeContactEnabled: boolean;
   endpoint: string;
+  organisationId: string | null;
 }
 
 export function emptyHeroDraft(): EcardHeroDraft {
   return {
+    name: "",
+    email: "",
     companyName: "",
     photo: emptyImageField(),
     phoneCountryDialCode: "",
     phoneNumber: "",
     isExchangeContactEnabled: true,
     endpoint: "",
+    organisationId: null,
   };
 }
 

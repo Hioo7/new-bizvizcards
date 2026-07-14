@@ -84,4 +84,40 @@ export class AppConfigService {
   get minioBucket(): string {
     return this.env.MINIO_BUCKET;
   }
+
+  get googleWalletIssuerId(): string | undefined {
+    return this.env.GOOGLE_WALLET_ISSUER_ID;
+  }
+
+  get googleWalletServiceAccountEmail(): string | undefined {
+    return this.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL;
+  }
+
+  get googleWalletPrivateKey(): string | undefined {
+    return this.env.GOOGLE_WALLET_PRIVATE_KEY;
+  }
+
+  get appleWalletPassTypeId(): string | undefined {
+    return this.env.APPLE_WALLET_PASS_TYPE_ID;
+  }
+
+  get appleWalletTeamId(): string | undefined {
+    return this.env.APPLE_WALLET_TEAM_ID;
+  }
+
+  get appleWalletCertPem(): string | undefined {
+    return this.env.APPLE_WALLET_CERT_PEM;
+  }
+
+  get appleWalletKeyPem(): string | undefined {
+    return this.env.APPLE_WALLET_KEY_PEM;
+  }
+
+  get appleWalletWwdrPem(): string | undefined {
+    return this.env.APPLE_WALLET_WWDR_PEM;
+  }
+
+  get appleWalletKeyPassphrase(): string | undefined {
+    return this.env.APPLE_WALLET_KEY_PASSPHRASE;
+  }
 }

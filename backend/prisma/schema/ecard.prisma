@@ -12,12 +12,25 @@ enum ECardComponentType {
 
 model ECard {
   id                  String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
-  customerId          String    @unique @db.Uuid
+  customerId          String    @db.Uuid
   customer            Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   endpoint            String    @unique
   createdByEmployeeId String?   @db.Uuid
   createdByEmployee   Employee? @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
 
+  // Optional back-reference to the organisation this specific card belongs
+  // to (as opposed to the customer's own org membership) — at most one card
+  // per customer per organisation (see @@unique below). This is how a
+  // colleague's org-branded card is resolved for TEAM component listings,
+  // independent of however many other (e.g. personal) cards they also own.
+  organisationId String?       @db.Uuid
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
+
+  // Independent per-card identity — no longer derived from Customer.account,
+  // since one customer can now own multiple cards, each with its own hero
+  // data (e.g. a personal card vs. a company-branded card).
+  heroName                String
+  heroEmail               String
   heroCompanyName         String?
   heroProfilePhotoMediaId String? @unique @db.Uuid
   heroProfilePhoto        Media?  @relation(fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
@@ -30,9 +43,12 @@ model ECard {
   updatedAt DateTime @updatedAt
 
   components ECardComponent[]
+  events     ECardEvent[]
 
+  @@unique([customerId, organisationId])
   @@index([customerId])
   @@index([createdByEmployeeId])
+  @@index([organisationId])
   @@map("ECard")
 }
 

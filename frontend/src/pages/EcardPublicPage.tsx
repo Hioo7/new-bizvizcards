@@ -1,10 +1,16 @@
 import { useParams } from "react-router-dom";
-import { EcardRenderer, useEcardDocumentMeta, usePublicEcard } from "@features/public-ecard";
+import {
+  EcardRenderer,
+  useEcardDocumentMeta,
+  useEcardViewDurationTracker,
+  usePublicEcard,
+} from "@features/public-ecard";
 
 export default function EcardPublicPage() {
   const { endpoint } = useParams<{ endpoint: string }>();
-  const { card, isLoading, error } = usePublicEcard(endpoint);
+  const { card, viewEventId, isLoading, error } = usePublicEcard(endpoint);
   useEcardDocumentMeta(card);
+  useEcardViewDurationTracker(endpoint, viewEventId);
 
   if (isLoading) {
     return (

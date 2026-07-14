@@ -1,10 +1,32 @@
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { MailerService } from '../../../common/mailer/mailer.service';
+import { MediaService } from '../../../common/media/media.service';
+import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
+import type {
+  MediaStorageProvider,
+  UploadMediaParams,
+} from '../../../common/media/storage/media-storage-provider.interface';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { MediaSource } from '../../../generated/prisma/client';
 import { ORGANISATION_MAX_MEMBERS } from '../organisations.constants';
 import { OrganisationInvitesService } from './organisation-invites.service';
 import { OrganisationsService } from './organisations.service';
+
+class FakeMediaStorageProvider implements MediaStorageProvider {
+  upload(params: UploadMediaParams): Promise<void> {
+    void params;
+    return Promise.resolve();
+  }
+
+  delete(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  getPublicUrl(key: string): string {
+    return `/media/test-bucket/${key}`;
+  }
+}
 
 describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
@@ -21,7 +43,11 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
 
     const appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
-    organisationsService = new OrganisationsService(prisma);
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: new FakeMediaStorageProvider(),
+    };
+    const mediaService = new MediaService(prisma, registry);
+    organisationsService = new OrganisationsService(prisma, mediaService);
     mailer = {
       sendMail: jest.fn().mockResolvedValue(undefined),
     } as unknown as MailerService & { sendMail: jest.Mock };
@@ -67,10 +93,10 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
     return prisma.customer.create({ data: { accountId: account.id } });
   }
 
-  async function seedOrgWithSpoc() {
+  async function seedOrgWithSpoc(name = 'Acme Inc') {
     const spoc = await seedCustomer();
     const { organisation } = await organisationsService.create(spoc.id, {
-      name: 'Acme Inc',
+      name,
     });
     seededOrganisationIds.push(organisation.id);
     return { spoc, organisation };
@@ -81,7 +107,7 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       const { spoc, organisation } = await seedOrgWithSpoc();
       const inviteeEmail = `invitee-${randomUUID()}@example.com`;
 
-      const invite = await service.invite(spoc.id, {
+      const invite = await service.invite(spoc.id, organisation.id, {
         email: inviteeEmail,
         role: 'MEMBER',
       });
@@ -102,7 +128,7 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       });
 
       await expect(
-        service.invite(member.id, {
+        service.invite(member.id, organisation.id, {
           email: `invitee-${randomUUID()}@example.com`,
           role: 'MEMBER',
         }),
@@ -110,13 +136,16 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
     });
 
     it('rejects inviting an email that already belongs to the organisation', async () => {
-      const { spoc } = await seedOrgWithSpoc();
+      const { spoc, organisation } = await seedOrgWithSpoc();
       const spocAccount = await prisma.customerAccount.findUniqueOrThrow({
         where: { id: spoc.accountId },
       });
 
       await expect(
-        service.invite(spoc.id, { email: spocAccount.email, role: 'MEMBER' }),
+        service.invite(spoc.id, organisation.id, {
+          email: spocAccount.email,
+          role: 'MEMBER',
+        }),
       ).rejects.toThrow('This person is already a member of the organisation');
     });
 
@@ -134,7 +163,7 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       });
 
       await expect(
-        service.invite(spoc.id, {
+        service.invite(spoc.id, organisation.id, {
           email: `invitee-${randomUUID()}@example.com`,
           role: 'MEMBER',
         }),
@@ -144,18 +173,18 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
 
   describe('list and revoke', () => {
     it('lists only pending invites and revoke marks them REVOKED', async () => {
-      const { spoc } = await seedOrgWithSpoc();
-      const invite = await service.invite(spoc.id, {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const invite = await service.invite(spoc.id, organisation.id, {
         email: `invitee-${randomUUID()}@example.com`,
         role: 'MEMBER',
       });
 
-      const pending = await service.list(spoc.id);
+      const pending = await service.list(spoc.id, organisation.id);
       expect(pending.map((i) => i.id)).toContain(invite.id);
 
       await service.revoke(spoc.id, invite.id);
 
-      const afterRevoke = await service.list(spoc.id);
+      const afterRevoke = await service.list(spoc.id, organisation.id);
       expect(afterRevoke.map((i) => i.id)).not.toContain(invite.id);
 
       const revoked = await prisma.organisationInvite.findUniqueOrThrow({
@@ -163,13 +192,32 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       });
       expect(revoked.status).toBe('REVOKED');
     });
+
+    it("rejects revoking an invite that belongs to a different organisation than the acting SPOC's", async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const invite = await prisma.organisationInvite.create({
+        data: {
+          organisationId: organisation.id,
+          email: `invitee-${randomUUID()}@example.com`,
+          role: 'MEMBER',
+          token: randomUUID(),
+          invitedByCustomerId: (await seedCustomer()).id,
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        },
+      });
+      const { spoc: otherSpoc } = await seedOrgWithSpoc('Other Org');
+
+      await expect(service.revoke(otherSpoc.id, invite.id)).rejects.toThrow(
+        'Only the organisation SPOC can perform this action',
+      );
+    });
   });
 
   describe('accept', () => {
     it('creates a membership and marks the invite ACCEPTED when the email matches', async () => {
       const { spoc, organisation } = await seedOrgWithSpoc();
       const inviteeEmail = `invitee-${randomUUID()}@example.com`;
-      const invite = await service.invite(spoc.id, {
+      const invite = await service.invite(spoc.id, organisation.id, {
         email: inviteeEmail,
         role: 'MEMBER',
       });
@@ -178,7 +226,12 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       await service.accept(invitee.id, inviteeEmail, invite.token);
 
       const membership = await prisma.organisationMember.findUniqueOrThrow({
-        where: { customerId: invitee.id },
+        where: {
+          customerId_organisationId: {
+            customerId: invitee.id,
+            organisationId: organisation.id,
+          },
+        },
       });
       expect(membership.organisationId).toBe(organisation.id);
 
@@ -190,8 +243,8 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
     });
 
     it('rejects acceptance when the authenticated email does not match the invite', async () => {
-      const { spoc } = await seedOrgWithSpoc();
-      const invite = await service.invite(spoc.id, {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const invite = await service.invite(spoc.id, organisation.id, {
         email: `invitee-${randomUUID()}@example.com`,
         role: 'MEMBER',
       });
@@ -207,9 +260,9 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
     });
 
     it('rejects acceptance of an expired invite and marks it EXPIRED', async () => {
-      const { spoc } = await seedOrgWithSpoc();
+      const { spoc, organisation } = await seedOrgWithSpoc();
       const inviteeEmail = `invitee-${randomUUID()}@example.com`;
-      const invite = await service.invite(spoc.id, {
+      const invite = await service.invite(spoc.id, organisation.id, {
         email: inviteeEmail,
         role: 'MEMBER',
       });
@@ -229,23 +282,52 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       expect(expired.status).toBe('EXPIRED');
     });
 
-    it('rejects acceptance when the invitee already belongs to another organisation', async () => {
-      const { spoc } = await seedOrgWithSpoc();
+    it('allows a customer to accept invites into multiple different organisations', async () => {
+      const { spoc: firstSpoc, organisation: firstOrg } =
+        await seedOrgWithSpoc('First Org');
+      const { spoc: secondSpoc, organisation: secondOrg } =
+        await seedOrgWithSpoc('Second Org');
       const inviteeEmail = `invitee-${randomUUID()}@example.com`;
-      const invite = await service.invite(spoc.id, {
+      const invitee = await seedCustomer(inviteeEmail);
+
+      const firstInvite = await service.invite(firstSpoc.id, firstOrg.id, {
         email: inviteeEmail,
         role: 'MEMBER',
       });
-      const invitee = await seedCustomer(inviteeEmail);
-      const { organisation: otherOrg } = await organisationsService.create(
-        invitee.id,
-        { name: 'Other Org' },
+      const secondInvite = await service.invite(secondSpoc.id, secondOrg.id, {
+        email: inviteeEmail,
+        role: 'MEMBER',
+      });
+
+      await service.accept(invitee.id, inviteeEmail, firstInvite.token);
+      await service.accept(invitee.id, inviteeEmail, secondInvite.token);
+
+      const memberships = await prisma.organisationMember.findMany({
+        where: { customerId: invitee.id },
+      });
+      expect(memberships.map((m) => m.organisationId).sort()).toEqual(
+        [firstOrg.id, secondOrg.id].sort(),
       );
-      seededOrganisationIds.push(otherOrg.id);
+    });
+
+    it('rejects accepting a second invite into the same organisation already joined', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const inviteeEmail = `invitee-${randomUUID()}@example.com`;
+      const invitee = await seedCustomer(inviteeEmail);
+      const firstInvite = await service.invite(spoc.id, organisation.id, {
+        email: inviteeEmail,
+        role: 'MEMBER',
+      });
+      await service.accept(invitee.id, inviteeEmail, firstInvite.token);
+
+      await prisma.organisationInvite.update({
+        where: { id: firstInvite.id },
+        data: { status: 'PENDING' },
+      });
 
       await expect(
-        service.accept(invitee.id, inviteeEmail, invite.token),
-      ).rejects.toThrow('Customer already belongs to an organisation');
+        service.accept(invitee.id, inviteeEmail, firstInvite.token),
+      ).rejects.toThrow('Customer already belongs to this organisation');
     });
 
     it('rejects an unknown token', async () => {

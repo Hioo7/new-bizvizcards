@@ -1,8 +1,30 @@
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
+import { MediaService } from '../../../common/media/media.service';
+import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
+import type {
+  MediaStorageProvider,
+  UploadMediaParams,
+} from '../../../common/media/storage/media-storage-provider.interface';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { MediaSource } from '../../../generated/prisma/client';
 import { OrganisationMembersService } from './organisation-members.service';
 import { OrganisationsService } from './organisations.service';
+
+class FakeMediaStorageProvider implements MediaStorageProvider {
+  upload(params: UploadMediaParams): Promise<void> {
+    void params;
+    return Promise.resolve();
+  }
+
+  delete(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  getPublicUrl(key: string): string {
+    return `/media/test-bucket/${key}`;
+  }
+}
 
 describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
@@ -18,7 +40,11 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
 
     const appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
-    organisationsService = new OrganisationsService(prisma);
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: new FakeMediaStorageProvider(),
+    };
+    const mediaService = new MediaService(prisma, registry);
+    organisationsService = new OrganisationsService(prisma, mediaService);
     service = new OrganisationMembersService(prisma, organisationsService);
   });
 
@@ -63,6 +89,14 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
     return { spoc, organisation };
   }
 
+  function spocMembership(spocId: string, organisationId: string) {
+    return prisma.organisationMember.findUniqueOrThrow({
+      where: {
+        customerId_organisationId: { customerId: spocId, organisationId },
+      },
+    });
+  }
+
   describe('list', () => {
     it('returns the roster including name and email', async () => {
       const { spoc, organisation } = await seedOrgWithSpoc();
@@ -71,13 +105,22 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
         data: { organisationId: organisation.id, customerId: member.id },
       });
 
-      const roster = await service.list(spoc.id);
+      const roster = await service.list(spoc.id, organisation.id);
 
       expect(roster).toHaveLength(2);
       expect(roster.find((m) => m.customerId === member.id)).toMatchObject({
         name: 'Member One',
         role: 'MEMBER',
       });
+    });
+
+    it('rejects a customer who is not a member of that organisation', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const outsider = await seedCustomer('Outsider');
+
+      await expect(service.list(outsider.id, organisation.id)).rejects.toThrow(
+        'Customer does not belong to this organisation',
+      );
     });
   });
 
@@ -113,16 +156,35 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
 
     it('blocks demoting the last remaining SPOC', async () => {
       const { spoc, organisation } = await seedOrgWithSpoc();
-      const spocMembership = await prisma.organisationMember.findUniqueOrThrow({
-        where: { customerId: spoc.id },
-      });
+      const membership = await spocMembership(spoc.id, organisation.id);
 
       await expect(
-        service.update(spoc.id, spocMembership.id, { role: 'MEMBER' }),
+        service.update(spoc.id, membership.id, { role: 'MEMBER' }),
       ).rejects.toThrow(
         'Cannot remove or demote the last SPOC of an organisation',
       );
-      void organisation;
+    });
+
+    it("scopes SPOC authority to the acting customer's own organisations", async () => {
+      const { organisation: ownOrg } = await seedOrgWithSpoc();
+      const spocOfBoth = await seedCustomer('Multi-org SPOC');
+      await prisma.organisationMember.create({
+        data: {
+          organisationId: ownOrg.id,
+          customerId: spocOfBoth.id,
+          role: 'SPOC',
+        },
+      });
+
+      const { organisation: otherOrg } = await seedOrgWithSpoc('Other Org');
+      const otherMember = await seedCustomer('Other Member');
+      const otherMembership = await prisma.organisationMember.create({
+        data: { organisationId: otherOrg.id, customerId: otherMember.id },
+      });
+
+      await expect(
+        service.update(spocOfBoth.id, otherMembership.id, { role: 'SPOC' }),
+      ).rejects.toThrow('Only the organisation SPOC can perform this action');
     });
   });
 
@@ -142,31 +204,16 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
     });
 
     it('blocks removing the last remaining SPOC', async () => {
-      const { spoc } = await seedOrgWithSpoc();
-      const spocMembership = await prisma.organisationMember.findUniqueOrThrow({
-        where: { customerId: spoc.id },
-      });
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const membership = await spocMembership(spoc.id, organisation.id);
 
-      await expect(service.remove(spoc.id, spocMembership.id)).rejects.toThrow(
+      await expect(service.remove(spoc.id, membership.id)).rejects.toThrow(
         'Cannot remove or demote the last SPOC of an organisation',
       );
     });
   });
 
   describe('employee-facing methods', () => {
-    it('returns an empty roster when the customer has no organisation', async () => {
-      const customer = await seedCustomer();
-      await expect(
-        service.listByCustomerIdForEmployee(customer.id),
-      ).resolves.toEqual([]);
-    });
-
-    it("returns the roster for the customer's organisation", async () => {
-      const { spoc } = await seedOrgWithSpoc();
-      const roster = await service.listByCustomerIdForEmployee(spoc.id);
-      expect(roster).toHaveLength(1);
-    });
-
     it('removes a member bypassing the SPOC check, but still blocks the last SPOC', async () => {
       const { spoc, organisation } = await seedOrgWithSpoc();
       const member = await seedCustomer('Member One');
@@ -179,12 +226,8 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
         prisma.organisationMember.findUnique({ where: { id: membership.id } }),
       ).resolves.toBeNull();
 
-      const spocMembership = await prisma.organisationMember.findUniqueOrThrow({
-        where: { customerId: spoc.id },
-      });
-      await expect(
-        service.removeForEmployee(spocMembership.id),
-      ).rejects.toThrow(
+      const spocMember = await spocMembership(spoc.id, organisation.id);
+      await expect(service.removeForEmployee(spocMember.id)).rejects.toThrow(
         'Cannot remove or demote the last SPOC of an organisation',
       );
     });

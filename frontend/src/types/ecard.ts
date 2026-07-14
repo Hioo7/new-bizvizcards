@@ -97,11 +97,20 @@ export interface Ecard {
   id: string;
   endpoint: string;
   customerId: string;
+  organisationId: string | null;
   createdByEmployeeId: string | null;
   createdAt: string;
   updatedAt: string;
   hero: EcardHero;
   components: EcardComponent[];
+}
+
+/** Wire shape of `GET /api/public/ecards/:endpoint` — the view event id lets
+ * the public page report back how long the visit lasted (see
+ * useEcardViewDurationTracker). */
+export interface GetPublicEcardResponse {
+  card: Ecard;
+  viewEventId: string;
 }
 
 export interface EcardListResponse {
@@ -195,7 +204,13 @@ export type EcardComponentPayload =
 
 export interface EcardPayload {
   endpoint: string;
+  heroName: string;
+  heroEmail: string;
   heroCompanyName?: string;
+  /** Which organisation this card belongs to — no admin UI sets this yet
+   * (org-template feature is future work), kept optional for forward compat
+   * with the backend DTO. */
+  organisationId?: string;
   phoneCountryDialCode?: string;
   phoneNumber?: string;
   isExchangeContactEnabled: boolean;

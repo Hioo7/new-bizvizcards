@@ -32,11 +32,13 @@ export class OrganisationInvitesService {
 
   async invite(
     customerId: string,
+    organisationId: string,
     dto: InviteMemberDto,
   ): Promise<OrganisationInviteModel> {
-    const { organisation } =
-      await this.organisationsService.getMembershipOrThrow(customerId);
-    await this.organisationsService.assertIsSpoc(customerId, organisation.id);
+    await this.organisationsService.assertIsSpoc(customerId, organisationId);
+    const organisation = await this.prisma.organisation.findUniqueOrThrow({
+      where: { id: organisationId },
+    });
 
     const memberCount = await this.prisma.organisationMember.count({
       where: { organisationId: organisation.id },
@@ -84,14 +86,15 @@ export class OrganisationInvitesService {
     return invite;
   }
 
-  async list(customerId: string): Promise<OrganisationInviteModel[]> {
-    const { organisation } =
-      await this.organisationsService.getMembershipOrThrow(customerId);
-    await this.organisationsService.assertIsSpoc(customerId, organisation.id);
+  async list(
+    customerId: string,
+    organisationId: string,
+  ): Promise<OrganisationInviteModel[]> {
+    await this.organisationsService.assertIsSpoc(customerId, organisationId);
 
     return this.prisma.organisationInvite.findMany({
       where: {
-        organisationId: organisation.id,
+        organisationId,
         status: OrganisationInviteStatus.PENDING,
       },
       orderBy: { createdAt: 'desc' },
@@ -99,16 +102,16 @@ export class OrganisationInvitesService {
   }
 
   async revoke(customerId: string, inviteId: string): Promise<void> {
-    const { organisation } =
-      await this.organisationsService.getMembershipOrThrow(customerId);
-    await this.organisationsService.assertIsSpoc(customerId, organisation.id);
-
     const invite = await this.prisma.organisationInvite.findUnique({
       where: { id: inviteId },
     });
-    if (!invite || invite.organisationId !== organisation.id) {
+    if (!invite) {
       throw new NotFoundException('Invite not found');
     }
+    await this.organisationsService.assertIsSpoc(
+      customerId,
+      invite.organisationId,
+    );
 
     await this.prisma.organisationInvite.update({
       where: { id: inviteId },
@@ -143,11 +146,16 @@ export class OrganisationInvitesService {
     }
 
     const existingMembership = await this.prisma.organisationMember.findUnique({
-      where: { customerId },
+      where: {
+        customerId_organisationId: {
+          customerId,
+          organisationId: invite.organisationId,
+        },
+      },
     });
     if (existingMembership) {
       throw new ConflictException(
-        'Customer already belongs to an organisation',
+        'Customer already belongs to this organisation',
       );
     }
 

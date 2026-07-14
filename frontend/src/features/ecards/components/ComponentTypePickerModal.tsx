@@ -9,6 +9,7 @@ import type { EcardComponentType } from "@app-types/ecard";
 interface ComponentTypePickerModalProps {
   open: boolean;
   addedTypes: EcardComponentType[];
+  isTeamDisabled?: boolean;
   onClose: () => void;
   onPick: (type: EcardComponentType) => void;
 }
@@ -16,6 +17,7 @@ interface ComponentTypePickerModalProps {
 export default function ComponentTypePickerModal({
   open,
   addedTypes,
+  isTeamDisabled = false,
   onClose,
   onPick,
 }: ComponentTypePickerModalProps) {
@@ -55,12 +57,14 @@ export default function ComponentTypePickerModal({
           {availableTypes.map((type) => {
             const meta = ECARD_COMPONENT_META[type];
             const Icon = meta.icon;
+            const isDisabled = type === "TEAM" && isTeamDisabled;
             return (
               <button
                 key={type}
                 type="button"
+                disabled={isDisabled}
                 onClick={() => onPick(type)}
-                className="flex items-center gap-3 rounded-field border border-base-300 bg-base-100 px-3 py-3 text-left hover:border-primary hover:bg-primary/5"
+                className="flex items-center gap-3 rounded-field border border-base-300 bg-base-100 px-3 py-3 text-left hover:border-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-base-300 disabled:hover:bg-base-100"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary">
                   <Icon className="h-5 w-5" />
@@ -68,7 +72,9 @@ export default function ComponentTypePickerModal({
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-base-content">{meta.label}</p>
                   <p className="truncate text-xs text-base-content/50">
-                    {meta.description}
+                    {isDisabled
+                      ? "Link an organisation in Hero first"
+                      : meta.description}
                   </p>
                 </div>
               </button>

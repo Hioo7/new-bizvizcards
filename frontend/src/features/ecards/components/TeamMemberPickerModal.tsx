@@ -5,7 +5,7 @@ import { ECARD_MAX_TEAM_MEMBERS } from "@features/ecards/config/ecardBuilder.con
 
 interface TeamMemberPickerModalProps {
   open: boolean;
-  customerId: string;
+  organisationId: string | null;
   selectedIds: string[];
   onClose: () => void;
   onConfirm: (memberIds: string[]) => void;
@@ -13,13 +13,13 @@ interface TeamMemberPickerModalProps {
 
 export default function TeamMemberPickerModal({
   open,
-  customerId,
+  organisationId,
   selectedIds,
   onClose,
   onConfirm,
 }: TeamMemberPickerModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const { members, isLoading, error } = useOrganisationMembers(customerId);
+  const { members, isLoading, error } = useOrganisationMembers(organisationId);
   const [picked, setPicked] = useState<string[]>(selectedIds);
   const [prevOpen, setPrevOpen] = useState(open);
 
@@ -52,7 +52,15 @@ export default function TeamMemberPickerModal({
     <dialog
       ref={dialogRef}
       className="modal modal-bottom sm:modal-middle"
-      onClose={onClose}
+      onClose={(event) => {
+        // React's synthetic dialog `close`/`cancel` events bubble through
+        // the React tree, not the DOM tree — this picker is nested inside
+        // another open dialog (the Team edit sheet), so without stopping
+        // propagation here, closing this one would also trigger the
+        // outer dialog's onClose.
+        event.stopPropagation();
+        onClose();
+      }}
     >
       <div className="modal-box flex max-h-[85vh] flex-col overflow-hidden p-0 sm:max-w-md">
         <div className="flex shrink-0 items-center gap-3 border-b border-base-300 px-4 py-4 sm:px-6">

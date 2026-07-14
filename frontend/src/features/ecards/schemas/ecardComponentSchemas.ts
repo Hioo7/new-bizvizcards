@@ -20,6 +20,8 @@ export const heroSheetSchema = z
       .min(ECARD_ENDPOINT_MIN_LENGTH, "Too short")
       .max(ECARD_ENDPOINT_MAX_LENGTH, "Too long")
       .regex(ECARD_ENDPOINT_REGEX, "Lowercase letters, numbers, and hyphens only"),
+    name: z.string().trim().min(1, "Required").max(ECARD_TEXT_SHORT_MAX_LENGTH),
+    email: z.string().trim().min(1, "Required").email("Enter a valid email"),
     companyName: z.string().trim().max(ECARD_TEXT_SHORT_MAX_LENGTH),
     phoneCountryDialCode: z.string().trim(),
     phoneNumber: z.string().trim(),

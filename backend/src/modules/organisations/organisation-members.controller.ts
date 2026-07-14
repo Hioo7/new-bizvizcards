@@ -24,12 +24,15 @@ export class OrganisationMembersController {
     private readonly customersService: CustomersService,
   ) {}
 
-  @Get()
-  async list(@Req() request: CustomerAuthenticatedRequest) {
+  @Get(':organisationId')
+  async list(
+    @Req() request: CustomerAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
+  ) {
     const customer = await this.customersService.getByAccountId(
       request.customerSession.user.id,
     );
-    return this.organisationMembersService.list(customer.id);
+    return this.organisationMembersService.list(customer.id, organisationId);
   }
 
   @Patch(':id')

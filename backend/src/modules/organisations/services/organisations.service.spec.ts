@@ -1,10 +1,34 @@
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
+import { MediaService } from '../../../common/media/media.service';
+import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
+import type {
+  MediaStorageProvider,
+  UploadMediaParams,
+} from '../../../common/media/storage/media-storage-provider.interface';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { MediaSource } from '../../../generated/prisma/client';
+import { ORGANISATION_MAX_MEMBERSHIPS_PER_CUSTOMER } from '../organisations.constants';
 import { OrganisationsService } from './organisations.service';
+
+class FakeMediaStorageProvider implements MediaStorageProvider {
+  upload(params: UploadMediaParams): Promise<void> {
+    void params;
+    return Promise.resolve();
+  }
+
+  delete(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  getPublicUrl(key: string): string {
+    return `/media/test-bucket/${key}`;
+  }
+}
 
 describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
+  let mediaService: MediaService;
   let service: OrganisationsService;
   let originalDatabaseUrl: string | undefined;
   const seededAccountIds: string[] = [];
@@ -16,7 +40,11 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
 
     const appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
-    service = new OrganisationsService(prisma);
+    const registry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: new FakeMediaStorageProvider(),
+    };
+    mediaService = new MediaService(prisma, registry);
+    service = new OrganisationsService(prisma, mediaService);
   });
 
   afterAll(async () => {
@@ -39,10 +67,10 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
     }
   });
 
-  async function seedCustomer() {
+  async function seedCustomer(name = 'Test Customer') {
     const account = await prisma.customerAccount.create({
       data: {
-        name: 'Test Customer',
+        name,
         email: `organisations-service-${randomUUID()}@example.com`,
         emailVerified: true,
       },
@@ -66,34 +94,101 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
       expect(membership.role).toBe('SPOC');
     });
 
-    it('rejects creating a second organisation for the same customer', async () => {
+    it('allows creating a second, independent organisation for the same customer', async () => {
       const customer = await seedCustomer();
-      const { organisation } = await service.create(customer.id, {
+      const { organisation: first } = await service.create(customer.id, {
         name: 'First',
       });
-      seededOrganisationIds.push(organisation.id);
+      seededOrganisationIds.push(first.id);
+
+      const { organisation: second, membership } = await service.create(
+        customer.id,
+        { name: 'Second' },
+      );
+      seededOrganisationIds.push(second.id);
+
+      expect(second.id).not.toBe(first.id);
+      expect(membership.organisationId).toBe(second.id);
+
+      const memberships = await prisma.organisationMember.findMany({
+        where: { customerId: customer.id },
+      });
+      expect(memberships.map((m) => m.organisationId).sort()).toEqual(
+        [first.id, second.id].sort(),
+      );
+    });
+
+    it('rejects creating more than ORGANISATION_MAX_MEMBERSHIPS_PER_CUSTOMER organisations', async () => {
+      const customer = await seedCustomer();
+      for (let i = 0; i < ORGANISATION_MAX_MEMBERSHIPS_PER_CUSTOMER; i++) {
+        const { organisation } = await service.create(customer.id, {
+          name: `Org ${i}`,
+        });
+        seededOrganisationIds.push(organisation.id);
+      }
 
       await expect(
-        service.create(customer.id, { name: 'Second' }),
-      ).rejects.toThrow('Customer already belongs to an organisation');
+        service.create(customer.id, { name: 'One too many' }),
+      ).rejects.toThrow(
+        `This customer already belongs to the maximum of ${ORGANISATION_MAX_MEMBERSHIPS_PER_CUSTOMER} organisations`,
+      );
     });
   });
 
-  describe('getMine', () => {
-    it('returns null when the customer has no organisation', async () => {
+  describe('listMine', () => {
+    it('returns an empty array when the customer belongs to no organisation', async () => {
       const customer = await seedCustomer();
-      await expect(service.getMine(customer.id)).resolves.toBeNull();
+      await expect(service.listMine(customer.id)).resolves.toEqual([]);
     });
 
-    it('returns the organisation and membership when the customer belongs to one', async () => {
+    it('returns every organisation the customer belongs to', async () => {
       const customer = await seedCustomer();
-      const { organisation } = await service.create(customer.id, {
+      const { organisation: first } = await service.create(customer.id, {
+        name: 'Acme Inc',
+      });
+      seededOrganisationIds.push(first.id);
+      const { organisation: second } = await service.create(customer.id, {
+        name: 'Beta LLC',
+      });
+      seededOrganisationIds.push(second.id);
+
+      const result = await service.listMine(customer.id);
+      expect(result.map((r) => r.organisation.id).sort()).toEqual(
+        [first.id, second.id].sort(),
+      );
+    });
+  });
+
+  describe('listMembershipsWithOrgDetails', () => {
+    it("resolves each organisation's name and its earliest-joined SPOC email", async () => {
+      const spoc = await seedCustomer('Org Spoc');
+      const { organisation } = await service.create(spoc.id, {
         name: 'Acme Inc',
       });
       seededOrganisationIds.push(organisation.id);
+      const member = await seedCustomer('Org Member');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
 
-      const result = await service.getMine(customer.id);
-      expect(result?.organisation.id).toBe(organisation.id);
+      const memberResult = await service.listMembershipsWithOrgDetails(
+        member.id,
+      );
+      expect(memberResult).toHaveLength(1);
+      expect(memberResult[0]).toMatchObject({
+        organisationId: organisation.id,
+        organisationName: 'Acme Inc',
+        organisationLogoUrl: null,
+        role: 'MEMBER',
+      });
+      expect(memberResult[0].spocEmail).toContain('organisations-service-');
+    });
+
+    it('returns an empty array when the customer belongs to no organisation', async () => {
+      const customer = await seedCustomer();
+      await expect(
+        service.listMembershipsWithOrgDetails(customer.id),
+      ).resolves.toEqual([]);
     });
   });
 
@@ -105,7 +200,9 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
       });
       seededOrganisationIds.push(organisation.id);
 
-      const updated = await service.update(customer.id, { name: 'New Name' });
+      const updated = await service.update(customer.id, organisation.id, {
+        name: 'New Name',
+      });
       expect(updated.name).toBe('New Name');
     });
 
@@ -121,15 +218,49 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
       });
 
       await expect(
-        service.update(member.id, { name: 'Renamed' }),
+        service.update(member.id, organisation.id, { name: 'Renamed' }),
       ).rejects.toThrow('Only the organisation SPOC can perform this action');
     });
 
-    it('throws when the customer has no organisation', async () => {
+    it('throws when the customer does not belong to that organisation', async () => {
       const customer = await seedCustomer();
+      const outsider = await seedCustomer();
+      const { organisation } = await service.create(customer.id, {
+        name: 'Acme Inc',
+      });
+      seededOrganisationIds.push(organisation.id);
+
       await expect(
-        service.update(customer.id, { name: 'Renamed' }),
-      ).rejects.toThrow('Customer does not belong to an organisation');
+        service.update(outsider.id, organisation.id, { name: 'Renamed' }),
+      ).rejects.toThrow('Customer does not belong to this organisation');
+    });
+  });
+
+  describe('multi-org membership', () => {
+    it('lets a customer be SPOC of one organisation and MEMBER of another', async () => {
+      const customer = await seedCustomer();
+      const { organisation: ownOrg } = await service.create(customer.id, {
+        name: 'Own Org',
+      });
+      seededOrganisationIds.push(ownOrg.id);
+
+      const otherSpoc = await seedCustomer();
+      const { organisation: otherOrg } = await service.create(otherSpoc.id, {
+        name: 'Other Org',
+      });
+      seededOrganisationIds.push(otherOrg.id);
+      await prisma.organisationMember.create({
+        data: { organisationId: otherOrg.id, customerId: customer.id },
+      });
+
+      await expect(
+        service.update(customer.id, ownOrg.id, { name: 'Own Org Renamed' }),
+      ).resolves.toMatchObject({ name: 'Own Org Renamed' });
+      await expect(
+        service.update(customer.id, otherOrg.id, {
+          name: 'Should Fail',
+        }),
+      ).rejects.toThrow('Only the organisation SPOC can perform this action');
     });
   });
 

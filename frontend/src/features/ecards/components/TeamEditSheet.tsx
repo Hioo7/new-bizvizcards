@@ -8,7 +8,7 @@ import type { TeamComponentDraft } from "@features/ecards/types/ecardBuilder.typ
 
 interface TeamEditSheetProps {
   open: boolean;
-  customerId: string;
+  organisationId: string | null;
   draft: TeamComponentDraft;
   isSubmitting: boolean;
   error: string | null;
@@ -18,7 +18,7 @@ interface TeamEditSheetProps {
 
 export default function TeamEditSheet({
   open,
-  customerId,
+  organisationId,
   draft,
   isSubmitting,
   error,
@@ -28,7 +28,7 @@ export default function TeamEditSheet({
   const [title, setTitle] = useState(draft.title);
   const [memberIds, setMemberIds] = useState(draft.memberIds);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const { members } = useOrganisationMembers(customerId);
+  const { members } = useOrganisationMembers(organisationId);
 
   const selectedMembers = memberIds
     .map((id) => members.find((member) => member.id === id))
@@ -113,7 +113,7 @@ export default function TeamEditSheet({
 
       <TeamMemberPickerModal
         open={isPickerOpen}
-        customerId={customerId}
+        organisationId={organisationId}
         selectedIds={memberIds}
         onClose={() => setIsPickerOpen(false)}
         onConfirm={(ids) => {

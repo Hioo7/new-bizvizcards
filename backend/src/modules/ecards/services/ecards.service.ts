@@ -26,12 +26,17 @@ import {
   ECARD_HERO_PHOTO_FIELD,
   ECARD_LIST_DEFAULT_PAGE,
   ECARD_LIST_DEFAULT_PAGE_SIZE,
+  ECARD_MAX_PER_CUSTOMER,
   ECARD_STORAGE_KEY_PREFIX,
   ecardGalleryImageField,
 } from '../ecards.constants';
 
 const FULL_INCLUDE = {
-  customer: { include: { account: { select: { name: true, email: true } } } },
+  customer: {
+    include: {
+      account: { select: { name: true, email: true } },
+    },
+  },
   heroProfilePhoto: true,
   components: {
     orderBy: { order: 'asc' as const },
@@ -65,11 +70,16 @@ const FULL_INCLUDE = {
                     include: {
                       account: { select: { name: true, email: true } },
                       pfpMedia: true,
-                      ecard: {
+                      // Every card this teammate owns — the org-tagged one
+                      // (if any) is picked out at read time in
+                      // teamMemberToResponse, since a customer can now own
+                      // more than one.
+                      ecards: {
                         select: {
                           endpoint: true,
                           phoneCountryDialCode: true,
                           phoneNumber: true,
+                          organisationId: true,
                         },
                       },
                     },
@@ -181,12 +191,13 @@ export class EcardsService {
     private readonly mediaService: MediaService,
   ) {}
 
-  async getByCustomerId(customerId: string) {
-    const card = await this.prisma.eCard.findUnique({
+  async listByCustomerId(customerId: string) {
+    const cards = await this.prisma.eCard.findMany({
       where: { customerId },
       include: FULL_INCLUDE,
+      orderBy: { createdAt: 'desc' },
     });
-    return card ? this.toResponse(card) : null;
+    return cards.map((card) => this.toResponse(card));
   }
 
   async getById(id: string) {
@@ -252,21 +263,6 @@ export class EcardsService {
     return this.create(customerId, rest, files, employee.id);
   }
 
-  async updateByCustomerId(
-    customerId: string,
-    dto: UpdateEcardDto,
-    files: Express.Multer.File[],
-  ) {
-    const existing = await this.prisma.eCard.findUnique({
-      where: { customerId },
-      include: FULL_INCLUDE,
-    });
-    if (!existing) {
-      throw new NotFoundException('E-card not found');
-    }
-    return this.update(existing, dto, files);
-  }
-
   async updateById(
     id: string,
     dto: UpdateEcardDto,
@@ -274,17 +270,6 @@ export class EcardsService {
   ) {
     const existing = await this.findByIdOrThrow(id);
     return this.update(existing, dto, files);
-  }
-
-  async removeByCustomerId(customerId: string): Promise<void> {
-    const existing = await this.prisma.eCard.findUnique({
-      where: { customerId },
-      include: FULL_INCLUDE,
-    });
-    if (!existing) {
-      throw new NotFoundException('E-card not found');
-    }
-    await this.remove(existing);
   }
 
   async removeById(id: string): Promise<void> {
@@ -300,15 +285,26 @@ export class EcardsService {
     files: Express.Multer.File[],
     createdByEmployeeId: string | null,
   ) {
-    await this.assertCustomerHasNoEcard(customerId);
+    await this.assertUnderEcardCap(customerId);
     await this.assertEndpointAvailable(dto.endpoint);
+    if (dto.organisationId) {
+      await this.assertOrganisationExists(dto.organisationId);
+      await this.assertCustomerBelongsToOrganisation(
+        customerId,
+        dto.organisationId,
+      );
+      await this.assertCustomerHasNoEcardForOrganisation(
+        customerId,
+        dto.organisationId,
+      );
+    }
 
     const teamComponent = dto.components.find(
       (component) => component.type === 'TEAM',
     );
     if (teamComponent) {
       await this.assertTeamMembersBelongToOwnerOrganisation(
-        customerId,
+        dto.organisationId ?? null,
         teamComponent.members.map((member) => member.organisationMemberId),
       );
     }
@@ -318,6 +314,9 @@ export class EcardsService {
         customerId,
         endpoint: dto.endpoint,
         createdByEmployeeId,
+        organisationId: dto.organisationId,
+        heroName: dto.heroName,
+        heroEmail: dto.heroEmail,
         heroCompanyName: dto.heroCompanyName,
         phoneCountryDialCode: dto.phoneCountryDialCode,
         phoneNumber: dto.phoneNumber,
@@ -390,13 +389,24 @@ export class EcardsService {
     if (dto.endpoint !== existing.endpoint) {
       await this.assertEndpointAvailable(dto.endpoint);
     }
+    if (dto.organisationId && dto.organisationId !== existing.organisationId) {
+      await this.assertOrganisationExists(dto.organisationId);
+      await this.assertCustomerBelongsToOrganisation(
+        existing.customerId,
+        dto.organisationId,
+      );
+      await this.assertCustomerHasNoEcardForOrganisation(
+        existing.customerId,
+        dto.organisationId,
+      );
+    }
 
     const teamComponent = dto.components.find(
       (component) => component.type === 'TEAM',
     );
     if (teamComponent) {
       await this.assertTeamMembersBelongToOwnerOrganisation(
-        existing.customerId,
+        dto.organisationId ?? existing.organisationId,
         teamComponent.members.map((member) => member.organisationMemberId),
       );
     }
@@ -439,6 +449,9 @@ export class EcardsService {
         where: { id: existing.id },
         data: {
           endpoint: dto.endpoint,
+          organisationId: dto.organisationId ?? null,
+          heroName: dto.heroName,
+          heroEmail: dto.heroEmail,
           heroCompanyName: dto.heroCompanyName,
           phoneCountryDialCode: dto.phoneCountryDialCode,
           phoneNumber: dto.phoneNumber,
@@ -718,12 +731,39 @@ export class EcardsService {
 
   // ── assertions ───────────────────────────────────────────────────────────
 
-  private async assertCustomerHasNoEcard(customerId: string): Promise<void> {
+  private async assertUnderEcardCap(customerId: string): Promise<void> {
+    const count = await this.prisma.eCard.count({ where: { customerId } });
+    if (count >= ECARD_MAX_PER_CUSTOMER) {
+      throw new BadRequestException(
+        `This customer already has the maximum of ${ECARD_MAX_PER_CUSTOMER} e-cards`,
+      );
+    }
+  }
+
+  private async assertOrganisationExists(
+    organisationId: string,
+  ): Promise<void> {
+    const organisation = await this.prisma.organisation.findUnique({
+      where: { id: organisationId },
+    });
+    if (!organisation) {
+      throw new BadRequestException(
+        'organisationId does not reference an existing organisation',
+      );
+    }
+  }
+
+  private async assertCustomerHasNoEcardForOrganisation(
+    customerId: string,
+    organisationId: string,
+  ): Promise<void> {
     const existing = await this.prisma.eCard.findUnique({
-      where: { customerId },
+      where: { customerId_organisationId: { customerId, organisationId } },
     });
     if (existing) {
-      throw new ConflictException('This customer already has an e-card');
+      throw new ConflictException(
+        'This customer already has an e-card for this organisation',
+      );
     }
   }
 
@@ -748,30 +788,41 @@ export class EcardsService {
   }
 
   private async assertTeamMembersBelongToOwnerOrganisation(
-    customerId: string,
+    organisationId: string | null,
     organisationMemberIds: string[],
   ): Promise<void> {
     if (organisationMemberIds.length === 0) {
       return;
     }
-    const ownerMembership = await this.prisma.organisationMember.findUnique({
-      where: { customerId },
-    });
-    if (!ownerMembership) {
+    if (!organisationId) {
       throw new BadRequestException(
-        'Cannot add team members: this customer does not belong to an organisation',
+        'Cannot add team members: this card is not linked to an organisation yet',
       );
     }
     const uniqueIds = new Set(organisationMemberIds);
     const validCount = await this.prisma.organisationMember.count({
       where: {
         id: { in: [...uniqueIds] },
-        organisationId: ownerMembership.organisationId,
+        organisationId,
       },
     });
     if (validCount !== uniqueIds.size) {
       throw new BadRequestException(
-        'One or more team members do not belong to your organisation',
+        "One or more team members do not belong to this card's organisation",
+      );
+    }
+  }
+
+  private async assertCustomerBelongsToOrganisation(
+    customerId: string,
+    organisationId: string,
+  ): Promise<void> {
+    const membership = await this.prisma.organisationMember.findUnique({
+      where: { customerId_organisationId: { customerId, organisationId } },
+    });
+    if (!membership) {
+      throw new BadRequestException(
+        'Customer does not belong to this organisation',
       );
     }
   }
@@ -804,16 +855,18 @@ export class EcardsService {
   }
 
   private toResponse(card: FullEcard) {
+    const ownerOrganisationId = card.organisationId;
     return {
       id: card.id,
       endpoint: card.endpoint,
       customerId: card.customerId,
+      organisationId: card.organisationId,
       createdByEmployeeId: card.createdByEmployeeId,
       createdAt: card.createdAt,
       updatedAt: card.updatedAt,
       hero: {
-        name: card.customer.account.name,
-        email: card.customer.account.email,
+        name: card.heroName,
+        email: card.heroEmail,
         companyName: card.heroCompanyName,
         profilePhotoMediaId: card.heroProfilePhotoMediaId,
         profilePhotoUrl: card.heroProfilePhoto
@@ -824,13 +877,14 @@ export class EcardsService {
         isExchangeContactEnabled: card.isExchangeContactEnabled,
       },
       components: card.components.map((component) =>
-        this.componentToResponse(component),
+        this.componentToResponse(component, ownerOrganisationId),
       ),
     };
   }
 
   private componentToResponse(
     component: FullEcardComponent,
+    ownerOrganisationId: string | null,
   ): EcardComponentResponse {
     const base: EcardComponentResponseBase = {
       id: component.id,
@@ -893,7 +947,7 @@ export class EcardsService {
           type: ECardComponentType.TEAM,
           title: component.team?.title ?? null,
           members: (component.team?.members ?? []).map((member) =>
-            this.teamMemberToResponse(member),
+            this.teamMemberToResponse(member, ownerOrganisationId),
           ),
         };
       case ECardComponentType.BROCHURE:
@@ -911,8 +965,12 @@ export class EcardsService {
 
   private teamMemberToResponse(
     member: FullTeamMember,
+    ownerOrganisationId: string | null,
   ): EcardTeamMemberResponse {
     const customer = member.organisationMember.customer;
+    const orgCard = ownerOrganisationId
+      ? customer.ecards.find((e) => e.organisationId === ownerOrganisationId)
+      : undefined;
     return {
       organisationMemberId: member.organisationMemberId,
       name: customer.account.name,
@@ -920,9 +978,9 @@ export class EcardsService {
       photoUrl: customer.pfpMedia
         ? this.mediaService.getPublicUrl(customer.pfpMedia)
         : null,
-      phoneCountryDialCode: customer.ecard?.phoneCountryDialCode ?? null,
-      phoneNumber: customer.ecard?.phoneNumber ?? null,
-      ecardEndpoint: customer.ecard?.endpoint ?? null,
+      phoneCountryDialCode: orgCard?.phoneCountryDialCode ?? null,
+      phoneNumber: orgCard?.phoneNumber ?? null,
+      ecardEndpoint: orgCard?.endpoint ?? null,
     };
   }
 }

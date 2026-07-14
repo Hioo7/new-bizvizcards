@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ExchangeContactPopup } from "@components/ExchangeContactPopup";
+import { useExchangeContactTimer } from "@hooks/useExchangeContactTimer";
 import { ecardVCardUrl, submitEcardExchangeContact } from "@services/publicEcardService";
 import { HeroSection } from "@features/public-ecard/components/sections/HeroSection";
 import { AboutSection } from "@features/public-ecard/components/sections/AboutSection";
@@ -44,6 +45,10 @@ interface EcardRendererProps {
 
 export function EcardRenderer({ card }: EcardRendererProps) {
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
+
+  useExchangeContactTimer(() => {
+    if (card.hero.isExchangeContactEnabled) setIsExchangeOpen(true);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">

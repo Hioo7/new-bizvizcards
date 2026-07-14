@@ -24,5 +24,7 @@ model Media {
   ecardGalleryImage ECardGalleryImage?
   ecardBrochure     ECardBrochureComponent?
 
+  organisation Organisation?
+
   @@map("Media")
 }

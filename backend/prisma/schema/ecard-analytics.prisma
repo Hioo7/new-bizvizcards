@@ -1,0 +1,23 @@
+enum ECardEventType {
+  VIEW
+  WALLET_SAVE
+  CONTACT_SAVE
+  EXCHANGE_CONTACT
+
+  @@map("ECardEventType")
+}
+
+model ECardEvent {
+  id         String         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardId    String         @db.Uuid
+  ecard      ECard          @relation(fields: [ecardId], references: [id], onDelete: Cascade)
+  type       ECardEventType
+  // Only ever set for VIEW events, reported back by the public card page
+  // after the fact (see EcardAnalyticsService.recordViewDuration) — null
+  // until then, and for every other event type.
+  durationMs Int?
+  createdAt  DateTime       @default(now())
+
+  @@index([ecardId, type, createdAt])
+  @@map("ECardEvent")
+}

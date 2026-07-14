@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createEcard, listEcards, updateEcard } from "@services/ecardService";
+import { createEcard, getEcard, updateEcard } from "@services/ecardService";
 import type { Ecard } from "@app-types/ecard";
 import {
   buildEcardSubmission,
@@ -7,8 +7,14 @@ import {
 } from "@features/ecards/utils/ecardFormMapping";
 import {
   emptyEcardBuilderState,
+  emptyHeroDraft,
   type EcardBuilderState,
 } from "@features/ecards/types/ecardBuilder.types";
+
+export interface EcardHeroPrefill {
+  name: string;
+  email: string;
+}
 
 export interface UseEcardBuilderResult {
   state: EcardBuilderState;
@@ -21,28 +27,58 @@ export interface UseEcardBuilderResult {
   save: () => Promise<Ecard | null>;
 }
 
-export function useEcardBuilder(customerId: string): UseEcardBuilderResult {
-  const [state, setStateInternal] = useState<EcardBuilderState>(
-    emptyEcardBuilderState(),
+function createModeState(prefill: EcardHeroPrefill | null): EcardBuilderState {
+  return {
+    ...emptyEcardBuilderState(),
+    hero: {
+      ...emptyHeroDraft(),
+      name: prefill?.name ?? "",
+      email: prefill?.email ?? "",
+    },
+  };
+}
+
+export function useEcardBuilder(
+  customerId: string,
+  ecardId: string | null,
+  prefill: EcardHeroPrefill | null,
+): UseEcardBuilderResult {
+  const [state, setStateInternal] = useState<EcardBuilderState>(() =>
+    createModeState(prefill),
   );
   const [existingCard, setExistingCard] = useState<Ecard | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(ecardId !== null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Tracks which ecardId the current `state` was last reset for, so a prop
+  // change back to create mode (e.g. navigating from editing card A straight
+  // to "new") can reset synchronously during render — React's documented
+  // "adjust state when a prop changes" pattern — rather than via an effect,
+  // since it's a pure, synchronous reset with no async work involved.
+  const [resetForId, setResetForId] = useState(ecardId);
+  if (ecardId !== resetForId && ecardId === null) {
+    setResetForId(null);
+    setExistingCard(null);
+    setStateInternal(createModeState(prefill));
+    setIsLoading(false);
+    setLoadError(null);
+  }
+
   useEffect(() => {
+    if (ecardId === null) return;
+
     let cancelled = false;
 
     async function load() {
       setIsLoading(true);
       setLoadError(null);
       try {
-        const response = await listEcards({ customerId, page: 1, pageSize: 1 });
+        const card = await getEcard(ecardId as string);
         if (cancelled) return;
-        const card = response.ecards[0] ?? null;
         setExistingCard(card);
-        setStateInternal(card ? ecardToBuilderState(card) : emptyEcardBuilderState());
+        setStateInternal(ecardToBuilderState(card));
       } catch (err) {
         if (cancelled) return;
         setLoadError(
@@ -58,7 +94,7 @@ export function useEcardBuilder(customerId: string): UseEcardBuilderResult {
     return () => {
       cancelled = true;
     };
-  }, [customerId]);
+  }, [ecardId]);
 
   const setState = useCallback(
     (updater: (state: EcardBuilderState) => EcardBuilderState) => {
@@ -72,8 +108,8 @@ export function useEcardBuilder(customerId: string): UseEcardBuilderResult {
     setSaveError(null);
     try {
       const { payload, files } = buildEcardSubmission(state);
-      const saved = existingCard
-        ? await updateEcard(existingCard.id, payload, files)
+      const saved = ecardId
+        ? await updateEcard(ecardId, payload, files)
         : await createEcard({ ...payload, customerId }, files);
       setExistingCard(saved);
       setStateInternal(ecardToBuilderState(saved));
@@ -86,7 +122,7 @@ export function useEcardBuilder(customerId: string): UseEcardBuilderResult {
     } finally {
       setIsSaving(false);
     }
-  }, [customerId, existingCard, state]);
+  }, [customerId, ecardId, state]);
 
   return {
     state,

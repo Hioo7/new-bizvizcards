@@ -10,6 +10,7 @@ import SmartCardsPage from "@pages/SmartCardsPage";
 import SmartCardsListPage from "@pages/SmartCardsListPage";
 import RedirectsPage from "@pages/RedirectsPage";
 import EcardsPage from "@pages/EcardsPage";
+import EcardListPage from "@pages/EcardListPage";
 import EcardBuilderPage from "@pages/EcardBuilderPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import EcardPublicPage from "@pages/EcardPublicPage";
@@ -39,6 +40,7 @@ function App() {
           />
           <Route path={ROUTES.adminRedirects} element={<RedirectsPage />} />
           <Route path={ROUTES.adminEcards} element={<EcardsPage />} />
+          <Route path={ROUTES.adminCustomerEcards} element={<EcardListPage />} />
           <Route path={ROUTES.adminEcardBuilder} element={<EcardBuilderPage />} />
         </Route>
       </Route>

@@ -24,23 +24,31 @@ export class OrganisationInvitesController {
     private readonly customersService: CustomersService,
   ) {}
 
-  @Get()
-  async list(@Req() request: CustomerAuthenticatedRequest) {
+  @Get(':organisationId')
+  async list(
+    @Req() request: CustomerAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
+  ) {
     const customer = await this.customersService.getByAccountId(
       request.customerSession.user.id,
     );
-    return this.organisationInvitesService.list(customer.id);
+    return this.organisationInvitesService.list(customer.id, organisationId);
   }
 
-  @Post()
+  @Post(':organisationId')
   async invite(
     @Req() request: CustomerAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
     @Body(new ZodValidationPipe(inviteMemberSchema)) dto: InviteMemberDto,
   ) {
     const customer = await this.customersService.getByAccountId(
       request.customerSession.user.id,
     );
-    return this.organisationInvitesService.invite(customer.id, dto);
+    return this.organisationInvitesService.invite(
+      customer.id,
+      organisationId,
+      dto,
+    );
   }
 
   @Delete(':id')

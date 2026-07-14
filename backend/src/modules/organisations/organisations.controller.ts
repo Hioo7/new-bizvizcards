@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Patch,
   Post,
   Req,
@@ -26,11 +27,11 @@ export class OrganisationsController {
   ) {}
 
   @Get('me')
-  async getMine(@Req() request: CustomerAuthenticatedRequest) {
+  async listMine(@Req() request: CustomerAuthenticatedRequest) {
     const customer = await this.customersService.getByAccountId(
       request.customerSession.user.id,
     );
-    return this.organisationsService.getMine(customer.id);
+    return this.organisationsService.listMine(customer.id);
   }
 
   @Post()
@@ -45,15 +46,16 @@ export class OrganisationsController {
     return this.organisationsService.create(customer.id, dto);
   }
 
-  @Patch('me')
+  @Patch('me/:organisationId')
   async update(
     @Req() request: CustomerAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
     @Body(new ZodValidationPipe(updateOrganisationSchema))
     dto: UpdateOrganisationDto,
   ) {
     const customer = await this.customersService.getByAccountId(
       request.customerSession.user.id,
     );
-    return this.organisationsService.update(customer.id, dto);
+    return this.organisationsService.update(customer.id, organisationId, dto);
   }
 }

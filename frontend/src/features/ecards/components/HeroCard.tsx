@@ -35,10 +35,10 @@ export default function HeroCard({ draft, onEdit }: HeroCardProps) {
           <Sparkles className="h-3 w-3" /> Hero — required
         </p>
         <p className="truncate text-sm font-semibold text-base-content">
-          {draft.companyName || "Untitled card"}
+          {draft.name || "Untitled card"}
         </p>
         <p className="truncate text-xs text-base-content/50">
-          /{draft.endpoint || "no-url-yet"}
+          {draft.companyName || `/${draft.endpoint || "no-url-yet"}`}
         </p>
       </div>
       <button

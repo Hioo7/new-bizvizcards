@@ -62,6 +62,80 @@ describe('AppConfigService', () => {
     expect(config.minioBucket).toBe(validEnv.MINIO_BUCKET);
   });
 
+  it('boots with Google Wallet vars unset and exposes them as undefined', () => {
+    process.env = { ...validEnv };
+
+    const config = new AppConfigService();
+
+    expect(config.googleWalletIssuerId).toBeUndefined();
+    expect(config.googleWalletServiceAccountEmail).toBeUndefined();
+    expect(config.googleWalletPrivateKey).toBeUndefined();
+  });
+
+  it('exposes Google Wallet vars when set', () => {
+    process.env = {
+      ...validEnv,
+      GOOGLE_WALLET_ISSUER_ID: 'issuer-123',
+      GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL:
+        'wallet@example.iam.gserviceaccount.com',
+      GOOGLE_WALLET_PRIVATE_KEY:
+        '-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----',
+    };
+
+    const config = new AppConfigService();
+
+    expect(config.googleWalletIssuerId).toBe('issuer-123');
+    expect(config.googleWalletServiceAccountEmail).toBe(
+      'wallet@example.iam.gserviceaccount.com',
+    );
+    expect(config.googleWalletPrivateKey).toBe(
+      '-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----',
+    );
+  });
+
+  it('boots with Apple Wallet vars unset and exposes them as undefined', () => {
+    process.env = { ...validEnv };
+
+    const config = new AppConfigService();
+
+    expect(config.appleWalletPassTypeId).toBeUndefined();
+    expect(config.appleWalletTeamId).toBeUndefined();
+    expect(config.appleWalletCertPem).toBeUndefined();
+    expect(config.appleWalletKeyPem).toBeUndefined();
+    expect(config.appleWalletWwdrPem).toBeUndefined();
+    expect(config.appleWalletKeyPassphrase).toBeUndefined();
+  });
+
+  it('exposes Apple Wallet vars when set', () => {
+    process.env = {
+      ...validEnv,
+      APPLE_WALLET_PASS_TYPE_ID: 'pass.com.example.bizcard',
+      APPLE_WALLET_TEAM_ID: 'ABCDE12345',
+      APPLE_WALLET_CERT_PEM:
+        '-----BEGIN CERTIFICATE-----\ncert\n-----END CERTIFICATE-----',
+      APPLE_WALLET_KEY_PEM:
+        '-----BEGIN PRIVATE KEY-----\nkey\n-----END PRIVATE KEY-----',
+      APPLE_WALLET_WWDR_PEM:
+        '-----BEGIN CERTIFICATE-----\nwwdr\n-----END CERTIFICATE-----',
+      APPLE_WALLET_KEY_PASSPHRASE: 'super-secret',
+    };
+
+    const config = new AppConfigService();
+
+    expect(config.appleWalletPassTypeId).toBe('pass.com.example.bizcard');
+    expect(config.appleWalletTeamId).toBe('ABCDE12345');
+    expect(config.appleWalletCertPem).toBe(
+      '-----BEGIN CERTIFICATE-----\ncert\n-----END CERTIFICATE-----',
+    );
+    expect(config.appleWalletKeyPem).toBe(
+      '-----BEGIN PRIVATE KEY-----\nkey\n-----END PRIVATE KEY-----',
+    );
+    expect(config.appleWalletWwdrPem).toBe(
+      '-----BEGIN CERTIFICATE-----\nwwdr\n-----END CERTIFICATE-----',
+    );
+    expect(config.appleWalletKeyPassphrase).toBe('super-secret');
+  });
+
   it('throws when a secret is shorter than 32 characters', () => {
     process.env = { ...validEnv, BETTER_AUTH_STAFF_SECRET: 'too-short' };
 

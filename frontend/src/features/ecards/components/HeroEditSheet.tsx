@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link2, Phone, Sparkles } from "lucide-react";
+import { Link2, Mail, Phone, Sparkles, User } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import ImageSlotField from "@components/media/ImageSlotField";
 import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import OrganisationPickerField from "@features/ecards/components/OrganisationPickerField";
 import {
   heroSheetSchema,
   type HeroSheetValues,
@@ -14,6 +15,7 @@ import type { ImageFieldValue } from "@app-types/media.types";
 
 interface HeroEditSheetProps {
   open: boolean;
+  customerId: string;
   draft: EcardHeroDraft;
   isSubmitting: boolean;
   error: string | null;
@@ -23,6 +25,7 @@ interface HeroEditSheetProps {
 
 export default function HeroEditSheet({
   open,
+  customerId,
   draft,
   isSubmitting,
   error,
@@ -37,6 +40,8 @@ export default function HeroEditSheet({
     resolver: zodResolver(heroSheetSchema),
     defaultValues: {
       endpoint: draft.endpoint,
+      name: draft.name,
+      email: draft.email,
       companyName: draft.companyName,
       phoneCountryDialCode: draft.phoneCountryDialCode,
       phoneNumber: draft.phoneNumber,
@@ -44,9 +49,12 @@ export default function HeroEditSheet({
     },
   });
   const [photo, setPhoto] = useState<ImageFieldValue>(draft.photo);
+  const [organisationId, setOrganisationId] = useState<string | null>(
+    draft.organisationId,
+  );
 
   function submit(values: HeroSheetValues) {
-    onSave({ ...values, photo });
+    onSave({ ...values, photo, organisationId });
   }
 
   return (
@@ -74,11 +82,31 @@ export default function HeroEditSheet({
         error={errors.endpoint?.message}
       />
       <FormTextField
+        id="name"
+        label="Name"
+        icon={User}
+        registration={register("name")}
+        error={errors.name?.message}
+      />
+      <FormTextField
+        id="email"
+        label="Email"
+        type="email"
+        icon={Mail}
+        registration={register("email")}
+        error={errors.email?.message}
+      />
+      <FormTextField
         id="companyName"
         label="Company"
         icon={Sparkles}
         registration={register("companyName")}
         error={errors.companyName?.message}
+      />
+      <OrganisationPickerField
+        customerId={customerId}
+        value={organisationId}
+        onChange={setOrganisationId}
       />
       <div className="flex gap-3">
         <div className="w-24">

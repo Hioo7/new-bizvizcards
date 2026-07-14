@@ -32,12 +32,16 @@ export class EmployeeOrganisationsController {
     return this.organisationsService.listAllForEmployee(query);
   }
 
-  @Get('by-customer/:customerId/members')
+  @Get('by-customer/:customerId')
   @RequirePermissions({ organisation: ['get'] })
-  listMembersByCustomer(@Param('customerId') customerId: string) {
-    return this.organisationMembersService.listByCustomerIdForEmployee(
-      customerId,
-    );
+  listMembershipsByCustomer(@Param('customerId') customerId: string) {
+    return this.organisationsService.listMembershipsWithOrgDetails(customerId);
+  }
+
+  @Get(':organisationId/members')
+  @RequirePermissions({ organisation: ['get'] })
+  listMembersByOrganisation(@Param('organisationId') organisationId: string) {
+    return this.organisationMembersService.listByOrganisationId(organisationId);
   }
 
   @Delete('members/:id')

@@ -19,11 +19,20 @@ export const ecardCoreFields = {
     .min(URL_SLUG_MIN_LENGTH)
     .max(URL_SLUG_MAX_LENGTH)
     .regex(URL_SLUG_REGEX),
+  // Independent per-card identity — no longer derived from the customer's
+  // account, since one customer can now own multiple cards.
+  heroName: z.string().trim().min(1).max(ECARD_TEXT_SHORT_MAX_LENGTH),
+  heroEmail: z.string().trim().email(),
   heroCompanyName: z
     .string()
     .trim()
     .max(ECARD_TEXT_SHORT_MAX_LENGTH)
     .optional(),
+  // Which organisation this specific card belongs to (as opposed to the
+  // customer's own org membership) — optional; unset means a
+  // personal/unaffiliated card. No admin UI sets this yet (org-template
+  // feature is future work) but the API is ready for it.
+  organisationId: z.uuid().optional(),
   phoneCountryDialCode: z
     .string()
     .trim()

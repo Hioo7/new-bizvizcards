@@ -1,7 +1,7 @@
 import { Search, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCustomerSearch } from "@hooks/useCustomerSearch";
-import { adminEcardBuilderPath } from "@config/routes";
+import { adminCustomerEcardsPath } from "@config/routes";
 
 export default function EcardCustomerPickerView() {
   const navigate = useNavigate();
@@ -40,8 +40,8 @@ export default function EcardCustomerPickerView() {
               key={customer.id}
               type="button"
               onClick={() =>
-                navigate(adminEcardBuilderPath(customer.id), {
-                  state: { customerName: customer.name },
+                navigate(adminCustomerEcardsPath(customer.id), {
+                  state: { customer },
                 })
               }
               className="flex w-full items-center gap-3 border-b border-base-300 px-4 py-3 text-left last:border-b-0 hover:bg-base-200"

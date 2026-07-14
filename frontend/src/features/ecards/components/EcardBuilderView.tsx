@@ -17,7 +17,12 @@ import ConfirmActionModal from "@components/ConfirmActionModal";
 import EmptyStepState from "@components/EmptyStepState";
 import { useAsyncAction } from "@hooks/useAsyncAction";
 import { deleteEcard } from "@services/ecardService";
-import { ROUTES } from "@config/routes";
+import {
+  ECARD_NEW_ID,
+  adminCustomerEcardsPath,
+  adminEcardBuilderPath,
+} from "@config/routes";
+import type { Customer } from "@app-types/customer";
 import HeroCard from "@features/ecards/components/HeroCard";
 import SortableComponentRow from "@features/ecards/components/SortableComponentRow";
 import ComponentTypePickerModal from "@features/ecards/components/ComponentTypePickerModal";
@@ -37,12 +42,21 @@ import type { EcardComponentType } from "@app-types/ecard";
 type EditingTarget = { kind: "hero" } | { kind: "component"; key: string } | null;
 
 export default function EcardBuilderView() {
-  const { customerId } = useParams<{ customerId: string }>();
+  const { customerId, ecardId: ecardIdParam } = useParams<{
+    customerId: string;
+    ecardId: string;
+  }>();
   const navigate = useNavigate();
-  const location = useLocation() as { state?: { customerName?: string } };
-  const customerName = location.state?.customerName;
+  const location = useLocation() as { state?: { customer?: Customer } };
+  const customer = location.state?.customer;
+  const isNew = ecardIdParam === ECARD_NEW_ID;
+  const ecardId = isNew ? null : (ecardIdParam ?? null);
 
-  const builder = useEcardBuilder(customerId ?? "");
+  const builder = useEcardBuilder(
+    customerId ?? "",
+    ecardId,
+    customer ? { name: customer.name, email: customer.email } : null,
+  );
   const [editing, setEditing] = useState<EditingTarget>(null);
   const [isPickingType, setIsPickingType] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -50,7 +64,7 @@ export default function EcardBuilderView() {
   const deleteAction = useAsyncAction();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  if (!customerId) {
+  if (!customerId || !ecardIdParam) {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 py-8 text-center sm:px-6">
         <p className="text-sm text-base-content/60">Missing customer.</p>
@@ -91,24 +105,30 @@ export default function EcardBuilderView() {
     }));
   }
 
-  async function handleSaveAll() {
+  const handleSaveAll = async () => {
     const saved = await builder.save();
-    if (saved) {
-      setSavedAt(Date.now());
-      setTimeout(() => setSavedAt(null), 3000);
+    if (!saved) return;
+    if (isNew) {
+      navigate(adminEcardBuilderPath(customerId, saved.id), {
+        replace: true,
+        state: { customer },
+      });
+      return;
     }
-  }
+    setSavedAt(Date.now());
+    setTimeout(() => setSavedAt(null), 3000);
+  };
 
-  function handleDelete() {
+  const handleDelete = () => {
     if (!builder.existingCard) return;
     void deleteAction.run(
       () => deleteEcard(builder.existingCard!.id),
       () => {
         setIsConfirmingDelete(false);
-        navigate(ROUTES.adminEcards);
+        navigate(adminCustomerEcardsPath(customerId), { state: { customer } });
       },
     );
-  }
+  };
 
   const addedTypes = builder.state.components.map((c) => c.draft.type);
 
@@ -117,7 +137,9 @@ export default function EcardBuilderView() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate(ROUTES.adminEcards)}
+          onClick={() =>
+            navigate(adminCustomerEcardsPath(customerId), { state: { customer } })
+          }
           aria-label="Back to e-cards"
           className="flex min-h-11 min-w-11 items-center justify-center rounded-field text-base-content/60 hover:bg-base-200"
         >
@@ -125,7 +147,7 @@ export default function EcardBuilderView() {
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-extrabold text-base-content">
-            {customerName ?? "Customer"}&rsquo;s E-card
+            {customer?.name ?? "Customer"}&rsquo;s E-card
           </h1>
           <p className="text-sm text-base-content/60">
             {builder.existingCard ? "Editing existing card" : "Creating a new card"}
@@ -195,7 +217,7 @@ export default function EcardBuilderView() {
             type="button"
             onClick={() => void handleSaveAll()}
             disabled={builder.isSaving}
-            className="btn min-h-11 gap-2 self-end rounded-field bg-primary px-6 text-primary-content hover:bg-primary/90"
+            className="btn min-h-11 gap-2 rounded-field bg-primary px-6 text-primary-content hover:bg-primary/90"
           >
             {builder.isSaving && <span className="loading loading-spinner loading-sm" />}
             {savedAt && !builder.isSaving && <Check className="h-4 w-4" />}
@@ -207,6 +229,7 @@ export default function EcardBuilderView() {
       {editing?.kind === "hero" && (
         <HeroEditSheet
           open
+          customerId={customerId}
           draft={builder.state.hero}
           isSubmitting={false}
           error={null}
@@ -297,7 +320,7 @@ export default function EcardBuilderView() {
       {editingComponent?.draft.type === "TEAM" && (
         <TeamEditSheet
           open
-          customerId={customerId}
+          organisationId={builder.state.hero.organisationId}
           draft={editingComponent.draft}
           isSubmitting={false}
           error={null}
@@ -356,6 +379,7 @@ export default function EcardBuilderView() {
       <ComponentTypePickerModal
         open={isPickingType}
         addedTypes={addedTypes}
+        isTeamDisabled={builder.state.hero.organisationId === null}
         onClose={() => setIsPickingType(false)}
         onPick={handlePickType}
       />

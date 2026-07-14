@@ -8,7 +8,7 @@ model Customer {
   updatedAt  DateTime        @updatedAt
 
   smartCards SmartCard[]
-  ecard      ECard?
+  ecards     ECard[]
 
   defaultLeadFolderId String?     @db.Uuid
   defaultLeadFolder   LeadFolder? @relation("CustomerDefaultLeadFolder", fields: [defaultLeadFolderId], references: [id], onDelete: SetNull)
@@ -16,7 +16,7 @@ model Customer {
   leadFolders LeadFolder[] @relation("CustomerLeadFolders")
   leads       Lead[]
 
-  organisationMembership OrganisationMember?
+  organisationMemberships OrganisationMember[]
   createdOrganisations   Organisation[]       @relation("OrganisationCreatedBy")
   sentInvites            OrganisationInvite[] @relation("OrganisationInvitesSent")
   acceptedInvites        OrganisationInvite[] @relation("OrganisationInvitesAccepted")

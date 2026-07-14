@@ -9,6 +9,7 @@ import type {
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaSource } from '../../../generated/prisma/client';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
+import { ECARD_MAX_PER_CUSTOMER } from '../ecards.constants';
 import { EcardsService } from './ecards.service';
 
 class FakeMediaStorageProvider implements MediaStorageProvider {
@@ -72,7 +73,13 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
 
     const appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
-    organisationsService = new OrganisationsService(prisma);
+    const bootstrapRegistry: MediaStorageProviderRegistry = {
+      [MediaSource.MINIO]: new FakeMediaStorageProvider(),
+    };
+    organisationsService = new OrganisationsService(
+      prisma,
+      new MediaService(prisma, bootstrapRegistry),
+    );
   });
 
   afterAll(async () => {
@@ -159,7 +166,10 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         customer.id,
         {
           endpoint: `e2e-${randomUUID()}`,
+          heroName: 'Jane Doe (Personal)',
+          heroEmail: 'jane.personal@example.com',
           heroCompanyName: 'Acme',
+          organisationId: organisation.id,
           phoneCountryDialCode: '91',
           phoneNumber: '9876543210',
           isExchangeContactEnabled: true,
@@ -207,7 +217,9 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       );
 
       expect(created.endpoint).toMatch(/^e2e-/);
-      expect(created.hero.name).toBe('Jane Doe');
+      // Independently stored — not derived from the customer's account name.
+      expect(created.hero.name).toBe('Jane Doe (Personal)');
+      expect(created.hero.email).toBe('jane.personal@example.com');
       expect(created.hero.profilePhotoUrl).toContain('/media/test-bucket/');
       expect(created.components).toHaveLength(7);
 
@@ -239,21 +251,73 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       ]);
     });
 
-    it('rejects creating a second e-card for the same customer', async () => {
-      const customer = await seedCustomer();
-      await service.createForCustomer(
+    it('allows a customer to own multiple, independently-identified e-cards', async () => {
+      const customer = await seedCustomer('Jane Doe');
+      const personal = await service.createForCustomer(
         customer.id,
-        { endpoint: `first-${randomUUID()}`, components: [] },
+        {
+          endpoint: `personal-${randomUUID()}`,
+          heroName: 'Jane Doe',
+          heroEmail: 'jane@personal.example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
         [],
       );
+      const branded = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `branded-${randomUUID()}`,
+          heroName: 'Jane Doe',
+          heroEmail: 'jane@acme.example.com',
+          isExchangeContactEnabled: true,
+          heroCompanyName: 'Acme Inc',
+          components: [],
+        },
+        [],
+      );
+
+      expect(personal.id).not.toBe(branded.id);
+      expect(personal.hero.email).toBe('jane@personal.example.com');
+      expect(branded.hero.email).toBe('jane@acme.example.com');
+
+      const listed = await service.listByCustomerId(customer.id);
+      expect(listed.map((c) => c.id).sort()).toEqual(
+        [personal.id, branded.id].sort(),
+      );
+    });
+
+    it('rejects creating more than ECARD_MAX_PER_CUSTOMER e-cards', async () => {
+      const customer = await seedCustomer();
+      for (let i = 0; i < ECARD_MAX_PER_CUSTOMER; i++) {
+        await service.createForCustomer(
+          customer.id,
+          {
+            endpoint: `cap-${i}-${randomUUID()}`,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        );
+      }
 
       await expect(
         service.createForCustomer(
           customer.id,
-          { endpoint: `second-${randomUUID()}`, components: [] },
+          {
+            endpoint: `cap-over-${randomUUID()}`,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
           [],
         ),
-      ).rejects.toThrow('This customer already has an e-card');
+      ).rejects.toThrow(
+        `This customer already has the maximum of ${ECARD_MAX_PER_CUSTOMER} e-cards`,
+      );
     });
 
     it('rejects an endpoint already in use', async () => {
@@ -262,26 +326,41 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const endpoint = `dup-${randomUUID()}`;
       await service.createForCustomer(
         customerA.id,
-        { endpoint, components: [] },
+        {
+          endpoint,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
         [],
       );
 
       await expect(
         service.createForCustomer(
           customerB.id,
-          { endpoint, components: [] },
+          {
+            endpoint,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
           [],
         ),
       ).rejects.toThrow('Endpoint already in use');
     });
 
-    it('rejects a TEAM component when the owner has no organisation', async () => {
+    it('rejects a TEAM component when the card is not linked to an organisation', async () => {
       const customer = await seedCustomer();
       await expect(
         service.createForCustomer(
           customer.id,
           {
             endpoint: `no-org-${randomUUID()}`,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
             components: [
               {
                 type: 'TEAM',
@@ -292,11 +371,11 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           [],
         ),
       ).rejects.toThrow(
-        'Cannot add team members: this customer does not belong to an organisation',
+        'Cannot add team members: this card is not linked to an organisation yet',
       );
     });
 
-    it('rejects a TEAM member from a different organisation', async () => {
+    it('rejects a TEAM member from a different organisation than the card is linked to', async () => {
       const { organisation: ownOrg } = await seedOrgWithSpoc();
       const owner = await seedCustomer('Owner');
       await prisma.organisationMember.create({
@@ -314,6 +393,10 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           owner.id,
           {
             endpoint: `cross-org-${randomUUID()}`,
+            heroName: 'Owner',
+            heroEmail: 'owner@example.com',
+            isExchangeContactEnabled: true,
+            organisationId: ownOrg.id,
             components: [
               {
                 type: 'TEAM',
@@ -324,8 +407,200 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           [],
         ),
       ).rejects.toThrow(
-        'One or more team members do not belong to your organisation',
+        "One or more team members do not belong to this card's organisation",
       );
+    });
+
+    it('rejects tagging a card to an organisation the customer does not belong to', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const outsider = await seedCustomer('Outsider');
+
+      await expect(
+        service.createForCustomer(
+          outsider.id,
+          {
+            endpoint: `not-a-member-${randomUUID()}`,
+            heroName: 'Outsider',
+            heroEmail: 'outsider@example.com',
+            isExchangeContactEnabled: true,
+            organisationId: organisation.id,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow('Customer does not belong to this organisation');
+    });
+
+    it('resolves TEAM eligibility per-card when a customer belongs to two organisations', async () => {
+      const { organisation: orgA } = await seedOrgWithSpoc();
+      const { organisation: orgB } = await seedOrgWithSpoc();
+      const owner = await seedCustomer('Owner');
+      await prisma.organisationMember.create({
+        data: { organisationId: orgA.id, customerId: owner.id },
+      });
+      await prisma.organisationMember.create({
+        data: { organisationId: orgB.id, customerId: owner.id },
+      });
+
+      const memberOfA = await seedCustomer('Member of A');
+      const membershipA = await prisma.organisationMember.create({
+        data: { organisationId: orgA.id, customerId: memberOfA.id },
+      });
+      const memberOfB = await seedCustomer('Member of B');
+      const membershipB = await prisma.organisationMember.create({
+        data: { organisationId: orgB.id, customerId: memberOfB.id },
+      });
+
+      const cardForA = await service.createForCustomer(
+        owner.id,
+        {
+          endpoint: `card-a-${randomUUID()}`,
+          heroName: 'Owner',
+          heroEmail: 'owner@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: orgA.id,
+          components: [
+            {
+              type: 'TEAM',
+              members: [{ organisationMemberId: membershipA.id }],
+            },
+          ],
+        },
+        [],
+      );
+      const team = cardForA.components.find((c) => c.type === 'TEAM');
+      expect(team?.members).toEqual([
+        expect.objectContaining({ organisationMemberId: membershipA.id }),
+      ]);
+
+      const cardForB = await service.createForCustomer(
+        owner.id,
+        {
+          endpoint: `card-b-valid-${randomUUID()}`,
+          heroName: 'Owner',
+          heroEmail: 'owner@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: orgB.id,
+          components: [
+            {
+              type: 'TEAM',
+              members: [{ organisationMemberId: membershipB.id }],
+            },
+          ],
+        },
+        [],
+      );
+      const teamB = cardForB.components.find((c) => c.type === 'TEAM');
+      expect(teamB?.members).toEqual([
+        expect.objectContaining({ organisationMemberId: membershipB.id }),
+      ]);
+
+      await expect(
+        service.updateById(
+          cardForB.id,
+          {
+            endpoint: cardForB.endpoint,
+            heroName: 'Owner',
+            heroEmail: 'owner@example.com',
+            isExchangeContactEnabled: true,
+            organisationId: orgB.id,
+            components: [
+              {
+                type: 'TEAM',
+                // membershipA belongs to orgA, not orgB — cardForB is
+                // tagged to orgB, so this should be rejected.
+                members: [{ organisationMemberId: membershipA.id }],
+              },
+            ],
+          },
+          [],
+        ),
+      ).rejects.toThrow(
+        "One or more team members do not belong to this card's organisation",
+      );
+    });
+
+    describe('organisationId', () => {
+      it("accepts a card tagged to the customer's organisation", async () => {
+        const { organisation } = await seedOrgWithSpoc();
+        const customer = await seedCustomer('Jane Doe');
+        await prisma.organisationMember.create({
+          data: { organisationId: organisation.id, customerId: customer.id },
+        });
+
+        const created = await service.createForCustomer(
+          customer.id,
+          {
+            endpoint: `org-card-${randomUUID()}`,
+            heroName: 'Jane Doe',
+            heroEmail: 'jane@acme.example.com',
+            isExchangeContactEnabled: true,
+            organisationId: organisation.id,
+            components: [],
+          },
+          [],
+        );
+
+        expect(created.organisationId).toBe(organisation.id);
+      });
+
+      it('rejects a second card for the same customer+organisation pair', async () => {
+        const { organisation } = await seedOrgWithSpoc();
+        const customer = await seedCustomer('Jane Doe');
+        await prisma.organisationMember.create({
+          data: { organisationId: organisation.id, customerId: customer.id },
+        });
+        await service.createForCustomer(
+          customer.id,
+          {
+            endpoint: `org-first-${randomUUID()}`,
+            heroName: 'Jane Doe',
+            heroEmail: 'jane@acme.example.com',
+            isExchangeContactEnabled: true,
+            organisationId: organisation.id,
+            components: [],
+          },
+          [],
+        );
+
+        await expect(
+          service.createForCustomer(
+            customer.id,
+            {
+              endpoint: `org-second-${randomUUID()}`,
+              heroName: 'Jane Doe',
+              heroEmail: 'jane@acme.example.com',
+              isExchangeContactEnabled: true,
+              organisationId: organisation.id,
+              components: [],
+            },
+            [],
+          ),
+        ).rejects.toThrow(
+          'This customer already has an e-card for this organisation',
+        );
+      });
+
+      it('rejects an organisationId that does not reference an existing organisation', async () => {
+        const customer = await seedCustomer();
+
+        await expect(
+          service.createForCustomer(
+            customer.id,
+            {
+              endpoint: `org-missing-${randomUUID()}`,
+              heroName: 'Test Customer',
+              heroEmail: 'test@example.com',
+              isExchangeContactEnabled: true,
+              organisationId: randomUUID(),
+              components: [],
+            },
+            [],
+          ),
+        ).rejects.toThrow(
+          'organisationId does not reference an existing organisation',
+        );
+      });
     });
   });
 
@@ -339,6 +614,9 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         {
           customerId: customer.id,
           endpoint: `emp-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
           components: [],
         },
         [],
@@ -355,6 +633,9 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           {
             customerId: randomUUID(),
             endpoint: `emp-bad-${randomUUID()}`,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
             components: [],
           },
           [],
@@ -363,20 +644,124 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
     });
   });
 
-  describe('getByCustomerId', () => {
-    it('returns null when the customer has no e-card', async () => {
+  describe('listByCustomerId', () => {
+    it('returns an empty array when the customer has no e-cards', async () => {
       const customer = await seedCustomer();
-      await expect(service.getByCustomerId(customer.id)).resolves.toBeNull();
+      await expect(service.listByCustomerId(customer.id)).resolves.toEqual([]);
     });
   });
 
-  describe('updateByCustomerId (full replace)', () => {
+  describe('team member resolution via organisationId', () => {
+    it("resolves a colleague's org-tagged card for phone/endpoint, omitting them if untagged", async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const owner = await seedCustomer('Owner');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: owner.id },
+      });
+      const ownerCard = await service.createForCustomer(
+        owner.id,
+        {
+          endpoint: `owner-${randomUUID()}`,
+          heroName: 'Owner',
+          heroEmail: 'owner@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+
+      const taggedMember = await seedCustomer('Tagged Mate');
+      const taggedMembership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: taggedMember.id },
+      });
+      await service.createForCustomer(
+        taggedMember.id,
+        {
+          endpoint: `tagged-${randomUUID()}`,
+          heroName: 'Tagged Mate',
+          heroEmail: 'tagged@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          phoneCountryDialCode: '91',
+          phoneNumber: '9111111111',
+          components: [],
+        },
+        [],
+      );
+
+      const untaggedMember = await seedCustomer('Untagged Mate');
+      const untaggedMembership = await prisma.organisationMember.create({
+        data: {
+          organisationId: organisation.id,
+          customerId: untaggedMember.id,
+        },
+      });
+      await service.createForCustomer(
+        untaggedMember.id,
+        {
+          endpoint: `untagged-${randomUUID()}`,
+          heroName: 'Untagged Mate',
+          heroEmail: 'untagged@example.com',
+          isExchangeContactEnabled: true,
+          phoneCountryDialCode: '91',
+          phoneNumber: '9222222222',
+          components: [],
+        },
+        [],
+      );
+
+      const updated = await service.updateById(
+        ownerCard.id,
+        {
+          endpoint: ownerCard.endpoint,
+          heroName: ownerCard.hero.name,
+          heroEmail: ownerCard.hero.email,
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [
+            {
+              type: 'TEAM',
+              members: [
+                { organisationMemberId: taggedMembership.id },
+                { organisationMemberId: untaggedMembership.id },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const team = updated.components.find((c) => c.type === 'TEAM');
+      const taggedResult = team?.members.find(
+        (m) => m.organisationMemberId === taggedMembership.id,
+      );
+      const untaggedResult = team?.members.find(
+        (m) => m.organisationMemberId === untaggedMembership.id,
+      );
+      expect(taggedResult).toMatchObject({
+        phoneCountryDialCode: '91',
+        phoneNumber: '9111111111',
+      });
+      expect(taggedResult?.ecardEndpoint).toMatch(/^tagged-/);
+      expect(untaggedResult).toMatchObject({
+        phoneCountryDialCode: null,
+        phoneNumber: null,
+        ecardEndpoint: null,
+      });
+    });
+  });
+
+  describe('updateById (full replace)', () => {
     it('replaces components, keeps an existing gallery image, and orphans the replaced hero photo', async () => {
       const customer = await seedCustomer();
       const created = await service.createForCustomer(
         customer.id,
         {
           endpoint: `upd-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
           heroProfilePhoto: { action: 'upload' },
           components: [
             {
@@ -394,10 +779,13 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const keptMediaId = createdGallery?.subGalleries[0].images[0]
         .imageMediaId as string;
 
-      const updated = await service.updateByCustomerId(
-        customer.id,
+      const updated = await service.updateById(
+        created.id,
         {
           endpoint: created.endpoint,
+          heroName: 'Updated Name',
+          heroEmail: 'updated@example.com',
+          isExchangeContactEnabled: true,
           heroProfilePhoto: { action: 'upload' },
           components: [
             {
@@ -417,6 +805,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         [makeFile('heroProfilePhoto')],
       );
 
+      expect(updated.hero.name).toBe('Updated Name');
+      expect(updated.hero.email).toBe('updated@example.com');
       expect(updated.components).toHaveLength(2);
       expect(updated.components[0]).toMatchObject({
         type: 'ABOUT',
@@ -447,6 +837,9 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         customer.id,
         {
           endpoint: `brochure-keep-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
           components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
         },
         [makePdfFile('brochurePdf')],
@@ -455,10 +848,13 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         (c) => c.type === 'BROCHURE',
       )?.pdfMediaId as string;
 
-      const updated = await service.updateByCustomerId(
-        customer.id,
+      const updated = await service.updateById(
+        created.id,
         {
           endpoint: created.endpoint,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
           components: [
             {
               type: 'BROCHURE',
@@ -482,6 +878,9 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         customer.id,
         {
           endpoint: `brochure-replace-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
           components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
         },
         [makePdfFile('brochurePdf')],
@@ -490,10 +889,13 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         (c) => c.type === 'BROCHURE',
       )?.pdfMediaId as string;
 
-      const updated = await service.updateByCustomerId(
-        customer.id,
+      const updated = await service.updateById(
+        created.id,
         {
           endpoint: created.endpoint,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
           components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
         },
         [makePdfFile('brochurePdf')],
@@ -512,15 +914,24 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const customer = await seedCustomer();
       const created = await service.createForCustomer(
         customer.id,
-        { endpoint: `brochure-missing-${randomUUID()}`, components: [] },
+        {
+          endpoint: `brochure-missing-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
         [],
       );
 
       await expect(
-        service.updateByCustomerId(
-          customer.id,
+        service.updateById(
+          created.id,
           {
             endpoint: created.endpoint,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
             components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
           },
           [],
@@ -532,15 +943,24 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const customer = await seedCustomer();
       const created = await service.createForCustomer(
         customer.id,
-        { endpoint: `keep-bad-${randomUUID()}`, components: [] },
+        {
+          endpoint: `keep-bad-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
         [],
       );
 
       await expect(
-        service.updateByCustomerId(
-          customer.id,
+        service.updateById(
+          created.id,
           {
             endpoint: created.endpoint,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
             components: [
               {
                 type: 'GALLERY',
@@ -555,25 +975,33 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       ).rejects.toThrow('mediaId does not belong to this e-card');
     });
 
-    it('throws when the customer has no e-card', async () => {
-      const customer = await seedCustomer();
+    it('throws when the id does not reference an existing e-card', async () => {
       await expect(
-        service.updateByCustomerId(
-          customer.id,
-          { endpoint: `none-${randomUUID()}`, components: [] },
+        service.updateById(
+          randomUUID(),
+          {
+            endpoint: `none-${randomUUID()}`,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
           [],
         ),
       ).rejects.toThrow('E-card not found');
     });
   });
 
-  describe('removeByCustomerId', () => {
+  describe('removeById', () => {
     it('deletes the card and its media', async () => {
       const customer = await seedCustomer();
       const created = await service.createForCustomer(
         customer.id,
         {
           endpoint: `rm-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
           heroProfilePhoto: { action: 'upload' },
           components: [],
         },
@@ -581,10 +1009,10 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       );
       const mediaId = created.hero.profilePhotoMediaId as string;
 
-      await service.removeByCustomerId(customer.id);
+      await service.removeById(created.id);
 
       await expect(
-        prisma.eCard.findUnique({ where: { customerId: customer.id } }),
+        prisma.eCard.findUnique({ where: { id: created.id } }),
       ).resolves.toBeNull();
       await expect(
         prisma.media.findUnique({ where: { id: mediaId } }),
@@ -606,7 +1034,13 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const customer = await seedCustomer();
       const created = await service.createForCustomer(
         customer.id,
-        { endpoint: `list-${randomUUID()}`, components: [] },
+        {
+          endpoint: `list-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
         [],
       );
 
