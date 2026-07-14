@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSession()
       .then((session) => {
-        if (!cancelled) setUser(session.user);
+        if (!cancelled) setUser(session?.user ?? null);
       })
       .catch(() => {
         if (!cancelled) setUser(null);

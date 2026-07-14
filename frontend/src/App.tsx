@@ -23,7 +23,9 @@ import OrdersPage from "@pages/OrdersPage";
 import OrderDetailPage from "@pages/OrderDetailPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import EcardPublicPage from "@pages/EcardPublicPage";
+import UserDashboardPage from "@pages/UserDashboardPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
+import RequireAuth from "@components/RequireAuth";
 import AdminLayout from "@layouts/AdminLayout";
 import { ROUTES } from "@config/routes";
 
@@ -36,6 +38,10 @@ function App() {
       <Route path={ROUTES.adminLogin} element={<AdminLoginPage />} />
       <Route path={ROUTES.smartCardPublic} element={<SmartCardPublicPage />} />
       <Route path={ROUTES.ecardPublic} element={<EcardPublicPage />} />
+
+      <Route element={<RequireAuth />}>
+        <Route path={ROUTES.userDashboard} element={<UserDashboardPage />} />
+      </Route>
 
       <Route element={<RequireStaffAuth />}>
         <Route element={<AdminLayout />}>

@@ -1,7 +1,8 @@
-import { AUTH_ENDPOINTS } from "@config/api";
+import { AUTH_ENDPOINTS, CUSTOMER_ENDPOINTS } from "@config/api";
 import { apiRequest } from "@services/apiClient";
 import type {
   AuthSession,
+  AuthUser,
   SessionResponse,
   SignInPayload,
   SignUpPayload,
@@ -27,8 +28,26 @@ export function signOut(): Promise<{ success: boolean }> {
   });
 }
 
-export function getSession(): Promise<SessionResponse> {
-  return apiRequest<SessionResponse>(AUTH_ENDPOINTS.session, {
+export function getSession(): Promise<SessionResponse | null> {
+  return apiRequest<SessionResponse | null>(AUTH_ENDPOINTS.session, {
     method: "GET",
   });
+}
+
+export function updateUserName(name: string): Promise<{ user: AuthUser }> {
+  return apiRequest<{ user: AuthUser }>(AUTH_ENDPOINTS.updateUser, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function updateProfilePicture(
+  file: File,
+): Promise<{ pfpMediaId: string | null; pfpUrl: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiRequest<{ pfpMediaId: string | null; pfpUrl: string }>(
+    CUSTOMER_ENDPOINTS.updateProfilePicture,
+    { method: "PATCH", body: formData },
+  );
 }

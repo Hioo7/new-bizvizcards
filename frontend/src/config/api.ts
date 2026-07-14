@@ -5,6 +5,7 @@ export const AUTH_ENDPOINTS = {
   signIn: `${AUTH_BASE_PATH}/sign-in/email`,
   signOut: `${AUTH_BASE_PATH}/sign-out`,
   session: `${AUTH_BASE_PATH}/get-session`,
+  updateUser: `${AUTH_BASE_PATH}/update-user`,
 } as const;
 
 export const STAFF_AUTH_BASE_PATH = "/api/auth/staff";
@@ -44,8 +45,14 @@ export const SMART_CARD_TEMPLATES_BASE_PATH = "/api/smart-card-templates";
 export const EMPLOYEE_BUSINESS_EVENTS_BASE_PATH =
   "/api/employee/business-events";
 
+
 export const ADMIN_PRODUCTS_BASE_PATH = "/api/admin/products";
 
 export const ADMIN_PRODUCT_UNITS_BASE_PATH = "/api/admin/product-units";
 
 export const EMPLOYEE_ORDERS_BASE_PATH = "/api/employee/orders";
+
+export const CUSTOMER_ENDPOINTS = {
+  updateProfilePicture: `${CUSTOMERS_BASE_PATH}/me/profile-picture`,
+} as const;
+

@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: false;
+}
 @plugin "daisyui/theme" {
   name: "bizviz";
   default: true;
@@ -10,7 +12,7 @@
   --color-base-300: #e2e8f0;
   --color-base-content: #0f172a;
 
-  --color-primary: #2563eb;
+  --color-primary: #2D2DE0;
   --color-primary-content: #ffffff;
 
   --color-secondary: #6366f1;
@@ -20,7 +22,7 @@
   --color-accent-content: #0f172a;
 
   --color-neutral: #111827;
-  --color-neutral-content: #9ca3af;
+  --color-neutral-content: #ffffff;
 
   --color-info: #60a5fa;
   --color-info-content: #0f172a;
@@ -104,4 +106,9 @@
 
 .animate-ticker {
   animation: ticker 25s linear infinite;
+}
+
+body {
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
 }

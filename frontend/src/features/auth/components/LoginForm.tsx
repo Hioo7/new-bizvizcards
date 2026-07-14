@@ -45,10 +45,7 @@ export default function LoginForm() {
     setErrorMessage(null);
     try {
       await signIn(values);
-      // TODO: redirect to the customer's real post-login destination
-      // (dashboard/eshop) once those pages are migrated — for now we send
-      // everyone back to the landing page.
-      navigate(ROUTES.landing);
+      navigate(ROUTES.userDashboard);
     } catch (err) {
       if (err instanceof ApiError && [401, 403, 404].includes(err.status)) {
         setErrorMessage(INVALID_CREDENTIALS_MESSAGE);
