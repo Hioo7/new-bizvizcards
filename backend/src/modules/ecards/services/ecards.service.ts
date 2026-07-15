@@ -11,6 +11,9 @@ import type {
   CreateImageSlotDto,
   UpdateImageSlotDto,
 } from '../../../common/validators/image-slot.dto';
+import { OrganisationMembersService } from '../../organisations/services/organisation-members.service';
+import { OrganisationsService } from '../../organisations/services/organisations.service';
+import type { CreateEcardAsSpocDto } from '../dto/create-ecard-as-spoc.dto';
 import type {
   CreateEcardAsEmployeeDto,
   CreateEcardDto,
@@ -189,6 +192,8 @@ export class EcardsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mediaService: MediaService,
+    private readonly organisationsService: OrganisationsService,
+    private readonly organisationMembersService: OrganisationMembersService,
   ) {}
 
   async listByCustomerId(customerId: string) {
@@ -221,6 +226,7 @@ export class EcardsService {
     const pageSize = query.pageSize ?? ECARD_LIST_DEFAULT_PAGE_SIZE;
     const where = {
       ...(query.customerId && { customerId: query.customerId }),
+      ...(query.organisationId && { organisationId: query.organisationId }),
     };
 
     const [ecards, total] = await Promise.all([
@@ -275,6 +281,81 @@ export class EcardsService {
   async removeById(id: string): Promise<void> {
     const existing = await this.findByIdOrThrow(id);
     await this.remove(existing);
+  }
+
+  // ── SPOC-initiated (organisation-scoped) operations ─────────────────────
+
+  async createForOrganisationSpoc(
+    actorCustomerId: string,
+    organisationId: string,
+    dto: CreateEcardAsSpocDto,
+    files: Express.Multer.File[],
+  ) {
+    await this.organisationsService.assertIsSpoc(
+      actorCustomerId,
+      organisationId,
+    );
+    const { memberId, ...rest } = dto;
+    const member =
+      await this.organisationMembersService.getMemberInOrganisationOrThrow(
+        memberId,
+        organisationId,
+      );
+    return this.create(
+      member.customerId,
+      { ...rest, organisationId },
+      files,
+      null,
+    );
+  }
+
+  async updateForOrganisationSpoc(
+    actorCustomerId: string,
+    organisationId: string,
+    ecardId: string,
+    dto: UpdateEcardDto,
+    files: Express.Multer.File[],
+  ) {
+    await this.organisationsService.assertIsSpoc(
+      actorCustomerId,
+      organisationId,
+    );
+    const existing = await this.findByIdOrThrow(ecardId);
+    if (existing.organisationId !== organisationId) {
+      throw new NotFoundException('E-card not found');
+    }
+    // Never trust a body-supplied organisationId here — force it to stay on
+    // the org the SPOC is authorized for, so this endpoint can't be used to
+    // relink a card to a different organisation.
+    return this.update(existing, { ...dto, organisationId }, files);
+  }
+
+  async getForOrganisationSpoc(
+    actorCustomerId: string,
+    organisationId: string,
+    ecardId: string,
+  ) {
+    await this.organisationsService.assertIsSpoc(
+      actorCustomerId,
+      organisationId,
+    );
+    const card = await this.getById(ecardId);
+    if (card.organisationId !== organisationId) {
+      throw new NotFoundException('E-card not found');
+    }
+    return card;
+  }
+
+  async listForOrganisationSpoc(
+    actorCustomerId: string,
+    organisationId: string,
+    query: ListEcardQueryDto,
+  ) {
+    await this.organisationsService.assertIsSpoc(
+      actorCustomerId,
+      organisationId,
+    );
+    return this.list({ ...query, organisationId });
   }
 
   // ── shared create/update/remove ─────────────────────────────────────────

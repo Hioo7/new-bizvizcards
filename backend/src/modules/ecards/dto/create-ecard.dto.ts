@@ -21,7 +21,7 @@ const createEcardComponentSchema = z.discriminatedUnion('type', [
   createEcardBrochureComponentSchema,
 ]);
 
-const createEcardShape = {
+export const createEcardShape = {
   ...ecardCoreFields,
   heroProfilePhoto: createImageSlotSchema.optional(),
   components: z

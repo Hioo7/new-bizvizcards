@@ -8,6 +8,7 @@ import {
 export const listEcardQuerySchema = z
   .object({
     customerId: z.uuid().optional(),
+    organisationId: z.uuid().optional(),
     page: z.coerce.number().int().min(1).default(ECARD_LIST_DEFAULT_PAGE),
     pageSize: z.coerce
       .number()

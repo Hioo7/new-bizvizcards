@@ -109,6 +109,19 @@ export class OrganisationMembersService {
     await this.prisma.organisationMember.delete({ where: { id: memberId } });
   }
 
+  async getMemberInOrganisationOrThrow(
+    memberId: string,
+    organisationId: string,
+  ): Promise<OrganisationMemberModel> {
+    const member = await this.getMemberOrThrow(memberId);
+    if (member.organisationId !== organisationId) {
+      // Same message as the plain not-found case above — doesn't leak that
+      // the member exists in a *different* organisation.
+      throw new NotFoundException('Organisation member not found');
+    }
+    return member;
+  }
+
   private async getMemberOrThrow(
     memberId: string,
   ): Promise<OrganisationMemberModel> {

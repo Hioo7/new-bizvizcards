@@ -8,6 +8,7 @@ import type {
 } from '../../../common/media/storage/media-storage-provider.interface';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaSource } from '../../../generated/prisma/client';
+import { OrganisationMembersService } from '../../organisations/services/organisation-members.service';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
 import { ECARD_MAX_PER_CUSTOMER } from '../ecards.constants';
 import { EcardsService } from './ecards.service';
@@ -61,6 +62,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
   let fakeProvider: FakeMediaStorageProvider;
   let mediaService: MediaService;
   let organisationsService: OrganisationsService;
+  let organisationMembersService: OrganisationMembersService;
   let service: EcardsService;
   let originalDatabaseUrl: string | undefined;
   const seededAccountIds: string[] = [];
@@ -80,6 +82,10 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       prisma,
       new MediaService(prisma, bootstrapRegistry),
     );
+    organisationMembersService = new OrganisationMembersService(
+      prisma,
+      organisationsService,
+    );
   });
 
   afterAll(async () => {
@@ -93,7 +99,12 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       [MediaSource.MINIO]: fakeProvider,
     };
     mediaService = new MediaService(prisma, registry);
-    service = new EcardsService(prisma, mediaService);
+    service = new EcardsService(
+      prisma,
+      mediaService,
+      organisationsService,
+      organisationMembersService,
+    );
   });
 
   afterEach(async () => {
@@ -1051,6 +1062,504 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       });
 
       expect(result.ecards.map((c) => c.id)).toEqual([created.id]);
+    });
+  });
+
+  describe('createForOrganisationSpoc', () => {
+    it('lets the SPOC create a card for a member who has none yet', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+
+      const created = await service.createForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        {
+          memberId: membership.id,
+          endpoint: `spoc-create-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      expect(created.customerId).toBe(member.id);
+      expect(created.organisationId).toBe(organisation.id);
+      expect(created.createdByEmployeeId).toBeNull();
+    });
+
+    it('rejects a caller who is a MEMBER, not the SPOC', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const actingMember = await seedCustomer('Acting Member');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: actingMember.id },
+      });
+      const target = await seedCustomer('Target');
+      const targetMembership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: target.id },
+      });
+
+      await expect(
+        service.createForOrganisationSpoc(
+          actingMember.id,
+          organisation.id,
+          {
+            memberId: targetMembership.id,
+            endpoint: `spoc-create-${randomUUID()}`,
+            heroName: 'Target',
+            heroEmail: 'target@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow('Only the organisation SPOC can perform this action');
+    });
+
+    it('rejects a caller who does not belong to the organisation at all', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const outsider = await seedCustomer('Outsider');
+      const target = await seedCustomer('Target');
+      const targetMembership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: target.id },
+      });
+
+      await expect(
+        service.createForOrganisationSpoc(
+          outsider.id,
+          organisation.id,
+          {
+            memberId: targetMembership.id,
+            endpoint: `spoc-create-${randomUUID()}`,
+            heroName: 'Target',
+            heroEmail: 'target@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow('Only the organisation SPOC can perform this action');
+    });
+
+    it('rejects a memberId that belongs to a different organisation', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const { organisation: otherOrg } = await seedOrgWithSpoc();
+      const outsider = await seedCustomer('Outsider');
+      const outsiderMembership = await prisma.organisationMember.create({
+        data: { organisationId: otherOrg.id, customerId: outsider.id },
+      });
+
+      await expect(
+        service.createForOrganisationSpoc(
+          spoc.id,
+          organisation.id,
+          {
+            memberId: outsiderMembership.id,
+            endpoint: `spoc-create-${randomUUID()}`,
+            heroName: 'Outsider',
+            heroEmail: 'outsider@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow('Organisation member not found');
+    });
+
+    it('rejects when the target member already has a card for this organisation', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      await service.createForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        {
+          memberId: membership.id,
+          endpoint: `spoc-create-first-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.createForOrganisationSpoc(
+          spoc.id,
+          organisation.id,
+          {
+            memberId: membership.id,
+            endpoint: `spoc-create-second-${randomUUID()}`,
+            heroName: 'Member One',
+            heroEmail: 'member-one@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow(
+        'This customer already has an e-card for this organisation',
+      );
+    });
+  });
+
+  describe('updateForOrganisationSpoc', () => {
+    it('lets the SPOC edit a card originally created by the member themself', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `member-owned-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+
+      const updated = await service.updateForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: 'Updated By SPOC',
+          heroEmail: 'updated@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      expect(updated.hero.name).toBe('Updated By SPOC');
+      expect(updated.organisationId).toBe(organisation.id);
+    });
+
+    it('lets the SPOC edit a card originally created by another SPOC on behalf of the member', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const created = await service.createForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        {
+          memberId: membership.id,
+          endpoint: `spoc-owned-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      const updated = await service.updateForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: 'Updated Again',
+          heroEmail: 'updated-again@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      expect(updated.hero.name).toBe('Updated Again');
+    });
+
+    it('rejects a caller who is not the SPOC', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `not-spoc-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.updateForOrganisationSpoc(
+          member.id,
+          organisation.id,
+          created.id,
+          {
+            endpoint: created.endpoint,
+            heroName: 'Should Not Update',
+            heroEmail: 'member-one@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow('Only the organisation SPOC can perform this action');
+    });
+
+    it('404s when the card is linked to a different organisation', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const { organisation: otherOrg } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: otherOrg.id, customerId: member.id },
+      });
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `other-org-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: otherOrg.id,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.updateForOrganisationSpoc(
+          spoc.id,
+          organisation.id,
+          created.id,
+          {
+            endpoint: created.endpoint,
+            heroName: 'Should Not Update',
+            heroEmail: 'member-one@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow('E-card not found');
+    });
+
+    it('404s when the card has no organisation link at all', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `personal-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.updateForOrganisationSpoc(
+          spoc.id,
+          organisation.id,
+          created.id,
+          {
+            endpoint: created.endpoint,
+            heroName: 'Should Not Update',
+            heroEmail: 'member-one@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        ),
+      ).rejects.toThrow('E-card not found');
+    });
+
+    it('ignores a body-supplied organisationId and keeps the card linked to the route organisation', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const { organisation: otherOrg } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `no-relink-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+
+      const updated = await service.updateForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: otherOrg.id,
+          components: [],
+        },
+        [],
+      );
+
+      expect(updated.organisationId).toBe(organisation.id);
+    });
+  });
+
+  describe('getForOrganisationSpoc', () => {
+    it("returns the card when it's linked to the SPOC's organisation", async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `analytics-target-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+
+      const found = await service.getForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        created.id,
+      );
+      expect(found.id).toBe(created.id);
+    });
+
+    it('rejects a caller who is not the SPOC', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `analytics-forbidden-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.getForOrganisationSpoc(member.id, organisation.id, created.id),
+      ).rejects.toThrow('Only the organisation SPOC can perform this action');
+    });
+
+    it('404s when the card belongs to a different organisation', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const { organisation: otherOrg } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: otherOrg.id, customerId: member.id },
+      });
+      const created = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `analytics-wrong-org-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: otherOrg.id,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.getForOrganisationSpoc(spoc.id, organisation.id, created.id),
+      ).rejects.toThrow('E-card not found');
+    });
+  });
+
+  describe('listForOrganisationSpoc', () => {
+    it('returns only cards linked to the given organisation', async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const linked = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `list-linked-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+      await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `list-unlinked-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      const result = await service.listForOrganisationSpoc(
+        spoc.id,
+        organisation.id,
+        { page: 1, pageSize: 20 },
+      );
+
+      expect(result.ecards.map((c) => c.id)).toEqual([linked.id]);
+    });
+
+    it('rejects a caller who is not the SPOC', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+
+      await expect(
+        service.listForOrganisationSpoc(member.id, organisation.id, {
+          page: 1,
+          pageSize: 20,
+        }),
+      ).rejects.toThrow('Only the organisation SPOC can perform this action');
     });
   });
 });

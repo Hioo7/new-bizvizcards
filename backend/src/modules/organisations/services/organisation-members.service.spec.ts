@@ -213,6 +213,43 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
     });
   });
 
+  describe('getMemberInOrganisationOrThrow', () => {
+    it('returns the member when it belongs to the given organisation', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+
+      const found = await service.getMemberInOrganisationOrThrow(
+        membership.id,
+        organisation.id,
+      );
+      expect(found.id).toBe(membership.id);
+    });
+
+    it('throws when the memberId does not exist', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+
+      await expect(
+        service.getMemberInOrganisationOrThrow(randomUUID(), organisation.id),
+      ).rejects.toThrow('Organisation member not found');
+    });
+
+    it('throws when the member belongs to a different organisation', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const { organisation: otherOrg } = await seedOrgWithSpoc('Other Org');
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: otherOrg.id, customerId: member.id },
+      });
+
+      await expect(
+        service.getMemberInOrganisationOrThrow(membership.id, organisation.id),
+      ).rejects.toThrow('Organisation member not found');
+    });
+  });
+
   describe('employee-facing methods', () => {
     it('removes a member bypassing the SPOC check, but still blocks the last SPOC', async () => {
       const { spoc, organisation } = await seedOrgWithSpoc();
