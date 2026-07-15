@@ -1,5 +1,8 @@
 import { randomUUID } from 'crypto';
+import { verifyPassword } from 'better-auth/crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
+import { createCustomerAuth } from '../../../common/auth/customer-auth.factory';
+import type { CustomerAuth } from '../../../common/auth/customer-auth.factory';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaService } from '../../../common/media/media.service';
 import { MediaSource } from '../../../generated/prisma/client';
@@ -32,6 +35,7 @@ class FakeMediaStorageProvider implements MediaStorageProvider {
 describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
   let prisma: PrismaService;
   let appConfig: AppConfigService;
+  let customerAuth: CustomerAuth;
   let fakeProvider: FakeMediaStorageProvider;
   let service: CustomersService;
   let originalDatabaseUrl: string | undefined;
@@ -43,6 +47,11 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
 
     appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
+    customerAuth = createCustomerAuth({
+      secret: appConfig.betterAuthCustomerSecret,
+      baseUrl: appConfig.betterAuthUrl,
+      prisma,
+    });
   });
 
   afterAll(async () => {
@@ -56,7 +65,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
       [MediaSource.MINIO]: fakeProvider,
     };
     const mediaService = new MediaService(prisma, registry);
-    service = new CustomersService(prisma, mediaService);
+    service = new CustomersService(prisma, mediaService, customerAuth);
   });
 
   afterEach(async () => {
@@ -217,6 +226,206 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
 
       const found = result.customers.find((c) => c.id === customer.id);
       expect(found?.pfpUrl).toBeNull();
+    });
+  });
+
+  describe('create', () => {
+    it('creates a customer account and leaves no orphaned session row', async () => {
+      const email = `create-${randomUUID()}@example.com`;
+
+      const created = await service.create({
+        name: 'New Customer',
+        email,
+        password: 'a-strong-password',
+      });
+      seededAccountIds.push(
+        (await prisma.customer.findUniqueOrThrow({ where: { id: created.id } }))
+          .accountId,
+      );
+
+      expect(created.name).toBe('New Customer');
+      expect(created.email).toBe(email);
+      expect(created.banned).toBe(false);
+
+      const account = await prisma.customerAccount.findUniqueOrThrow({
+        where: { email },
+      });
+      const sessions = await prisma.customerSession.findMany({
+        where: { userId: account.id },
+      });
+      expect(sessions).toHaveLength(0);
+    });
+
+    it('rejects a duplicate email', async () => {
+      const email = `create-dup-${randomUUID()}@example.com`;
+      const first = await service.create({
+        name: 'First',
+        email,
+        password: 'a-strong-password',
+      });
+      seededAccountIds.push(
+        (await prisma.customer.findUniqueOrThrow({ where: { id: first.id } }))
+          .accountId,
+      );
+
+      await expect(
+        service.create({
+          name: 'Second',
+          email,
+          password: 'a-strong-password',
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('updateForEmployee', () => {
+    it('updates name and email independently', async () => {
+      const customer = await seedCustomer();
+
+      const nameOnly = await service.updateForEmployee(customer.id, {
+        name: 'Renamed',
+      });
+      expect(nameOnly.name).toBe('Renamed');
+
+      const newEmail = `updated-${randomUUID()}@example.com`;
+      const emailOnly = await service.updateForEmployee(customer.id, {
+        email: newEmail,
+      });
+      expect(emailOnly.email).toBe(newEmail);
+      expect(emailOnly.name).toBe('Renamed');
+    });
+
+    it('rejects a duplicate email', async () => {
+      const existing = await seedCustomer();
+      const customer = await seedCustomer();
+      const existingAccount = await prisma.customerAccount.findUniqueOrThrow({
+        where: { id: existing.accountId },
+      });
+
+      await expect(
+        service.updateForEmployee(customer.id, {
+          email: existingAccount.email,
+        }),
+      ).rejects.toThrow('Email is already in use');
+    });
+
+    it('throws when the customer does not exist', async () => {
+      await expect(
+        service.updateForEmployee(randomUUID(), { name: 'X' }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('setPasswordForEmployee', () => {
+    it('creates a credential row when none exists yet, and it verifies', async () => {
+      const customer = await seedCustomer();
+
+      await service.setPasswordForEmployee(customer.id, {
+        newPassword: 'brand-new-password',
+      });
+
+      const credential = await prisma.customerCredential.findFirstOrThrow({
+        where: { userId: customer.accountId, providerId: 'credential' },
+      });
+      await expect(
+        verifyPassword({
+          hash: credential.password as string,
+          password: 'brand-new-password',
+        }),
+      ).resolves.toBe(true);
+    });
+
+    it('updates an existing credential row in place', async () => {
+      const email = `set-password-${randomUUID()}@example.com`;
+      const created = await service.create({
+        name: 'Has Password',
+        email,
+        password: 'original-password',
+      });
+      const customer = await prisma.customer.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      seededAccountIds.push(customer.accountId);
+
+      await service.setPasswordForEmployee(customer.id, {
+        newPassword: 'replaced-password',
+      });
+
+      const credentials = await prisma.customerCredential.findMany({
+        where: { userId: customer.accountId, providerId: 'credential' },
+      });
+      expect(credentials).toHaveLength(1);
+      await expect(
+        verifyPassword({
+          hash: credentials[0].password as string,
+          password: 'replaced-password',
+        }),
+      ).resolves.toBe(true);
+    });
+
+    it('throws when the customer does not exist', async () => {
+      await expect(
+        service.setPasswordForEmployee(randomUUID(), {
+          newPassword: 'whatever-password',
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('ban / unban', () => {
+    it('bans a customer with a default reason and deletes existing sessions', async () => {
+      const email = `ban-${randomUUID()}@example.com`;
+      const created = await service.create({
+        name: 'Ban Me',
+        email,
+        password: 'a-strong-password',
+      });
+      const customer = await prisma.customer.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      seededAccountIds.push(customer.accountId);
+
+      const signIn = await customerAuth.api.signInEmail({
+        body: { email, password: 'a-strong-password' },
+      });
+      expect(signIn.token).toBeTruthy();
+
+      const banned = await service.ban(customer.id, {});
+      expect(banned.banned).toBe(true);
+      expect(banned.banReason).toBe('No reason provided');
+
+      const sessions = await prisma.customerSession.findMany({
+        where: { userId: customer.accountId },
+      });
+      expect(sessions).toHaveLength(0);
+    });
+
+    it('uses a provided ban reason', async () => {
+      const customer = await seedCustomer();
+
+      const banned = await service.ban(customer.id, {
+        banReason: 'Fraudulent activity',
+      });
+
+      expect(banned.banReason).toBe('Fraudulent activity');
+    });
+
+    it('unban clears ban fields, including for an already-unbanned customer', async () => {
+      const customer = await seedCustomer();
+
+      await service.ban(customer.id, { banReason: 'test' });
+      const unbanned = await service.unban(customer.id);
+      expect(unbanned.banned).toBe(false);
+      expect(unbanned.banReason).toBeNull();
+
+      await expect(service.unban(customer.id)).resolves.toMatchObject({
+        banned: false,
+      });
+    });
+
+    it('throws when the customer does not exist', async () => {
+      await expect(service.ban(randomUUID(), {})).rejects.toThrow();
+      await expect(service.unban(randomUUID())).rejects.toThrow();
     });
   });
 });

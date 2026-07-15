@@ -1,7 +1,7 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import CustomerPicker from "@features/smart-cards/components/CustomerPicker";
+import CustomerPickerField from "@components/CustomerPickerField";
 import { customerStepSchema } from "@features/smart-cards/schemas/smartCardStepSchemas";
 import type {
   CustomerStepValues,
@@ -49,7 +49,8 @@ const CustomerStep = forwardRef<
         This template requires a linked customer account. Every visitor who
         exchanges contact details will be tied to this customer.
       </p>
-      <CustomerPicker
+      <CustomerPickerField
+        label="Linked customer"
         selectedCustomerId={customerId}
         selectedCustomer={selectedCustomer}
         onSelect={(customer) => {

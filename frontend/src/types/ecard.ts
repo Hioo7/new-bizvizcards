@@ -126,6 +126,12 @@ export interface ListEcardsQuery {
   pageSize: number;
 }
 
+export interface OrganisationMemberLinkedEcard {
+  id: string;
+  endpoint: string;
+  heroName: string;
+}
+
 export interface OrganisationMemberSummary {
   id: string;
   customerId: string;
@@ -134,6 +140,7 @@ export interface OrganisationMemberSummary {
   role: "SPOC" | "MEMBER";
   status: "ACTIVE" | "SUSPENDED";
   joinedAt: string;
+  linkedEcard: OrganisationMemberLinkedEcard | null;
 }
 
 /** Mirrors the backend's discriminated image-slot DTO — 'upload' expects a

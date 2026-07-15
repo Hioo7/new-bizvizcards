@@ -1,5 +1,4 @@
 export const MIN_NAME_LENGTH = 2;
-export const MIN_PASSWORD_LENGTH = 8;
 export const ERROR_RIBBON_DURATION_MS = 4000;
 
 export const INVALID_CREDENTIALS_MESSAGE =

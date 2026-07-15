@@ -3,6 +3,9 @@ export interface Customer {
   name: string;
   email: string;
   pfpUrl: string | null;
+  banned: boolean | null;
+  banReason: string | null;
+  banExpires: string | null;
 }
 
 export interface CustomerListResponse {
@@ -16,4 +19,23 @@ export interface ListCustomersQuery {
   search?: string;
   page: number;
   pageSize: number;
+}
+
+export interface CreateCustomerPayload {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface UpdateCustomerPayload {
+  name?: string;
+  email?: string;
+}
+
+export interface SetCustomerPasswordPayload {
+  newPassword: string;
+}
+
+export interface BanCustomerPayload {
+  banReason?: string;
 }

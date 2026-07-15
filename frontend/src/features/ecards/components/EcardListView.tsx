@@ -10,15 +10,25 @@ import {
   adminEcardBuilderPath,
   adminNewEcardPath,
 } from "@config/routes";
-import { useEcardList } from "@features/ecards/hooks/useEcardList";
+import { useEcardList } from "@hooks/useEcardList";
 import type { Customer } from "@app-types/customer";
 import type { Ecard } from "@app-types/ecard";
 
 export default function EcardListView() {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
-  const location = useLocation() as { state?: { customer?: Customer } };
+  const location = useLocation() as {
+    key: string;
+    state?: { customer?: Customer };
+  };
   const customer = location.state?.customer;
+  // react-router gives the initial history entry (e.g. a fresh page load or
+  // direct link) a location.key of "default" — there's nothing to go back
+  // to in that case, so fall back to the e-card picker instead of leaving
+  // the app. Otherwise, go back to wherever actually linked here (the
+  // e-cards picker, a customer row, or an organisation member row) instead
+  // of always landing on the picker.
+  const canGoBack = location.key !== "default";
 
   const list = useEcardList(customerId ?? "");
   const deleteAction = useAsyncAction();
@@ -48,8 +58,8 @@ export default function EcardListView() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate(ROUTES.adminEcards)}
-          aria-label="Back to customers"
+          onClick={() => (canGoBack ? navigate(-1) : navigate(ROUTES.adminEcards))}
+          aria-label="Back"
           className="flex min-h-11 min-w-11 items-center justify-center rounded-field text-base-content/60 hover:bg-base-200"
         >
           <ArrowLeft className="h-5 w-5" />

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Mail } from "lucide-react";
 import { loginSchema, type LoginFormValues } from "@features/auth/schemas/loginSchema";
 import FormTextField from "@components/forms/FormTextField";
-import PasswordField from "@features/auth/components/PasswordField";
+import PasswordField from "@components/forms/PasswordField";
 import FormErrorRibbon from "@components/forms/FormErrorRibbon";
 import SocialLoginButtons from "@features/auth/components/SocialLoginButtons";
 import { useAuth } from "@hooks/useAuth";

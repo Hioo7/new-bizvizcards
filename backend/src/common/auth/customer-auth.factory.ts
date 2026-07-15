@@ -1,9 +1,10 @@
-import { betterAuth } from 'better-auth';
+import { APIError, betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '../../generated/prisma/client';
 import {
   CUSTOMER_AUTH_BASE_PATH,
   CUSTOMER_AUTH_COOKIE_PREFIX,
+  CUSTOMER_BANNED_MESSAGE,
 } from './auth.constants';
 import { linkAccountWithRetry } from './link-account-with-retry';
 
@@ -27,6 +28,21 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
     },
     user: {
       modelName: 'CustomerAccount',
+      // Surfaces ban state on session.user for type-inference parity with
+      // EmployeeAccount (which gets these from better-auth's admin plugin).
+      // Not load-bearing for enforcement itself — see the session.create
+      // hooks below for that. input: false so a customer can never set these
+      // on themselves via any self-service update-profile call.
+      additionalFields: {
+        banned: {
+          type: 'boolean',
+          required: false,
+          defaultValue: false,
+          input: false,
+        },
+        banReason: { type: 'string', required: false, input: false },
+        banExpires: { type: 'date', required: false, input: false },
+      },
     },
     session: {
       modelName: 'CustomerSession',
@@ -48,6 +64,39 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
                 update: {},
               }),
             );
+          },
+        },
+      },
+      session: {
+        create: {
+          // Customer auth has no admin plugin, so there is no built-in ban
+          // check like employee auth gets for free — this hand-rolls the
+          // same two-part enforcement better-auth's own admin plugin uses
+          // for EmployeeAccount: (1) block sign-in here while banned, (2) an
+          // active ban also deletes existing sessions (CustomersService.ban)
+          // so an already-signed-in customer is logged out immediately too.
+          before: async (session) => {
+            const account = await deps.prisma.customerAccount.findUnique({
+              where: { id: session.userId },
+              select: { banned: true, banExpires: true },
+            });
+            if (!account?.banned) return;
+
+            if (
+              account.banExpires &&
+              account.banExpires.getTime() < Date.now()
+            ) {
+              await deps.prisma.customerAccount.update({
+                where: { id: session.userId },
+                data: { banned: false, banReason: null, banExpires: null },
+              });
+              return;
+            }
+
+            throw new APIError('FORBIDDEN', {
+              message: CUSTOMER_BANNED_MESSAGE,
+              code: 'BANNED_USER',
+            });
           },
         },
       },

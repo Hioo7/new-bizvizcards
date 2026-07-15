@@ -1,4 +1,5 @@
 import {
+  Building2,
   Contact,
   IdCard,
   LogOut,
@@ -55,6 +56,13 @@ export const ADMIN_APP_TILES: AdminAppTile[] = [
     icon: Contact,
     color: "secondary",
     route: ROUTES.adminEcards,
+  },
+  {
+    id: "customer-organisation-management",
+    label: "Customers & Organisations",
+    icon: Building2,
+    color: "accent",
+    route: ROUTES.adminCustomerOrganisations,
   },
   {
     id: "logout",

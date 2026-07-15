@@ -1,17 +1,41 @@
+import { extname } from 'path';
 import {
+  Body,
   Controller,
   Delete,
+  FileTypeValidator,
   Get,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
+  Patch,
+  Post,
   Query,
+  UnsupportedMediaTypeException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { EmployeeAuthGuard } from '../../common/guards/employee-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { addOrganisationMemberAsEmployeeSchema } from './dto/add-organisation-member-as-employee.dto';
+import type { AddOrganisationMemberAsEmployeeDto } from './dto/add-organisation-member-as-employee.dto';
+import { createOrganisationAsEmployeeSchema } from './dto/create-organisation-as-employee.dto';
+import type { CreateOrganisationAsEmployeeDto } from './dto/create-organisation-as-employee.dto';
 import { listOrganisationsQuerySchema } from './dto/list-organisations-query.dto';
 import type { ListOrganisationsQueryDto } from './dto/list-organisations-query.dto';
+import { updateMemberSchema } from './dto/update-member.dto';
+import type { UpdateMemberDto } from './dto/update-member.dto';
+import { updateOrganisationSchema } from './dto/update-organisation.dto';
+import type { UpdateOrganisationDto } from './dto/update-organisation.dto';
+import {
+  ORGANISATION_LOGO_ALLOWED_EXTENSIONS,
+  ORGANISATION_LOGO_ALLOWED_MIME_TYPE_PATTERN,
+  ORGANISATION_LOGO_MAX_SIZE_BYTES,
+} from './organisations.constants';
 import { OrganisationMembersService } from './services/organisation-members.service';
 import { OrganisationsService } from './services/organisations.service';
 
@@ -32,6 +56,28 @@ export class EmployeeOrganisationsController {
     return this.organisationsService.listAllForEmployee(query);
   }
 
+  @Post()
+  @RequirePermissions({ organisation: ['create'] })
+  async create(
+    @Body(new ZodValidationPipe(createOrganisationAsEmployeeSchema))
+    dto: CreateOrganisationAsEmployeeDto,
+  ) {
+    const { customerId, ...rest } = dto;
+    const { organisation, membership } = await this.organisationsService.create(
+      customerId,
+      rest,
+    );
+    // Re-fetch through the employee-facing summary path so this response has
+    // the same shape (resolved logoUrl) as every other employee endpoint —
+    // organisationsService.create() returns the raw customer-facing model.
+    return {
+      organisation: await this.organisationsService.getByIdForEmployee(
+        organisation.id,
+      ),
+      membership,
+    };
+  }
+
   @Get('by-customer/:customerId')
   @RequirePermissions({ organisation: ['get'] })
   listMembershipsByCustomer(@Param('customerId') customerId: string) {
@@ -44,8 +90,30 @@ export class EmployeeOrganisationsController {
     return this.organisationMembersService.listByOrganisationId(organisationId);
   }
 
+  @Post(':organisationId/members')
+  @RequirePermissions({ organisation: ['update'] })
+  addMembers(
+    @Param('organisationId') organisationId: string,
+    @Body(new ZodValidationPipe(addOrganisationMemberAsEmployeeSchema))
+    dto: AddOrganisationMemberAsEmployeeDto,
+  ) {
+    return this.organisationMembersService.addMembersForEmployee(
+      organisationId,
+      dto,
+    );
+  }
+
+  @Patch('members/:id')
+  @RequirePermissions({ organisation: ['update'] })
+  updateMember(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateMemberSchema)) dto: UpdateMemberDto,
+  ) {
+    return this.organisationMembersService.updateForEmployee(id, dto);
+  }
+
   @Delete('members/:id')
-  @RequirePermissions({ organisation: ['delete'] })
+  @RequirePermissions({ organisation: ['update'] })
   async removeMember(@Param('id') id: string): Promise<void> {
     await this.organisationMembersService.removeForEmployee(id);
   }
@@ -54,6 +122,60 @@ export class EmployeeOrganisationsController {
   @RequirePermissions({ organisation: ['get'] })
   get(@Param('id') id: string) {
     return this.organisationsService.getByIdForEmployee(id);
+  }
+
+  @Patch(':id')
+  @RequirePermissions({ organisation: ['update'] })
+  update(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateOrganisationSchema))
+    dto: UpdateOrganisationDto,
+  ) {
+    return this.organisationsService.updateForEmployee(id, dto);
+  }
+
+  @Patch(':id/logo')
+  @RequirePermissions({ organisation: ['update'] })
+  @UseInterceptors(FileInterceptor('file'))
+  async replaceLogo(
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: ORGANISATION_LOGO_MAX_SIZE_BYTES,
+          }),
+          new FileTypeValidator({
+            fileType: ORGANISATION_LOGO_ALLOWED_MIME_TYPE_PATTERN,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    const extension = extname(file.originalname).slice(1).toLowerCase();
+    if (!ORGANISATION_LOGO_ALLOWED_EXTENSIONS.includes(extension)) {
+      throw new UnsupportedMediaTypeException();
+    }
+
+    const result = await this.organisationsService.replaceLogo(id, {
+      buffer: file.buffer,
+      contentType: file.mimetype,
+      originalName: file.originalname,
+      extension,
+    });
+
+    return {
+      logoMediaId: result.organisation.logoMediaId,
+      logoUrl: result.logoUrl,
+    };
+  }
+
+  @Delete(':id/logo')
+  @RequirePermissions({ organisation: ['update'] })
+  async removeLogo(@Param('id') id: string) {
+    const updated = await this.organisationsService.removeLogo(id);
+    return { logoMediaId: updated.logoMediaId };
   }
 
   @Delete(':id')

@@ -1,7 +1,7 @@
 import { Ban, CircleCheck, Pencil, Trash2 } from "lucide-react";
 import type { StaffMember } from "@app-types/staffAuth";
 import StaffRoleBadge from "@components/StaffRoleBadge";
-import StaffStatusBadge from "@features/staff-management/components/StaffStatusBadge";
+import BannedStatusBadge from "@components/BannedStatusBadge";
 import StaffAvatar from "@components/StaffAvatar";
 import type { StaffRowActions } from "@features/staff-management/utils/getStaffRowActions";
 
@@ -37,7 +37,7 @@ export default function StaffRow({
         <StaffRoleBadge role={staff.role} />
       </td>
       <td className="px-3 py-3">
-        <StaffStatusBadge banned={staff.banned} />
+        <BannedStatusBadge banned={staff.banned} />
       </td>
       <td className="py-3 pl-3 pr-4">
         {hasAnyAction ? (

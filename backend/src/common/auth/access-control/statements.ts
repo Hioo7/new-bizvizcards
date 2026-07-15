@@ -8,9 +8,9 @@ export const employeeStatements = {
   smartCardTemplate: ['list', 'get'],
   smartCard: ['create', 'list', 'get', 'update', 'delete'],
   eCard: ['create', 'list', 'get', 'update', 'delete'],
-  customer: ['list'],
+  customer: ['list', 'create', 'update', 'set-password', 'ban'],
   redirect: ['list', 'get', 'create', 'update', 'delete'],
-  organisation: ['list', 'get', 'delete'],
+  organisation: ['list', 'get', 'create', 'update', 'delete'],
 } as const;
 
 export const employeeAccessControl = createAccessControl(employeeStatements);

@@ -54,9 +54,33 @@ describe('employee role hierarchy', () => {
     ]);
   });
 
-  it('all three roles can list customers, with no tier restriction', () => {
-    expect(employeeRole.statements.customer).toEqual(['list']);
-    expect(adminRole.statements.customer).toEqual(['list']);
-    expect(superAdminRole.statements.customer).toEqual(['list']);
+  it('employee can list/create/update customers and set their password, but not ban', () => {
+    expect(employeeRole.statements.customer).toEqual([
+      'list',
+      'create',
+      'update',
+      'set-password',
+    ]);
+    expect(employeeRole.statements.customer).not.toContain('ban');
+  });
+
+  it('only admin and super_admin can ban customers', () => {
+    expect(adminRole.statements.customer).toContain('ban');
+    expect(superAdminRole.statements.customer).toContain('ban');
+  });
+
+  it('employee can list/get/create/update organisations but not delete', () => {
+    expect(employeeRole.statements.organisation).toEqual([
+      'list',
+      'get',
+      'create',
+      'update',
+    ]);
+    expect(employeeRole.statements.organisation).not.toContain('delete');
+  });
+
+  it('only admin and super_admin can delete organisations', () => {
+    expect(adminRole.statements.organisation).toContain('delete');
+    expect(superAdminRole.statements.organisation).toContain('delete');
   });
 });

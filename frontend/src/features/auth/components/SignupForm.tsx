@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Mail, User } from "lucide-react";
 import { signupSchema, type SignupFormValues } from "@features/auth/schemas/signupSchema";
 import FormTextField from "@components/forms/FormTextField";
-import PasswordField from "@features/auth/components/PasswordField";
+import PasswordField from "@components/forms/PasswordField";
 import PasswordStrengthMeter from "@features/auth/components/PasswordStrengthMeter";
 import FormErrorRibbon from "@components/forms/FormErrorRibbon";
 import { useAuth } from "@hooks/useAuth";

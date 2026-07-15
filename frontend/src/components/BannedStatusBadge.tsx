@@ -1,10 +1,10 @@
 import { Ban, CircleCheck } from "lucide-react";
 
-interface StaffStatusBadgeProps {
+interface BannedStatusBadgeProps {
   banned: boolean | null;
 }
 
-export default function StaffStatusBadge({ banned }: StaffStatusBadgeProps) {
+export default function BannedStatusBadge({ banned }: BannedStatusBadgeProps) {
   if (banned) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-error/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-error">

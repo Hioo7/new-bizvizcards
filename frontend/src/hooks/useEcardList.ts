@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listEcards } from "@services/ecardService";
 import type { Ecard } from "@app-types/ecard";
-import { ECARD_LIST_PAGE_SIZE } from "@features/ecards/config/ecardBuilder.config";
+import { ECARD_LIST_PAGE_SIZE } from "@config/ecardList.config";
 
 export interface UseEcardListResult {
   ecards: Ecard[];

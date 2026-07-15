@@ -17,9 +17,9 @@ model Customer {
   leads       Lead[]
 
   organisationMemberships OrganisationMember[]
-  createdOrganisations   Organisation[]       @relation("OrganisationCreatedBy")
-  sentInvites            OrganisationInvite[] @relation("OrganisationInvitesSent")
-  acceptedInvites        OrganisationInvite[] @relation("OrganisationInvitesAccepted")
+  createdOrganisations    Organisation[]       @relation("OrganisationCreatedBy")
+  sentInvites             OrganisationInvite[] @relation("OrganisationInvitesSent")
+  acceptedInvites         OrganisationInvite[] @relation("OrganisationInvitesAccepted")
 
   @@map("Customer")
 }

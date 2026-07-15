@@ -12,6 +12,9 @@ export const ROUTES = {
   adminEcards: "/admin/e-cards",
   adminCustomerEcards: "/admin/e-cards/:customerId",
   adminEcardBuilder: "/admin/e-cards/:customerId/:ecardId",
+  adminCustomerOrganisations: "/admin/customers-organisations",
+  adminOrganisationDetail:
+    "/admin/customers-organisations/organisations/:organisationId",
   smartCardPublic: "/smartcard/:endpoint",
   ecardPublic: "/ecard/:endpoint",
 } as const;
@@ -44,4 +47,8 @@ export function adminEcardBuilderPath(customerId: string, ecardId: string): stri
 
 export function ecardPublicPath(endpoint: string): string {
   return `/ecard/${endpoint}`;
+}
+
+export function adminOrganisationDetailPath(organisationId: string): string {
+  return `/admin/customers-organisations/organisations/${organisationId}`;
 }

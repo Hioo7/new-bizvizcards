@@ -12,6 +12,8 @@ import RedirectsPage from "@pages/RedirectsPage";
 import EcardsPage from "@pages/EcardsPage";
 import EcardListPage from "@pages/EcardListPage";
 import EcardBuilderPage from "@pages/EcardBuilderPage";
+import CustomerOrganisationManagementPage from "@pages/CustomerOrganisationManagementPage";
+import OrganisationDetailPage from "@pages/OrganisationDetailPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import EcardPublicPage from "@pages/EcardPublicPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
@@ -42,6 +44,14 @@ function App() {
           <Route path={ROUTES.adminEcards} element={<EcardsPage />} />
           <Route path={ROUTES.adminCustomerEcards} element={<EcardListPage />} />
           <Route path={ROUTES.adminEcardBuilder} element={<EcardBuilderPage />} />
+          <Route
+            path={ROUTES.adminCustomerOrganisations}
+            element={<CustomerOrganisationManagementPage />}
+          />
+          <Route
+            path={ROUTES.adminOrganisationDetail}
+            element={<OrganisationDetailPage />}
+          />
         </Route>
       </Route>
     </Routes>

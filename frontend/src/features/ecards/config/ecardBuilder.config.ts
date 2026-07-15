@@ -74,10 +74,6 @@ export const ECARD_MAX_SUB_GALLERIES = 10;
 export const ECARD_MAX_GALLERY_IMAGES = 30;
 export const ECARD_MAX_TEAM_MEMBERS = 50;
 
-// Comfortably covers the backend's per-customer e-card cap in one page, so
-// the customer e-card list never needs pagination controls.
-export const ECARD_LIST_PAGE_SIZE = 20;
-
 export const ECARD_ENDPOINT_MIN_LENGTH = 3;
 export const ECARD_ENDPOINT_MAX_LENGTH = 80;
 export const ECARD_ENDPOINT_REGEX = /^[a-z0-9-]+$/;

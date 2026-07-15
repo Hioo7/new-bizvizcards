@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -356,6 +357,51 @@ export class EcardsService {
       organisationId,
     );
     return this.list({ ...query, organisationId });
+  }
+
+  // ── Employee-initiated organisation-member e-card linking ────────────────
+
+  /**
+   * Sets which of a member's e-cards is linked to their organisation.
+   * Atomically unlinks any other card that customer currently has linked to
+   * the same org (only one is allowed per customer per org, enforced by
+   * @@unique([customerId, organisationId]) on ECard) before linking the
+   * chosen one, so the caller never has to unlink first — this is what lets
+   * the admin UI treat it as a single "switch" action.
+   */
+  async linkEcardForEmployee(
+    organisationId: string,
+    memberId: string,
+    ecardId: string,
+  ) {
+    const member =
+      await this.organisationMembersService.getMemberInOrganisationOrThrow(
+        memberId,
+        organisationId,
+      );
+    const ecard = await this.findByIdOrThrow(ecardId);
+    if (ecard.customerId !== member.customerId) {
+      throw new ForbiddenException(
+        'This e-card does not belong to the selected member',
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.eCard.updateMany({
+        where: {
+          customerId: member.customerId,
+          organisationId,
+          id: { not: ecardId },
+        },
+        data: { organisationId: null },
+      }),
+      this.prisma.eCard.update({
+        where: { id: ecardId },
+        data: { organisationId },
+      }),
+    ]);
+
+    return this.getById(ecardId);
   }
 
   // ── shared create/update/remove ─────────────────────────────────────────

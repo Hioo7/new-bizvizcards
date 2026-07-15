@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { MIN_NAME_LENGTH, MIN_PASSWORD_LENGTH } from "@features/auth/config";
+import { MIN_NAME_LENGTH } from "@features/auth/config";
+import { MIN_PASSWORD_LENGTH } from "@config/password.config";
 
 export const signupSchema = z
   .object({

@@ -39,8 +39,11 @@ export default function EditStaffModal({
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog || !staff) return;
-    if (open && !dialog.open) {
+    if (!dialog) return;
+    // The close path must not depend on `staff` — the parent clears it to
+    // null in the same state update that flips `open` to false, so gating
+    // the whole effect on `staff` would strand the dialog open forever.
+    if (open && staff && !dialog.open) {
       reset({
         name: staff.name,
         role: staff.role === "super_admin" ? undefined : (staff.role ?? undefined),

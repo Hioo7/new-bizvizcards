@@ -3,19 +3,21 @@ import { Search, User, UserCheck, X } from "lucide-react";
 import { useCustomerSearch } from "@hooks/useCustomerSearch";
 import type { Customer } from "@app-types/customer";
 
-interface CustomerPickerProps {
+interface CustomerPickerFieldProps {
   selectedCustomerId: string;
   selectedCustomer: Customer | null;
   onSelect: (customer: Customer) => void;
   error?: string;
+  label?: string;
 }
 
-export default function CustomerPicker({
+export default function CustomerPickerField({
   selectedCustomerId,
   selectedCustomer,
   onSelect,
   error,
-}: CustomerPickerProps) {
+  label = "Linked customer",
+}: CustomerPickerFieldProps) {
   const [isPicking, setIsPicking] = useState(!selectedCustomerId);
   const { search, setSearch, customers, isLoading } = useCustomerSearch();
 
@@ -23,7 +25,7 @@ export default function CustomerPicker({
     return (
       <div>
         <p className="mb-1.5 text-xs font-semibold text-base-content/70">
-          Linked customer
+          {label}
         </p>
         <div className="flex items-center gap-3 rounded-field border border-base-300 bg-base-200 px-3 py-2.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary">
@@ -53,7 +55,7 @@ export default function CustomerPicker({
     <div>
       <div className="mb-1.5 flex items-center justify-between">
         <p className="text-xs font-semibold text-base-content/70">
-          Linked customer <span className="text-error">*</span>
+          {label} <span className="text-error">*</span>
         </p>
         {selectedCustomerId && (
           <button

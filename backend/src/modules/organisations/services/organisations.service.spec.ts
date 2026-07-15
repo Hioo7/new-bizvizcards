@@ -288,7 +288,7 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
 
       await expect(
         service.getByIdForEmployee(organisation.id),
-      ).resolves.toMatchObject({ id: organisation.id });
+      ).resolves.toMatchObject({ id: organisation.id, logoUrl: null });
       await expect(service.getByIdForEmployee(randomUUID())).rejects.toThrow(
         'Organisation not found',
       );
@@ -304,6 +304,109 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
 
       await expect(
         prisma.organisation.findUnique({ where: { id: organisation.id } }),
+      ).resolves.toBeNull();
+    });
+
+    it('lists organisations filtered by a case-insensitive name search', async () => {
+      const customer = await seedCustomer();
+      const suffix = randomUUID();
+      const { organisation: matching } = await service.create(customer.id, {
+        name: `Searchable Co ${suffix}`,
+      });
+      seededOrganisationIds.push(matching.id);
+      const { organisation: nonMatching } = await service.create(customer.id, {
+        name: `Unrelated ${randomUUID()}`,
+      });
+      seededOrganisationIds.push(nonMatching.id);
+
+      const result = await service.listAllForEmployee({
+        search: `searchable co ${suffix}`,
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(result.organisations.map((o) => o.id)).toEqual([matching.id]);
+    });
+
+    it('renames an organisation without requiring the actor to be its SPOC', async () => {
+      const customer = await seedCustomer();
+      const { organisation } = await service.create(customer.id, {
+        name: 'Old Name',
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const updated = await service.updateForEmployee(organisation.id, {
+        name: 'New Name',
+      });
+      expect(updated.name).toBe('New Name');
+    });
+
+    it('updateForEmployee throws when the organisation does not exist', async () => {
+      await expect(
+        service.updateForEmployee(randomUUID(), { name: 'X' }),
+      ).rejects.toThrow('Organisation not found');
+    });
+
+    it('replaces a logo, linking the new media before deleting the old one', async () => {
+      const customer = await seedCustomer();
+      const { organisation } = await service.create(customer.id, {
+        name: 'Logo Org',
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const first = await service.replaceLogo(organisation.id, {
+        buffer: Buffer.from('a'),
+        contentType: 'image/png',
+        originalName: 'a.png',
+        extension: 'png',
+      });
+      expect(first.organisation.logoMediaId).not.toBeNull();
+      expect(first.logoUrl).toContain('/media/test-bucket/');
+      expect(first.organisation.logoUrl).toBe(first.logoUrl);
+      const firstMediaId = first.organisation.logoMediaId as string;
+
+      const second = await service.replaceLogo(organisation.id, {
+        buffer: Buffer.from('b'),
+        contentType: 'image/png',
+        originalName: 'b.png',
+        extension: 'png',
+      });
+      expect(second.organisation.logoMediaId).not.toBe(firstMediaId);
+
+      await expect(
+        prisma.media.findUnique({ where: { id: firstMediaId } }),
+      ).resolves.toBeNull();
+    });
+
+    it('removeLogo is a no-op when there is no existing logo', async () => {
+      const customer = await seedCustomer();
+      const { organisation } = await service.create(customer.id, {
+        name: 'No Logo Org',
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const result = await service.removeLogo(organisation.id);
+      expect(result.logoMediaId).toBeNull();
+    });
+
+    it('removeLogo clears the FK and deletes the media', async () => {
+      const customer = await seedCustomer();
+      const { organisation } = await service.create(customer.id, {
+        name: 'Remove Logo Org',
+      });
+      seededOrganisationIds.push(organisation.id);
+      const uploaded = await service.replaceLogo(organisation.id, {
+        buffer: Buffer.from('a'),
+        contentType: 'image/png',
+        originalName: 'a.png',
+        extension: 'png',
+      });
+      const mediaId = uploaded.organisation.logoMediaId as string;
+
+      const result = await service.removeLogo(organisation.id);
+      expect(result.logoMediaId).toBeNull();
+      await expect(
+        prisma.media.findUnique({ where: { id: mediaId } }),
       ).resolves.toBeNull();
     });
   });

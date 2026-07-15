@@ -1562,4 +1562,163 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       ).rejects.toThrow('Only the organisation SPOC can perform this action');
     });
   });
+
+  describe('linkEcardForEmployee', () => {
+    it("links one of the member's unlinked cards to the organisation", async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const card = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `unlinked-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      const linked = await service.linkEcardForEmployee(
+        organisation.id,
+        membership.id,
+        card.id,
+      );
+
+      expect(linked.organisationId).toBe(organisation.id);
+    });
+
+    it('switches the link: unlinks the previously-linked card and links the new one', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const oldCard = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `old-card-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+      const newCard = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `new-card-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      await service.linkEcardForEmployee(
+        organisation.id,
+        membership.id,
+        newCard.id,
+      );
+
+      const refreshedOld = await service.getById(oldCard.id);
+      const refreshedNew = await service.getById(newCard.id);
+      expect(refreshedOld.organisationId).toBeNull();
+      expect(refreshedNew.organisationId).toBe(organisation.id);
+    });
+
+    it('is idempotent when re-linking the already-linked card', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const card = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `already-linked-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.linkEcardForEmployee(organisation.id, membership.id, card.id),
+      ).resolves.toMatchObject({ organisationId: organisation.id });
+    });
+
+    it("rejects an e-card that doesn't belong to the selected member", async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const someoneElse = await seedCustomer('Someone Else');
+      const someoneElsesCard = await service.createForCustomer(
+        someoneElse.id,
+        {
+          endpoint: `not-yours-${randomUUID()}`,
+          heroName: 'Someone Else',
+          heroEmail: 'someone-else@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.linkEcardForEmployee(
+          organisation.id,
+          membership.id,
+          someoneElsesCard.id,
+        ),
+      ).rejects.toThrow('This e-card does not belong to the selected member');
+    });
+
+    it('throws when the member does not belong to this organisation', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const card = await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `no-membership-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one@example.com',
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      await expect(
+        service.linkEcardForEmployee(organisation.id, randomUUID(), card.id),
+      ).rejects.toThrow('Organisation member not found');
+    });
+
+    it('throws when the e-card does not exist', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      const membership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+
+      await expect(
+        service.linkEcardForEmployee(
+          organisation.id,
+          membership.id,
+          randomUUID(),
+        ),
+      ).rejects.toThrow('E-card not found');
+    });
+  });
 });
