@@ -31,6 +31,22 @@ export default function EcardSettingsCard({
           }
         />
       </label>
+      <label className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-field border border-base-300 bg-base-200 px-4 py-2.5">
+        <span className="text-sm font-medium text-base-content">
+          Allow visitors to exchange contact
+          <span className="block text-xs font-normal text-base-content/50">
+            Visitors can share their own details back with you
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          className="toggle toggle-primary shrink-0"
+          checked={draft.isExchangeContactEnabled}
+          onChange={(event) =>
+            onChange({ ...draft, isExchangeContactEnabled: event.target.checked })
+          }
+        />
+      </label>
     </div>
   );
 }

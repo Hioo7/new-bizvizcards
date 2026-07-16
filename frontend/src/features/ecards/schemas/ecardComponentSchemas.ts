@@ -25,7 +25,6 @@ export const heroSheetSchema = z
     companyName: z.string().trim().max(ECARD_TEXT_SHORT_MAX_LENGTH),
     phoneCountryDialCode: z.string().trim(),
     phoneNumber: z.string().trim(),
-    isExchangeContactEnabled: z.boolean(),
   })
   .refine(
     (value) => (value.phoneCountryDialCode === "") === (value.phoneNumber === ""),

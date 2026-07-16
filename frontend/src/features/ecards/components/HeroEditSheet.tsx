@@ -45,7 +45,6 @@ export default function HeroEditSheet({
       companyName: draft.companyName,
       phoneCountryDialCode: draft.phoneCountryDialCode,
       phoneNumber: draft.phoneNumber,
-      isExchangeContactEnabled: draft.isExchangeContactEnabled,
     },
   });
   const [photo, setPhoto] = useState<ImageFieldValue>(draft.photo);
@@ -59,6 +58,7 @@ export default function HeroEditSheet({
       photo,
       organisationId,
       autoDownloadContact: draft.autoDownloadContact,
+      isExchangeContactEnabled: draft.isExchangeContactEnabled,
     });
   }
 
@@ -133,16 +133,6 @@ export default function HeroEditSheet({
           />
         </div>
       </div>
-      <label className="flex items-center gap-3 rounded-field border border-base-300 bg-base-200 px-3 py-2.5">
-        <input
-          type="checkbox"
-          className="toggle toggle-primary"
-          {...register("isExchangeContactEnabled")}
-        />
-        <span className="text-sm text-base-content">
-          Allow visitors to exchange contact
-        </span>
-      </label>
     </ComponentEditSheetShell>
   );
 }
