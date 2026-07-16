@@ -38,6 +38,10 @@ model ECard {
   phoneCountryDialCode     String?
   phoneNumber              String?
   isExchangeContactEnabled Boolean @default(true)
+  // Per-card setting — when true, opening this card's public page
+  // automatically triggers a vCard download for the visitor instead of
+  // requiring a manual "Save Contact" tap.
+  autoDownloadContact      Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

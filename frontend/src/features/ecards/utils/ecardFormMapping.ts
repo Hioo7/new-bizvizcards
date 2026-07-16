@@ -35,6 +35,7 @@ export function ecardToBuilderState(card: Ecard): EcardBuilderState {
       phoneCountryDialCode: card.hero.phoneCountryDialCode ?? "",
       phoneNumber: card.hero.phoneNumber ?? "",
       isExchangeContactEnabled: card.hero.isExchangeContactEnabled,
+      autoDownloadContact: card.hero.autoDownloadContact,
       endpoint: card.endpoint,
     },
     components: card.components
@@ -218,6 +219,7 @@ export function buildEcardSubmission(state: EcardBuilderState): EcardSubmission 
     phoneCountryDialCode: state.hero.phoneCountryDialCode.trim() || undefined,
     phoneNumber: state.hero.phoneNumber.trim() || undefined,
     isExchangeContactEnabled: state.hero.isExchangeContactEnabled,
+    autoDownloadContact: state.hero.autoDownloadContact,
     heroProfilePhoto,
     components,
   };

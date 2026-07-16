@@ -46,7 +46,7 @@ interface InteriorDesignTemplate2Props {
 
 export function InteriorDesignTemplate2({ card }: InteriorDesignTemplate2Props) {
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
-  const showExchangeButton = Boolean(card.customerId);
+  const showExchangeButton = Boolean(card.customerId) && card.exchangeContactAllowed;
 
   useExchangeContactTimer(() => {
     if (showExchangeButton) setIsExchangeOpen(true);

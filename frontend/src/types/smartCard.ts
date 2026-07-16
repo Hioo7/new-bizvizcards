@@ -88,6 +88,7 @@ export interface SmartCard {
 
 export interface PublicSmartCard extends SmartCard {
   templateKey: SmartCardTemplateKey;
+  exchangeContactAllowed: boolean;
 }
 
 export interface SmartCardListResponse {

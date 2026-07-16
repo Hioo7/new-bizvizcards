@@ -6,6 +6,8 @@ import {
   LeadSourceType,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
+import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { LeadsService } from './leads.service';
 
 describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
@@ -21,7 +23,10 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
 
     appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
-    service = new LeadsService(prisma);
+    service = new LeadsService(
+      prisma,
+      new PlanEnforcementService(prisma, new PlanPolicyResolverService(prisma)),
+    );
 
     await prisma.smartCardTemplate.upsert({
       where: { key: SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE },

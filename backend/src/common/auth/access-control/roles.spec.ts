@@ -83,4 +83,34 @@ describe('employee role hierarchy', () => {
     expect(adminRole.statements.organisation).toContain('delete');
     expect(superAdminRole.statements.organisation).toContain('delete');
   });
+
+  it('employee can list/get/create/update plans but not delete', () => {
+    expect(employeeRole.statements.plan).toEqual([
+      'list',
+      'get',
+      'create',
+      'update',
+    ]);
+    expect(employeeRole.statements.plan).not.toContain('delete');
+  });
+
+  it('only admin and super_admin can delete plans', () => {
+    expect(adminRole.statements.plan).toContain('delete');
+    expect(superAdminRole.statements.plan).toContain('delete');
+  });
+
+  it('employee can list/get/create/update business events but not delete', () => {
+    expect(employeeRole.statements.event).toEqual([
+      'list',
+      'get',
+      'create',
+      'update',
+    ]);
+    expect(employeeRole.statements.event).not.toContain('delete');
+  });
+
+  it('only admin and super_admin can delete business events', () => {
+    expect(adminRole.statements.event).toContain('delete');
+    expect(superAdminRole.statements.event).toContain('delete');
+  });
 });

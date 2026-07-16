@@ -1,5 +1,5 @@
 import { Search, User } from "lucide-react";
-import { useBulkCustomerSearch } from "@features/customer-organisation-management/hooks/useBulkCustomerSearch";
+import { useBulkCustomerSearch } from "@hooks/useBulkCustomerSearch";
 import type { Customer } from "@app-types/customer";
 
 interface BulkCustomerPickerFieldProps {

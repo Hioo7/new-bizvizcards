@@ -1,9 +1,18 @@
-import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Res,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { exchangeContactSchema } from '../leads/dto/exchange-contact.dto';
 import type { ExchangeContactDto } from '../leads/dto/exchange-contact.dto';
 import { LeadsService } from '../leads/services/leads.service';
+import { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
 import { SmartCardsService } from './services/smart-cards.service';
 import { SmartCardVCardService } from './services/smart-card-vcard.service';
 import { SmartCardOgPreviewService } from './services/smart-card-og-preview.service';
@@ -15,11 +24,25 @@ export class PublicSmartCardsController {
     private readonly smartCardVCardService: SmartCardVCardService,
     private readonly smartCardOgPreviewService: SmartCardOgPreviewService,
     private readonly leadsService: LeadsService,
+    private readonly planPolicyResolverService: PlanPolicyResolverService,
   ) {}
 
   @Get(':endpoint')
-  get(@Param('endpoint') endpoint: string) {
-    return this.smartCardsService.getByEndpoint(endpoint);
+  async get(@Param('endpoint') endpoint: string) {
+    const card = await this.smartCardsService.getByEndpoint(endpoint);
+    if (!card.customerId) {
+      // Unclaimed — fully exempt from plan enforcement.
+      return { ...card, exchangeContactAllowed: true };
+    }
+
+    const policy =
+      await this.planPolicyResolverService.getEffectiveSmartCardPolicy({
+        customerId: card.customerId,
+      });
+    if (!policy?.isAvailable) {
+      throw new NotFoundException('Smart card not found');
+    }
+    return { ...card, exchangeContactAllowed: policy.exchangeContactAccess };
   }
 
   @Post(':endpoint/exchange-contact')

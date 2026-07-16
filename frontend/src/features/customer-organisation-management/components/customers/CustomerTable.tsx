@@ -14,6 +14,7 @@ interface CustomerTableProps {
   onSetPassword: (customer: Customer) => void;
   onBanToggle: (customer: Customer) => void;
   onManageEcards: (customer: Customer) => void;
+  onManagePlan: (customer: Customer) => void;
 }
 
 export default function CustomerTable({
@@ -26,6 +27,7 @@ export default function CustomerTable({
   onSetPassword,
   onBanToggle,
   onManageEcards,
+  onManagePlan,
 }: CustomerTableProps) {
   if (isLoading) {
     return (
@@ -74,6 +76,7 @@ export default function CustomerTable({
               onSetPassword={() => onSetPassword(customer)}
               onBanToggle={() => onBanToggle(customer)}
               onManageEcards={() => onManageEcards(customer)}
+              onManagePlan={() => onManagePlan(customer)}
             />
           ))}
         </tbody>
@@ -89,6 +92,7 @@ export default function CustomerTable({
             onSetPassword={() => onSetPassword(customer)}
             onBanToggle={() => onBanToggle(customer)}
             onManageEcards={() => onManageEcards(customer)}
+            onManagePlan={() => onManagePlan(customer)}
           />
         ))}
       </div>

@@ -54,7 +54,12 @@ export default function HeroEditSheet({
   );
 
   function submit(values: HeroSheetValues) {
-    onSave({ ...values, photo, organisationId });
+    onSave({
+      ...values,
+      photo,
+      organisationId,
+      autoDownloadContact: draft.autoDownloadContact,
+    });
   }
 
   return (

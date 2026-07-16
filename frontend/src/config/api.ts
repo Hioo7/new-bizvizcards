@@ -32,3 +32,14 @@ export const EMPLOYEE_ECARDS_BASE_PATH = "/api/employee/ecards";
 export const PUBLIC_ECARDS_BASE_PATH = "/api/public/ecards";
 
 export const EMPLOYEE_ORGANISATIONS_BASE_PATH = "/api/employee/organisations";
+
+export const EMPLOYEE_PLANS_BASE_PATH = "/api/employee/plans";
+
+export const EMPLOYEE_CUSTOMER_PLAN_BASE_PATH = "/api/employee/customers";
+
+export const CUSTOMER_PLAN_BASE_PATH = "/api/customer/plan";
+
+export const SMART_CARD_TEMPLATES_BASE_PATH = "/api/smart-card-templates";
+
+export const EMPLOYEE_BUSINESS_EVENTS_BASE_PATH =
+  "/api/employee/business-events";

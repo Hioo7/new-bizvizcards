@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Res,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { ECardEventType } from '../../generated/prisma/client';
@@ -8,6 +16,8 @@ import type { RecordViewDurationDto } from '../ecard-analytics/dto/record-view-d
 import { exchangeContactSchema } from '../leads/dto/exchange-contact.dto';
 import type { ExchangeContactDto } from '../leads/dto/exchange-contact.dto';
 import { LeadsService } from '../leads/services/leads.service';
+import { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
+import { filterEcardComponentsByPolicy } from './ecard-policy-filter.util';
 import { EcardVCardService } from './services/ecard-vcard.service';
 import { EcardsService } from './services/ecards.service';
 import { EcardOgPreviewService } from './services/ecard-og-preview.service';
@@ -20,16 +30,30 @@ export class PublicEcardsController {
     private readonly ecardOgPreviewService: EcardOgPreviewService,
     private readonly ecardAnalyticsService: EcardAnalyticsService,
     private readonly leadsService: LeadsService,
+    private readonly planPolicyResolverService: PlanPolicyResolverService,
   ) {}
 
   @Get(':endpoint')
   async get(@Param('endpoint') endpoint: string) {
     const card = await this.ecardsService.getByEndpoint(endpoint);
+    const policy =
+      await this.planPolicyResolverService.getEffectiveEcardPolicyForCard({
+        customerId: card.customerId,
+        organisationId: card.organisationId,
+      });
+    if (!policy.isAvailable) {
+      throw new NotFoundException('E-card not found');
+    }
+
     const event = await this.ecardAnalyticsService.recordEvent(
       card.id,
       ECardEventType.VIEW,
     );
-    return { card, viewEventId: event.id };
+    return {
+      card: filterEcardComponentsByPolicy(card, policy),
+      viewEventId: event.id,
+      exchangeContactAllowed: policy.exchangeContactAccess,
+    };
   }
 
   @Post(':endpoint/view/:eventId/duration')

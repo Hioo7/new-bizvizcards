@@ -10,6 +10,7 @@ interface ComponentTypePickerModalProps {
   open: boolean;
   addedTypes: EcardComponentType[];
   isTeamDisabled?: boolean;
+  planUnavailableTypes?: EcardComponentType[];
   onClose: () => void;
   onPick: (type: EcardComponentType) => void;
 }
@@ -18,6 +19,7 @@ export default function ComponentTypePickerModal({
   open,
   addedTypes,
   isTeamDisabled = false,
+  planUnavailableTypes = [],
   onClose,
   onPick,
 }: ComponentTypePickerModalProps) {
@@ -57,7 +59,9 @@ export default function ComponentTypePickerModal({
           {availableTypes.map((type) => {
             const meta = ECARD_COMPONENT_META[type];
             const Icon = meta.icon;
-            const isDisabled = type === "TEAM" && isTeamDisabled;
+            const isTeamBlocked = type === "TEAM" && isTeamDisabled;
+            const isPlanBlocked = planUnavailableTypes.includes(type);
+            const isDisabled = isTeamBlocked || isPlanBlocked;
             return (
               <button
                 key={type}
@@ -72,9 +76,11 @@ export default function ComponentTypePickerModal({
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-base-content">{meta.label}</p>
                   <p className="truncate text-xs text-base-content/50">
-                    {isDisabled
+                    {isTeamBlocked
                       ? "Link an organisation in Hero first"
-                      : meta.description}
+                      : isPlanBlocked
+                        ? "Not included in this customer's plan"
+                        : meta.description}
                   </p>
                 </div>
               </button>

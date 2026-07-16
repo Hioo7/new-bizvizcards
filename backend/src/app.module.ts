@@ -13,6 +13,8 @@ import { SmartCardsModule } from './modules/smart-cards/smart-cards.module';
 import { OrganisationsModule } from './modules/organisations/organisations.module';
 import { EcardsModule } from './modules/ecards/ecards.module';
 import { RedirectsModule } from './modules/redirects/redirects.module';
+import { PlansModule } from './modules/plans/plans.module';
+import { BusinessEventsModule } from './modules/business-events/business-events.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { RedirectsModule } from './modules/redirects/redirects.module';
     OrganisationsModule,
     EcardsModule,
     RedirectsModule,
+    PlansModule,
+    BusinessEventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

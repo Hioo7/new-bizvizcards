@@ -7,6 +7,7 @@ export interface EcardHero {
   phoneCountryDialCode: string | null;
   phoneNumber: string | null;
   isExchangeContactEnabled: boolean;
+  autoDownloadContact: boolean;
 }
 
 interface EcardComponentBase {
@@ -111,6 +112,7 @@ export interface Ecard {
 export interface GetPublicEcardResponse {
   card: Ecard;
   viewEventId: string;
+  exchangeContactAllowed: boolean;
 }
 
 export interface EcardListResponse {
@@ -221,6 +223,7 @@ export interface EcardPayload {
   phoneCountryDialCode?: string;
   phoneNumber?: string;
   isExchangeContactEnabled: boolean;
+  autoDownloadContact: boolean;
   heroProfilePhoto?: ImageSlotPayload;
   components: EcardComponentPayload[];
 }

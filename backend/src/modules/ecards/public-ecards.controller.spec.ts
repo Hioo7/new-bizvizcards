@@ -6,6 +6,17 @@ import type { EcardOgPreviewService } from './services/ecard-og-preview.service'
 import { ECardEventType } from '../../generated/prisma/client';
 import type { EcardAnalyticsService } from '../ecard-analytics/services/ecard-analytics.service';
 import type { LeadsService } from '../leads/services/leads.service';
+import type { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
+
+function makeAvailablePolicyResolver() {
+  return {
+    getEffectiveEcardPolicyForCard: jest.fn().mockResolvedValue({
+      isAvailable: true,
+      exchangeContactAccess: true,
+      components: {},
+    }),
+  } as unknown as PlanPolicyResolverService;
+}
 
 function makeResponse() {
   const setHeader = jest.fn();
@@ -16,7 +27,12 @@ function makeResponse() {
 
 describe('PublicEcardsController', () => {
   it('get forwards the endpoint to the service, records a VIEW event, and returns the card with the view event id', async () => {
-    const card = { id: 'card-1' };
+    const card = {
+      id: 'card-1',
+      customerId: 'customer-1',
+      organisationId: null,
+      components: [],
+    };
     const getByEndpoint = jest.fn().mockResolvedValue(card);
     const recordEvent = jest.fn().mockResolvedValue({ id: 'event-1' });
     const controller = new PublicEcardsController(
@@ -25,13 +41,43 @@ describe('PublicEcardsController', () => {
       {} as unknown as EcardOgPreviewService,
       { recordEvent } as unknown as EcardAnalyticsService,
       {} as unknown as LeadsService,
+      makeAvailablePolicyResolver(),
     );
 
     const result = await controller.get('my-card');
 
     expect(getByEndpoint).toHaveBeenCalledWith('my-card');
     expect(recordEvent).toHaveBeenCalledWith('card-1', ECardEventType.VIEW);
-    expect(result).toEqual({ card, viewEventId: 'event-1' });
+    expect(result).toEqual({
+      card,
+      viewEventId: 'event-1',
+      exchangeContactAllowed: true,
+    });
+  });
+
+  it('get 404s when the effective policy makes the e-card unavailable', async () => {
+    const card = {
+      id: 'card-1',
+      customerId: 'customer-1',
+      organisationId: null,
+      components: [],
+    };
+    const getByEndpoint = jest.fn().mockResolvedValue(card);
+    const getEffectiveEcardPolicyForCard = jest
+      .fn()
+      .mockResolvedValue({ isAvailable: false, components: {} });
+    const controller = new PublicEcardsController(
+      { getByEndpoint } as unknown as EcardsService,
+      {} as unknown as EcardVCardService,
+      {} as unknown as EcardOgPreviewService,
+      {} as unknown as EcardAnalyticsService,
+      {} as unknown as LeadsService,
+      {
+        getEffectiveEcardPolicyForCard,
+      } as unknown as PlanPolicyResolverService,
+    );
+
+    await expect(controller.get('my-card')).rejects.toThrow('E-card not found');
   });
 
   describe('recordViewDuration', () => {
@@ -44,6 +90,7 @@ describe('PublicEcardsController', () => {
         {} as unknown as EcardOgPreviewService,
         { recordViewDuration } as unknown as EcardAnalyticsService,
         {} as unknown as LeadsService,
+        {} as unknown as PlanPolicyResolverService,
       );
 
       await controller.recordViewDuration('my-card', 'event-1', {
@@ -70,6 +117,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as EcardOgPreviewService,
       { recordEvent } as unknown as EcardAnalyticsService,
       { createFromEcardExchangeContact } as unknown as LeadsService,
+      {} as unknown as PlanPolicyResolverService,
     );
     const dto = { name: 'Jane', phoneNumber: '5551234567' } as never;
 
@@ -104,6 +152,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as EcardOgPreviewService,
       { recordEvent } as unknown as EcardAnalyticsService,
       {} as unknown as LeadsService,
+      {} as unknown as PlanPolicyResolverService,
     );
     const { res, setHeader, send } = makeResponse();
 
@@ -143,6 +192,7 @@ describe('PublicEcardsController', () => {
       { buildFields, renderHtml } as unknown as EcardOgPreviewService,
       {} as unknown as EcardAnalyticsService,
       {} as unknown as LeadsService,
+      {} as unknown as PlanPolicyResolverService,
     );
     const { res, setHeader, send } = makeResponse();
 

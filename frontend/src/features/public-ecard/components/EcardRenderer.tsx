@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExchangeContactPopup } from "@components/ExchangeContactPopup";
 import { useExchangeContactTimer } from "@hooks/useExchangeContactTimer";
 import { ecardVCardUrl, submitEcardExchangeContact } from "@services/publicEcardService";
+import { useAutoDownloadContact } from "@features/public-ecard/hooks/useAutoDownloadContact";
 import { HeroSection } from "@features/public-ecard/components/sections/HeroSection";
 import { AboutSection } from "@features/public-ecard/components/sections/AboutSection";
 import { SocialLinksSection } from "@features/public-ecard/components/sections/SocialLinksSection";
@@ -41,14 +42,19 @@ function EcardFooter() {
 
 interface EcardRendererProps {
   card: Ecard;
+  exchangeContactAllowed: boolean;
 }
 
-export function EcardRenderer({ card }: EcardRendererProps) {
+export function EcardRenderer({ card, exchangeContactAllowed }: EcardRendererProps) {
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
+  const canExchangeContact =
+    card.hero.isExchangeContactEnabled && exchangeContactAllowed;
 
   useExchangeContactTimer(() => {
-    if (card.hero.isExchangeContactEnabled) setIsExchangeOpen(true);
+    if (canExchangeContact) setIsExchangeOpen(true);
   });
+
+  useAutoDownloadContact(card);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -56,6 +62,7 @@ export function EcardRenderer({ card }: EcardRendererProps) {
         <HeroSection
           hero={card.hero}
           endpoint={card.endpoint}
+          canExchangeContact={canExchangeContact}
           onExchangeContact={() => setIsExchangeOpen(true)}
         />
         {card.components.map(renderComponent)}

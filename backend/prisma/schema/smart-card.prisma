@@ -15,7 +15,8 @@ model SmartCardTemplate {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
-  cards SmartCard[]
+  cards                 SmartCard[]
+  whitelistedByPolicies SmartCardPolicyTemplateWhitelist[]
 
   @@map("SmartCardTemplate")
 }

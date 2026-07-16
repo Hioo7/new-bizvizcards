@@ -1,0 +1,215 @@
+enum PlanBusinessModelType {
+  ONE_TIME
+  SUBSCRIPTION
+  TRIAL
+
+  @@map("PlanBusinessModelType")
+}
+
+model Plan {
+  id                         String                @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  name                       String
+  price                      Decimal               @db.Decimal(10, 2)
+  businessModelType          PlanBusinessModelType
+  // Required iff businessModelType == SUBSCRIPTION, null otherwise — enforced
+  // at the DTO layer (Zod .refine()), not expressible as a Prisma constraint.
+  subscriptionDurationMonths Int?
+  // Stored for future use — no public purchase API exists yet, this flag is
+  // currently inert.
+  isPublic                   Boolean               @default(false)
+  // Exactly one Plan row may have this true system-wide. Enforced by
+  // PlansService.setFallbackPlan (transactional unset-then-set) plus a
+  // partial unique index added by hand to the migration SQL (Prisma's schema
+  // DSL has no partial-unique-index syntax) as a DB-level backstop.
+  isFallbackPlan             Boolean               @default(false)
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
+
+  policy           PlanPolicy?
+  purchaseHistory  PlanPurchaseHistory[]
+  currentCustomers Customer[]
+
+  @@map("Plan")
+}
+
+// Assembler model (composition over one giant Plan model, per
+// backend/CLAUDE.md's Prisma conventions) — bundles the three independent
+// policy domains a plan governs.
+model PlanPolicy {
+  id     String @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  planId String @unique @db.Uuid
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  ecardPolicyId String      @unique @db.Uuid
+  ecardPolicy   EcardPolicy @relation(fields: [ecardPolicyId], references: [id], onDelete: Cascade)
+
+  smartCardPolicyId String          @unique @db.Uuid
+  smartCardPolicy   SmartCardPolicy @relation(fields: [smartCardPolicyId], references: [id], onDelete: Cascade)
+
+  organisationPolicyId String             @unique @db.Uuid
+  organisationPolicy   OrganisationPolicy @relation(fields: [organisationPolicyId], references: [id], onDelete: Cascade)
+
+  // Added after PlanPolicy already had rows in production — the migration
+  // that introduces this column adds it nullable, a one-off backfill script
+  // (backend/prisma/scripts/seed-event-policy-defaults.ts) populates it for
+  // every existing row, then a follow-up migration sets it NOT NULL. See
+  // those migration/script files for the exact sequencing.
+  eventPolicyId String      @unique @db.Uuid
+  eventPolicy   EventPolicy @relation(fields: [eventPolicyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("PlanPolicy")
+}
+
+// A standalone policy bundle, owned by exactly one parent: either a
+// PlanPolicy directly (a plan's personal e-card policy) or an
+// OrganisationPolicy (an org's shared "orgEcardPolicy"). Ownership is
+// established purely by which parent's unique FK column points at a given
+// row — no shared "owner" column needed, since only the owning assembler
+// service ever creates one — the same one-model-referenced-from-several-
+// independent-places pattern already used throughout this schema for Media.
+model EcardPolicy {
+  id                    String  @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable           Boolean @default(true)
+  maxEcards             Int     @default(0)
+  exchangeContactAccess Boolean @default(false)
+
+  componentAvailabilities EcardComponentAvailability[]
+
+  planPolicy                PlanPolicy?
+  ownedByOrganisationPolicy OrganisationPolicy? @relation("OrganisationPolicyOrgEcardPolicy")
+
+  @@map("EcardPolicy")
+}
+
+model EcardComponentAvailability {
+  id            String             @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardPolicyId String             @db.Uuid
+  ecardPolicy   EcardPolicy        @relation(fields: [ecardPolicyId], references: [id], onDelete: Cascade)
+  type          ECardComponentType
+  isAvailable   Boolean            @default(true)
+
+  // 1:1 satellite that only ever exists on the GALLERY row — application
+  // layer (the PlansService assembler methods are the only write path)
+  // guarantees this, since Prisma can't express a conditional FK keyed off a
+  // sibling enum column.
+  galleryLimits GalleryComponentLimits?
+
+  @@unique([ecardPolicyId, type])
+  @@map("EcardComponentAvailability")
+}
+
+model GalleryComponentLimits {
+  ecardComponentAvailabilityId String                     @id @db.Uuid
+  ecardComponentAvailability   EcardComponentAvailability @relation(fields: [ecardComponentAvailabilityId], references: [id], onDelete: Cascade)
+  maxGalleries                 Int
+  maxImagesPerGallery          Int
+  maxGallerySizeBytes          Int
+
+  @@map("GalleryComponentLimits")
+}
+
+model SmartCardPolicy {
+  id                    String  @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable           Boolean @default(true)
+  maxSmartCards         Int     @default(0)
+  exchangeContactAccess Boolean @default(false)
+
+  whitelistedTemplates SmartCardPolicyTemplateWhitelist[]
+
+  planPolicy                PlanPolicy?
+  ownedByOrganisationPolicy OrganisationPolicy? @relation("OrganisationPolicyOrgSmartCardPolicy")
+
+  @@map("SmartCardPolicy")
+}
+
+// Explicit join model for the templates a plan whitelists (matches this
+// codebase's established convention of always using an explicit join model
+// for M:N — e.g. ECardTeamMember — never Prisma's implicit M:N table). An
+// empty whitelist for a given SmartCardPolicy means no templates are
+// permitted (strict allowlist), not "no restriction" — this is a genuine
+// ambiguity otherwise, so it's called out here explicitly.
+model SmartCardPolicyTemplateWhitelist {
+  id                String            @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  smartCardPolicyId String            @db.Uuid
+  smartCardPolicy   SmartCardPolicy   @relation(fields: [smartCardPolicyId], references: [id], onDelete: Cascade)
+  templateId        String            @db.Uuid
+  template          SmartCardTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([smartCardPolicyId, templateId])
+  @@index([smartCardPolicyId])
+  @@map("SmartCardPolicyTemplateWhitelist")
+}
+
+// An organisation's own shared policy — deliberately NOT derived from any
+// member's personal plan. Nested inside the org creator's
+// (Organisation.createdByCustomerId) plan. orgEcardPolicy/orgSmartCardPolicy
+// reuse the EcardPolicy/SmartCardPolicy models themselves rather than
+// duplicating their fields.
+model OrganisationPolicy {
+  id               String  @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable      Boolean @default(true)
+  maxOrgsCanJoin   Int     @default(0)
+  maxOrgsCanCreate Int     @default(0)
+
+  orgEcardPolicyId String      @unique @db.Uuid
+  orgEcardPolicy   EcardPolicy @relation("OrganisationPolicyOrgEcardPolicy", fields: [orgEcardPolicyId], references: [id], onDelete: Cascade)
+
+  orgSmartCardPolicyId String          @unique @db.Uuid
+  orgSmartCardPolicy   SmartCardPolicy @relation("OrganisationPolicyOrgSmartCardPolicy", fields: [orgSmartCardPolicyId], references: [id], onDelete: Cascade)
+
+  planPolicy PlanPolicy?
+
+  @@map("OrganisationPolicy")
+}
+
+// A plan's event-ticketing policy — same standalone shape as
+// EcardPolicy/SmartCardPolicy. Unlike those, this is only ever owned by a
+// PlanPolicy directly (no OrganisationPolicy-level event boost exists —
+// events aren't organisation-linked in this codebase).
+model EventPolicy {
+  id                String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable       Boolean  @default(true)
+  maxEvents         Int      @default(0)
+  maxGuestsPerEvent Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  planPolicy PlanPolicy?
+
+  @@map("EventPolicy")
+}
+
+// Every plan assign/renew/switch/cancel event, per customer. Never mutated
+// after creation — a new row is always written, the old one is left as-is.
+model PlanPurchaseHistory {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId String   @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  planId     String   @db.Uuid
+  plan       Plan     @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  // FK to Employee (the business row), matching the ECard/SmartCard
+  // createdByEmployeeId convention elsewhere in this schema — not
+  // EmployeeAccount.
+  assignedByEmployeeId String   @db.Uuid
+  assignedByEmployee   Employee @relation(fields: [assignedByEmployeeId], references: [id], onDelete: Restrict)
+
+  startedAt DateTime  @default(now())
+  // null = lifetime/one-time, never expires.
+  expiresAt DateTime?
+
+  // Denormalized snapshot of Plan.businessModelType as of the moment this
+  // row was written, so a later edit to the Plan row's type can't rewrite
+  // what already happened. New pattern in this codebase (no existing
+  // snapshot-column precedent), but necessary for history integrity.
+  businessModelTypeAtPurchase PlanBusinessModelType
+  createdAt                   DateTime              @default(now())
+
+  @@index([customerId])
+  @@index([planId])
+  @@index([customerId, planId])
+  @@map("PlanPurchaseHistory")
+}

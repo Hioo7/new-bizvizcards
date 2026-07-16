@@ -47,6 +47,9 @@ export const ecardCoreFields = {
     .max(ECARD_PHONE_NUMBER_MAX_DIGITS)
     .optional(),
   isExchangeContactEnabled: z.boolean().default(true),
+  // Per-card setting — when true, the public page auto-triggers a vCard
+  // download for the visitor instead of requiring a manual "Save Contact".
+  autoDownloadContact: z.boolean().default(false),
 };
 
 /** Enforces ECardComponent.@@unique([ecardId, type]) at the DTO level too — one instance of each component type per card. */

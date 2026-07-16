@@ -11,6 +11,7 @@ import {
   OrganisationMemberStatus,
 } from '../../../generated/prisma/client';
 import type { OrganisationMemberModel } from '../../../generated/prisma/models';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import type { AddOrganisationMemberAsEmployeeDto } from '../dto/add-organisation-member-as-employee.dto';
 import type { UpdateMemberDto } from '../dto/update-member.dto';
 import { ORGANISATION_MAX_MEMBERS } from '../organisations.constants';
@@ -38,6 +39,7 @@ export class OrganisationMembersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly organisationsService: OrganisationsService,
+    private readonly planEnforcementService: PlanEnforcementService,
   ) {}
 
   async list(
@@ -176,6 +178,10 @@ export class OrganisationMembersService {
       throw new ConflictException(
         `Adding these members would exceed the organisation's limit of ${ORGANISATION_MAX_MEMBERS} members`,
       );
+    }
+
+    for (const customerId of uniqueCustomerIds) {
+      await this.planEnforcementService.assertCanJoinOrganisation(customerId);
     }
 
     await this.prisma.organisationMember.createMany({

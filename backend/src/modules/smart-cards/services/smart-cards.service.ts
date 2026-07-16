@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaService } from '../../../common/media/media.service';
 import { SmartCardTemplateKey } from '../../../generated/prisma/client';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import {
   SMART_CARD_STORAGE_KEY_PREFIX,
   SMART_CARD_LIST_DEFAULT_PAGE,
@@ -59,6 +60,7 @@ export class SmartCardsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mediaService: MediaService,
+    private readonly planEnforcementService: PlanEnforcementService,
   ) {}
 
   async list(templateKey: SmartCardTemplateKey, query: ListSmartCardQueryDto) {
@@ -114,6 +116,14 @@ export class SmartCardsService {
   ) {
     const template = await this.resolveTemplate(templateKey);
     const fileMap = this.buildFileMap(files);
+
+    await this.planEnforcementService.assertCanCreateSmartCard(
+      dto.customerId ?? null,
+    );
+    await this.planEnforcementService.assertSmartCardTemplateAllowed(
+      dto.customerId ?? null,
+      templateKey,
+    );
 
     // request.employeeSession.user.id is the EmployeeAccount id (better-auth's
     // own identity), not the Employee business-row id that createdByEmployeeId

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { LeadSourceType } from '../../../generated/prisma/client';
 import type { LeadModel } from '../../../generated/prisma/models';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import type { CreateLeadDto } from '../dto/create-lead.dto';
 import type { ExchangeContactDto } from '../dto/exchange-contact.dto';
 import type { ListLeadsQueryDto } from '../dto/list-leads-query.dto';
@@ -9,7 +10,10 @@ import type { UpdateLeadDto } from '../dto/update-lead.dto';
 
 @Injectable()
 export class LeadsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly planEnforcementService: PlanEnforcementService,
+  ) {}
 
   async createFromExchangeContact(
     endpoint: string,
@@ -28,6 +32,11 @@ export class LeadsService {
       throw new NotFoundException('Smart card not found');
     }
 
+    await this.planEnforcementService.assertExchangeContactAllowed(
+      'SMART_CARD',
+      smartCard.customerId,
+    );
+
     return this.createLeadFromExchange(
       smartCard.customerId,
       smartCard.customer.defaultLeadFolderId,
@@ -45,6 +54,7 @@ export class LeadsService {
       select: {
         id: true,
         customerId: true,
+        organisationId: true,
         customer: { select: { defaultLeadFolderId: true } },
       },
     });
@@ -52,6 +62,12 @@ export class LeadsService {
     if (!ecard) {
       throw new NotFoundException('E-card not found');
     }
+
+    await this.planEnforcementService.assertExchangeContactAllowed(
+      'ECARD',
+      ecard.customerId,
+      ecard.organisationId,
+    );
 
     return this.createLeadFromExchange(
       ecard.customerId,

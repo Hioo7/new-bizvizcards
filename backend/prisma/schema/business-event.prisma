@@ -1,0 +1,139 @@
+enum EventMemberRole {
+  HOST
+  CO_HOST
+  VOLUNTEER
+
+  @@map("EventMemberRole")
+}
+
+model BusinessEvent {
+  id          String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  location    String?
+  startAt     DateTime
+  endAt       DateTime?
+
+  // Set when an employee creates the event on behalf of a customer host —
+  // matches the ECard/SmartCard createdByEmployeeId convention. Null when the
+  // host created the event themselves.
+  createdByEmployeeId String?   @db.Uuid
+  createdByEmployee   Employee? @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members    EventMember[]
+  guests     EventGuest[]
+  trackables EventTrackable[]
+
+  @@index([createdByEmployeeId])
+  @@map("BusinessEvent")
+}
+
+// The host is an EventMember row with role HOST, auto-created transactionally
+// alongside the BusinessEvent at creation — mirrors how OrganisationMember's
+// SPOC row is created alongside its Organisation. The HOST row is immutable
+// (never removed/reassigned) — enforced at the service layer, not the DB.
+model EventMember {
+  id         String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  eventId    String          @db.Uuid
+  event      BusinessEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  customerId String          @db.Uuid
+  customer   Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  role       EventMemberRole
+  joinedAt   DateTime        @default(now())
+
+  @@unique([customerId, eventId])
+  @@index([eventId])
+  @@map("EventMember")
+}
+
+// The event's guest whitelist, one row per event per whitelisted customer.
+// Also doubles as the one-time gate-ticket scan log: checkedInAt is null
+// until a host/co-host/volunteer scans this guest's card at the gate.
+model EventGuest {
+  id         String        @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  eventId    String        @db.Uuid
+  event      BusinessEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  customerId String        @db.Uuid
+  customer   Customer      @relation("EventGuestCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+
+  checkedInAt           DateTime?
+  checkedInByCustomerId String?   @db.Uuid
+  checkedInByCustomer   Customer? @relation("EventGuestCheckedInBy", fields: [checkedInByCustomerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  redemptions EventTrackableRedemption[]
+
+  @@unique([customerId, eventId])
+  @@index([eventId])
+  @@map("EventGuest")
+}
+
+model EventTrackable {
+  id          String        @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  eventId     String        @db.Uuid
+  event       BusinessEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  redemptions EventTrackableRedemption[]
+
+  // Chained trackables: this trackable can only be redeemed once every
+  // trackable it depends on has already been redeemed by the same guest.
+  // Both relations point at this same model, so they need distinct names —
+  // same pattern as EventGuest's dual FK to Customer.
+  dependencies EventTrackableDependency[] @relation("EventTrackableDependencyOwner")
+  dependents   EventTrackableDependency[] @relation("EventTrackableDependencyTarget")
+
+  @@index([eventId])
+  @@map("EventTrackable")
+}
+
+// Explicit join model for trackable-to-trackable dependencies (matches this
+// codebase's established convention of always using an explicit join model
+// for M:N — e.g. ECardTeamMember, SmartCardPolicyTemplateWhitelist — never
+// Prisma's implicit M:N). A row means "trackableId requires
+// dependsOnTrackableId to be redeemed first". Both ends are constrained to
+// the same event and checked for cycles at the service layer — Prisma can't
+// express either constraint at the DB level.
+model EventTrackableDependency {
+  id                   String         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  trackableId          String         @db.Uuid
+  trackable            EventTrackable @relation("EventTrackableDependencyOwner", fields: [trackableId], references: [id], onDelete: Cascade)
+  dependsOnTrackableId String         @db.Uuid
+  dependsOnTrackable   EventTrackable @relation("EventTrackableDependencyTarget", fields: [dependsOnTrackableId], references: [id], onDelete: Cascade)
+
+  @@unique([trackableId, dependsOnTrackableId])
+  @@index([trackableId])
+  @@index([dependsOnTrackableId])
+  @@map("EventTrackableDependency")
+}
+
+// One row per (trackable, guest) — the unique constraint below is what makes
+// a redemption one-time. Independent of gate check-in by design: redeeming
+// only requires the scanned customer to be on the event's guest whitelist
+// (an EventGuest row must exist for them), not that they were already
+// gate-scanned.
+model EventTrackableRedemption {
+  id           String         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  trackableId  String         @db.Uuid
+  trackable    EventTrackable @relation(fields: [trackableId], references: [id], onDelete: Cascade)
+  eventGuestId String         @db.Uuid
+  eventGuest   EventGuest     @relation(fields: [eventGuestId], references: [id], onDelete: Cascade)
+
+  // Who performed the scan — always a Customer, since scanning is
+  // customer-side only (host, co-host, or volunteer); employees never scan.
+  scannedByCustomerId String   @db.Uuid
+  scannedByCustomer   Customer @relation(fields: [scannedByCustomerId], references: [id], onDelete: Cascade)
+
+  redeemedAt DateTime @default(now())
+
+  @@unique([trackableId, eventGuestId])
+  @@index([trackableId])
+  @@map("EventTrackableRedemption")
+}

@@ -9,6 +9,8 @@ import type {
 } from '../../../common/media/storage/media-storage-provider.interface';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaSource } from '../../../generated/prisma/client';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
+import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { ORGANISATION_MAX_MEMBERS } from '../organisations.constants';
 import { OrganisationInvitesService } from './organisation-invites.service';
 import { OrganisationsService } from './organisations.service';
@@ -47,7 +49,15 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       [MediaSource.MINIO]: new FakeMediaStorageProvider(),
     };
     const mediaService = new MediaService(prisma, registry);
-    organisationsService = new OrganisationsService(prisma, mediaService);
+    const planEnforcementService = new PlanEnforcementService(
+      prisma,
+      new PlanPolicyResolverService(prisma),
+    );
+    organisationsService = new OrganisationsService(
+      prisma,
+      mediaService,
+      planEnforcementService,
+    );
     mailer = {
       sendMail: jest.fn().mockResolvedValue(undefined),
     } as unknown as MailerService & { sendMail: jest.Mock };
@@ -56,6 +66,7 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
       organisationsService,
       mailer,
       appConfig,
+      planEnforcementService,
     );
   });
 

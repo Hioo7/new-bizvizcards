@@ -4,7 +4,7 @@ import type { Customer } from "@app-types/customer";
 import {
   BULK_CUSTOMER_PICKER_PAGE_SIZE,
   BULK_CUSTOMER_PICKER_SEARCH_DEBOUNCE_MS,
-} from "@features/customer-organisation-management/config";
+} from "@config/customerSearch.config";
 
 export interface UseBulkCustomerSearchResult {
   search: string;

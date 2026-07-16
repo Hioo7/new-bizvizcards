@@ -1,4 +1,12 @@
-import { Ban, CircleCheck, Contact, KeyRound, Pencil, User } from "lucide-react";
+import {
+  Ban,
+  CircleCheck,
+  Contact,
+  CreditCard,
+  KeyRound,
+  Pencil,
+  User,
+} from "lucide-react";
 import type { Customer } from "@app-types/customer";
 import BannedStatusBadge from "@components/BannedStatusBadge";
 
@@ -9,6 +17,7 @@ interface CustomerCardProps {
   onSetPassword: () => void;
   onBanToggle: () => void;
   onManageEcards: () => void;
+  onManagePlan: () => void;
 }
 
 export default function CustomerCard({
@@ -18,6 +27,7 @@ export default function CustomerCard({
   onSetPassword,
   onBanToggle,
   onManageEcards,
+  onManagePlan,
 }: CustomerCardProps) {
   return (
     <div className="rounded-box border border-base-300 bg-base-100 p-4">
@@ -51,6 +61,14 @@ export default function CustomerCard({
         >
           <Contact className="h-4 w-4" />
           E-cards
+        </button>
+        <button
+          type="button"
+          aria-label={`Manage plan for ${customer.name}`}
+          onClick={onManagePlan}
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-field border border-base-300 text-base-content/70"
+        >
+          <CreditCard className="h-4 w-4" />
         </button>
         <button
           type="button"

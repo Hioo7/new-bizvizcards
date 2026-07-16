@@ -10,6 +10,8 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaSource } from '../../../generated/prisma/client';
 import { OrganisationMembersService } from '../../organisations/services/organisation-members.service';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
+import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { ECARD_MAX_PER_CUSTOMER } from '../ecards.constants';
 import { EcardsService } from './ecards.service';
 
@@ -63,6 +65,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
   let mediaService: MediaService;
   let organisationsService: OrganisationsService;
   let organisationMembersService: OrganisationMembersService;
+  let planEnforcementService: PlanEnforcementService;
   let service: EcardsService;
   let originalDatabaseUrl: string | undefined;
   const seededAccountIds: string[] = [];
@@ -78,13 +81,19 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
     const bootstrapRegistry: MediaStorageProviderRegistry = {
       [MediaSource.MINIO]: new FakeMediaStorageProvider(),
     };
+    planEnforcementService = new PlanEnforcementService(
+      prisma,
+      new PlanPolicyResolverService(prisma),
+    );
     organisationsService = new OrganisationsService(
       prisma,
       new MediaService(prisma, bootstrapRegistry),
+      planEnforcementService,
     );
     organisationMembersService = new OrganisationMembersService(
       prisma,
       organisationsService,
+      planEnforcementService,
     );
   });
 
@@ -104,6 +113,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       mediaService,
       organisationsService,
       organisationMembersService,
+      planEnforcementService,
     );
   });
 
@@ -613,6 +623,43 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         );
       });
     });
+
+    describe('autoDownloadContact', () => {
+      it('persists an explicit true value', async () => {
+        const customer = await seedCustomer();
+        const created = await service.createForCustomer(
+          customer.id,
+          {
+            endpoint: `auto-download-${randomUUID()}`,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
+            autoDownloadContact: true,
+            components: [],
+          },
+          [],
+        );
+
+        expect(created.hero.autoDownloadContact).toBe(true);
+      });
+
+      it('defaults to false when omitted', async () => {
+        const customer = await seedCustomer();
+        const created = await service.createForCustomer(
+          customer.id,
+          {
+            endpoint: `auto-download-default-${randomUUID()}`,
+            heroName: 'Test Customer',
+            heroEmail: 'test@example.com',
+            isExchangeContactEnabled: true,
+            components: [],
+          },
+          [],
+        );
+
+        expect(created.hero.autoDownloadContact).toBe(false);
+      });
+    });
   });
 
   describe('createAsEmployee', () => {
@@ -1001,6 +1048,51 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         ),
       ).rejects.toThrow('E-card not found');
     });
+
+    it('round-trips autoDownloadContact through true and back to false', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `auto-download-upd-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          autoDownloadContact: false,
+          components: [],
+        },
+        [],
+      );
+      expect(created.hero.autoDownloadContact).toBe(false);
+
+      const enabled = await service.updateById(
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: created.hero.name,
+          heroEmail: created.hero.email,
+          isExchangeContactEnabled: true,
+          autoDownloadContact: true,
+          components: [],
+        },
+        [],
+      );
+      expect(enabled.hero.autoDownloadContact).toBe(true);
+
+      const disabled = await service.updateById(
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: created.hero.name,
+          heroEmail: created.hero.email,
+          isExchangeContactEnabled: true,
+          autoDownloadContact: false,
+          components: [],
+        },
+        [],
+      );
+      expect(disabled.hero.autoDownloadContact).toBe(false);
+    });
   });
 
   describe('removeById', () => {
@@ -1062,6 +1154,28 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       });
 
       expect(result.ecards.map((c) => c.id)).toEqual([created.id]);
+    });
+
+    it('getById and getByEndpoint both surface autoDownloadContact under hero', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `get-auto-download-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          autoDownloadContact: true,
+          components: [],
+        },
+        [],
+      );
+
+      const byId = await service.getById(created.id);
+      const byEndpoint = await service.getByEndpoint(created.endpoint);
+
+      expect(byId.hero.autoDownloadContact).toBe(true);
+      expect(byEndpoint.hero.autoDownloadContact).toBe(true);
     });
   });
 

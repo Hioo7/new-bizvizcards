@@ -10,6 +10,7 @@ import { MailerService } from '../../../common/mailer/mailer.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { OrganisationInviteStatus } from '../../../generated/prisma/client';
 import type { OrganisationInviteModel } from '../../../generated/prisma/models';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import type { InviteMemberDto } from '../dto/invite-member.dto';
 import {
   ORGANISATION_INVITE_EMAIL_SUBJECT,
@@ -28,6 +29,7 @@ export class OrganisationInvitesService {
     private readonly organisationsService: OrganisationsService,
     private readonly mailer: MailerService,
     private readonly appConfig: AppConfigService,
+    private readonly planEnforcementService: PlanEnforcementService,
   ) {}
 
   async invite(
@@ -158,6 +160,8 @@ export class OrganisationInvitesService {
         'Customer already belongs to this organisation',
       );
     }
+
+    await this.planEnforcementService.assertCanJoinOrganisation(customerId);
 
     await this.prisma.$transaction([
       this.prisma.organisationMember.create({

@@ -26,6 +26,8 @@ const EMPLOYEE_ORGANISATION_ACTIONS = [
   'create',
   'update',
 ] as const;
+const EMPLOYEE_PLAN_ACTIONS = ['list', 'get', 'create', 'update'] as const;
+const EMPLOYEE_EVENT_ACTIONS = ['list', 'get', 'create', 'update'] as const;
 
 const ADMIN_EXTRA_USER_ACTIONS = [
   'create',
@@ -41,6 +43,8 @@ const ADMIN_EXTRA_ECARD_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_CUSTOMER_ACTIONS = ['ban'] as const;
 const ADMIN_EXTRA_REDIRECT_ACTIONS = ['create', 'update', 'delete'] as const;
 const ADMIN_EXTRA_ORGANISATION_ACTIONS = ['delete'] as const;
+const ADMIN_EXTRA_PLAN_ACTIONS = ['delete'] as const;
+const ADMIN_EXTRA_EVENT_ACTIONS = ['delete'] as const;
 
 const SUPER_ADMIN_EXTRA_USER_ACTIONS = [
   'set-role',
@@ -58,6 +62,8 @@ export const employeeRole = employeeAccessControl.newRole({
   customer: [...EMPLOYEE_CUSTOMER_ACTIONS],
   redirect: [...EMPLOYEE_REDIRECT_ACTIONS],
   organisation: [...EMPLOYEE_ORGANISATION_ACTIONS],
+  plan: [...EMPLOYEE_PLAN_ACTIONS],
+  event: [...EMPLOYEE_EVENT_ACTIONS],
 });
 
 export const adminRole = employeeAccessControl.newRole({
@@ -75,6 +81,8 @@ export const adminRole = employeeAccessControl.newRole({
     ...EMPLOYEE_ORGANISATION_ACTIONS,
     ...ADMIN_EXTRA_ORGANISATION_ACTIONS,
   ],
+  plan: [...EMPLOYEE_PLAN_ACTIONS, ...ADMIN_EXTRA_PLAN_ACTIONS],
+  event: [...EMPLOYEE_EVENT_ACTIONS, ...ADMIN_EXTRA_EVENT_ACTIONS],
 });
 
 export const superAdminRole = employeeAccessControl.newRole({
@@ -116,4 +124,12 @@ export const superAdminRole = employeeAccessControl.newRole({
     ...EMPLOYEE_ORGANISATION_ACTIONS,
     ...ADMIN_EXTRA_ORGANISATION_ACTIONS,
   ],
+  // super_admin gets the same plan actions as admin — no super-admin-only
+  // plan action exists, so it's spread from the same admin-tier const rather
+  // than duplicated, keeping super_admin ⊇ admin by construction.
+  plan: [...EMPLOYEE_PLAN_ACTIONS, ...ADMIN_EXTRA_PLAN_ACTIONS],
+  // super_admin gets the same event actions as admin — no super-admin-only
+  // event action exists, so it's spread from the same admin-tier const
+  // rather than duplicated, keeping super_admin ⊇ admin by construction.
+  event: [...EMPLOYEE_EVENT_ACTIONS, ...ADMIN_EXTRA_EVENT_ACTIONS],
 });

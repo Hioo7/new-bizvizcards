@@ -24,6 +24,7 @@ import {
 } from "@config/routes";
 import type { Customer } from "@app-types/customer";
 import HeroCard from "@features/ecards/components/HeroCard";
+import EcardSettingsCard from "@features/ecards/components/EcardSettingsCard";
 import SortableComponentRow from "@features/ecards/components/SortableComponentRow";
 import ComponentTypePickerModal from "@features/ecards/components/ComponentTypePickerModal";
 import HeroEditSheet from "@features/ecards/components/HeroEditSheet";
@@ -35,7 +36,11 @@ import TeamEditSheet from "@features/ecards/components/TeamEditSheet";
 import WhatsAppEditSheet from "@features/ecards/components/WhatsAppEditSheet";
 import BrochureEditSheet from "@features/ecards/components/BrochureEditSheet";
 import { useEcardBuilder } from "@features/ecards/hooks/useEcardBuilder";
-import { ECARD_MAX_COMPONENTS } from "@features/ecards/config/ecardBuilder.config";
+import { useCustomerEffectivePolicy } from "@hooks/useCustomerEffectivePolicy";
+import {
+  ECARD_COMPONENT_TYPES,
+  ECARD_MAX_COMPONENTS,
+} from "@features/ecards/config/ecardBuilder.config";
 import { emptyDraftForType } from "@features/ecards/types/ecardBuilder.types";
 import type { EcardComponentType } from "@app-types/ecard";
 
@@ -57,6 +62,10 @@ export default function EcardBuilderView() {
     ecardId,
     customer ? { name: customer.name, email: customer.email } : null,
   );
+  const { policy } = useCustomerEffectivePolicy(customerId ?? null);
+  const planUnavailableTypes = policy
+    ? ECARD_COMPONENT_TYPES.filter((type) => !policy.ecard.components[type])
+    : [];
   const [editing, setEditing] = useState<EditingTarget>(null);
   const [isPickingType, setIsPickingType] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -173,6 +182,11 @@ export default function EcardBuilderView() {
       {!builder.isLoading && (
         <>
           <HeroCard draft={builder.state.hero} onEdit={() => setEditing({ kind: "hero" })} />
+
+          <EcardSettingsCard
+            draft={builder.state.hero}
+            onChange={(hero) => builder.setState((state) => ({ ...state, hero }))}
+          />
 
           {builder.state.components.length === 0 && (
             <EmptyStepState
@@ -380,6 +394,7 @@ export default function EcardBuilderView() {
         open={isPickingType}
         addedTypes={addedTypes}
         isTeamDisabled={builder.state.hero.organisationId === null}
+        planUnavailableTypes={planUnavailableTypes}
         onClose={() => setIsPickingType(false)}
         onPick={handlePickType}
       />

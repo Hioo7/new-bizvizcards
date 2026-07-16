@@ -6,10 +6,16 @@ import type { EcardHero } from "@app-types/ecard";
 interface HeroSectionProps {
   hero: EcardHero;
   endpoint: string;
+  canExchangeContact: boolean;
   onExchangeContact: () => void;
 }
 
-export function HeroSection({ hero, endpoint, onExchangeContact }: HeroSectionProps) {
+export function HeroSection({
+  hero,
+  endpoint,
+  canExchangeContact,
+  onExchangeContact,
+}: HeroSectionProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleShare() {
@@ -63,7 +69,7 @@ export function HeroSection({ hero, endpoint, onExchangeContact }: HeroSectionPr
       )}
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        {hero.isExchangeContactEnabled && (
+        {canExchangeContact && (
           <button
             type="button"
             onClick={onExchangeContact}
@@ -76,7 +82,7 @@ export function HeroSection({ hero, endpoint, onExchangeContact }: HeroSectionPr
         <a
           href={ecardVCardUrl(endpoint)}
           className={`rounded-xl py-3 px-4 font-semibold transition border-2 border-white/70 text-white hover:bg-white/10 flex items-center justify-center gap-2 ${
-            hero.isExchangeContactEnabled ? "" : "col-span-2"
+            canExchangeContact ? "" : "col-span-2"
           }`}
         >
           <Download className="w-4 h-4" />

@@ -1,6 +1,8 @@
 import {
   Building2,
+  CalendarDays,
   Contact,
+  CreditCard,
   IdCard,
   LogOut,
   Route as RouteIcon,
@@ -63,6 +65,20 @@ export const ADMIN_APP_TILES: AdminAppTile[] = [
     icon: Building2,
     color: "accent",
     route: ROUTES.adminCustomerOrganisations,
+  },
+  {
+    id: "plans",
+    label: "Plans",
+    icon: CreditCard,
+    color: "primary",
+    route: ROUTES.adminPlans,
+  },
+  {
+    id: "business-events",
+    label: "Business Events",
+    icon: CalendarDays,
+    color: "secondary",
+    route: ROUTES.adminBusinessEvents,
   },
   {
     id: "logout",

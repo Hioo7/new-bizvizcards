@@ -9,6 +9,8 @@ model Employee {
   createdInternalRedirects InternalRedirectRoute[]
   createdExternalRedirects ExternalRedirectRoute[]
   createdEcards            ECard[]
+  assignedPlans            PlanPurchaseHistory[]
+  createdBusinessEvents    BusinessEvent[]
 
   @@map("Employee")
 }

@@ -9,6 +9,7 @@ export interface EcardHeroDraft {
   phoneCountryDialCode: string;
   phoneNumber: string;
   isExchangeContactEnabled: boolean;
+  autoDownloadContact: boolean;
   endpoint: string;
   organisationId: string | null;
 }
@@ -22,6 +23,7 @@ export function emptyHeroDraft(): EcardHeroDraft {
     phoneCountryDialCode: "",
     phoneNumber: "",
     isExchangeContactEnabled: true,
+    autoDownloadContact: false,
     endpoint: "",
     organisationId: null,
   };

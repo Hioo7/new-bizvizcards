@@ -9,7 +9,7 @@ import { adminCustomerEcardsPath } from "@config/routes";
 import type { Customer } from "@app-types/customer";
 import { useCustomerManagementList } from "@features/customer-organisation-management/hooks/useCustomerManagementList";
 import { useCustomerManagementMutations } from "@features/customer-organisation-management/hooks/useCustomerManagementMutations";
-import { isAdminTier } from "@features/customer-organisation-management/utils/isAdminTier";
+import { isAdminTier } from "@utils/isAdminTier";
 import CustomerToolbar from "@features/customer-organisation-management/components/customers/CustomerToolbar";
 import CustomerTable from "@features/customer-organisation-management/components/customers/CustomerTable";
 import CreateCustomerModal from "@features/customer-organisation-management/components/customers/CreateCustomerModal";
@@ -20,6 +20,7 @@ import type { CreateCustomerValues } from "@features/customer-organisation-manag
 import type { EditCustomerValues } from "@features/customer-organisation-management/schemas/editCustomerSchema";
 import type { SetCustomerPasswordValues } from "@features/customer-organisation-management/schemas/setCustomerPasswordSchema";
 import type { BanCustomerValues } from "@features/customer-organisation-management/schemas/banCustomerSchema";
+import { CustomerPlanModal } from "@features/plans";
 
 export default function CustomersPanel() {
   const { staffUser } = useStaffAuth();
@@ -34,6 +35,7 @@ export default function CustomersPanel() {
   );
   const [banningCustomer, setBanningCustomer] = useState<Customer | null>(null);
   const [unbanTarget, setUnbanTarget] = useState<Customer | null>(null);
+  const [managingPlanFor, setManagingPlanFor] = useState<Customer | null>(null);
 
   const createAction = useAsyncAction();
   const editAction = useAsyncAction();
@@ -127,6 +129,7 @@ export default function CustomersPanel() {
               state: { customer },
             })
           }
+          onManagePlan={(customer) => setManagingPlanFor(customer)}
         />
       </div>
 
@@ -182,6 +185,12 @@ export default function CustomersPanel() {
         error={unbanAction.error}
         onCancel={() => setUnbanTarget(null)}
         onConfirm={handleUnbanConfirm}
+      />
+
+      <CustomerPlanModal
+        customer={managingPlanFor}
+        open={managingPlanFor !== null}
+        onCancel={() => setManagingPlanFor(null)}
       />
     </div>
   );

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus } from "lucide-react";
-import BulkCustomerPickerField from "@features/customer-organisation-management/components/organisations/BulkCustomerPickerField";
+import BulkCustomerPickerField from "@components/BulkCustomerPickerField";
 import type { Customer } from "@app-types/customer";
 import {
   addOrganisationMemberSchema,

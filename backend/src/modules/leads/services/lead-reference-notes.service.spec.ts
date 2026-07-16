@@ -2,6 +2,8 @@ import { randomUUID } from 'crypto';
 import { NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
+import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { LeadsService } from './leads.service';
 import { LeadReferenceNotesService } from './lead-reference-notes.service';
 
@@ -19,7 +21,10 @@ describe('LeadReferenceNotesService (integration, TEST_DATABASE_URL only)', () =
 
     appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
-    leadsService = new LeadsService(prisma);
+    leadsService = new LeadsService(
+      prisma,
+      new PlanEnforcementService(prisma, new PlanPolicyResolverService(prisma)),
+    );
     service = new LeadReferenceNotesService(prisma, leadsService);
   });
 

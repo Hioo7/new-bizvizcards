@@ -11,6 +11,8 @@ export const employeeStatements = {
   customer: ['list', 'create', 'update', 'set-password', 'ban'],
   redirect: ['list', 'get', 'create', 'update', 'delete'],
   organisation: ['list', 'get', 'create', 'update', 'delete'],
+  plan: ['list', 'get', 'create', 'update', 'delete'],
+  event: ['list', 'get', 'create', 'update', 'delete'],
 } as const;
 
 export const employeeAccessControl = createAccessControl(employeeStatements);

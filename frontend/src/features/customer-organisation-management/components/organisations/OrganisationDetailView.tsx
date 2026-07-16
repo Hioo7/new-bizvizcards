@@ -16,7 +16,7 @@ import { adminCustomerEcardsPath, ROUTES } from "@config/routes";
 import type { OrganisationMemberSummary } from "@app-types/ecard";
 import { useOrganisationDetail } from "@features/customer-organisation-management/hooks/useOrganisationDetail";
 import { useOrganisationDetailMutations } from "@features/customer-organisation-management/hooks/useOrganisationDetailMutations";
-import { isAdminTier } from "@features/customer-organisation-management/utils/isAdminTier";
+import { isAdminTier } from "@utils/isAdminTier";
 import { memberToCustomerShim } from "@features/customer-organisation-management/utils/memberToCustomerShim";
 import OrganisationLogoField from "@features/customer-organisation-management/components/organisations/OrganisationLogoField";
 import EditOrganisationNameModal from "@features/customer-organisation-management/components/organisations/EditOrganisationNameModal";

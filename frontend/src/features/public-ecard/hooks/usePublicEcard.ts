@@ -5,6 +5,7 @@ import type { Ecard } from "@app-types/ecard";
 export interface UsePublicEcardResult {
   card: Ecard | null;
   viewEventId: string | null;
+  exchangeContactAllowed: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -12,6 +13,7 @@ export interface UsePublicEcardResult {
 export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResult {
   const [card, setCard] = useState<Ecard | null>(null);
   const [viewEventId, setViewEventId] = useState<string | null>(null);
+  const [exchangeContactAllowed, setExchangeContactAllowed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +29,7 @@ export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResu
         if (!cancelled) {
           setCard(result.card);
           setViewEventId(result.viewEventId);
+          setExchangeContactAllowed(result.exchangeContactAllowed);
         }
       } catch (err) {
         if (!cancelled) {
@@ -43,5 +46,5 @@ export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResu
     };
   }, [endpoint]);
 
-  return { card, viewEventId, isLoading, error };
+  return { card, viewEventId, exchangeContactAllowed, isLoading, error };
 }

@@ -14,6 +14,7 @@ import type {
 } from '../../../common/validators/image-slot.dto';
 import { OrganisationMembersService } from '../../organisations/services/organisation-members.service';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import type { CreateEcardAsSpocDto } from '../dto/create-ecard-as-spoc.dto';
 import type {
   CreateEcardAsEmployeeDto,
@@ -195,6 +196,7 @@ export class EcardsService {
     private readonly mediaService: MediaService,
     private readonly organisationsService: OrganisationsService,
     private readonly organisationMembersService: OrganisationMembersService,
+    private readonly planEnforcementService: PlanEnforcementService,
   ) {}
 
   async listByCustomerId(customerId: string) {
@@ -413,6 +415,7 @@ export class EcardsService {
     createdByEmployeeId: string | null,
   ) {
     await this.assertUnderEcardCap(customerId);
+    await this.planEnforcementService.assertCanCreateEcard(customerId);
     await this.assertEndpointAvailable(dto.endpoint);
     if (dto.organisationId) {
       await this.assertOrganisationExists(dto.organisationId);
@@ -436,6 +439,17 @@ export class EcardsService {
       );
     }
 
+    const galleryComponent = dto.components.find(
+      (component) => component.type === 'GALLERY',
+    );
+    await this.planEnforcementService.assertCanAddGalleryContent(
+      customerId,
+      null,
+      galleryComponent
+        ? { subGalleries: galleryComponent.subGalleries }
+        : undefined,
+    );
+
     const card = await this.prisma.eCard.create({
       data: {
         customerId,
@@ -448,6 +462,7 @@ export class EcardsService {
         phoneCountryDialCode: dto.phoneCountryDialCode,
         phoneNumber: dto.phoneNumber,
         isExchangeContactEnabled: dto.isExchangeContactEnabled,
+        autoDownloadContact: dto.autoDownloadContact,
       },
     });
     const keyPrefix = `${ECARD_STORAGE_KEY_PREFIX}/${card.id}`;
@@ -538,6 +553,29 @@ export class EcardsService {
       );
     }
 
+    const existingGalleryComponent = existing.components.find(
+      (component) => component.type === 'GALLERY',
+    );
+    const incomingGalleryComponent = dto.components.find(
+      (component) => component.type === 'GALLERY',
+    );
+    await this.planEnforcementService.assertCanAddGalleryContent(
+      existing.customerId,
+      {
+        organisationId: dto.organisationId ?? existing.organisationId,
+        existingSubGalleryCount:
+          existingGalleryComponent?.gallery?.subGalleries.length ?? 0,
+        existingTotalImageCount:
+          existingGalleryComponent?.gallery?.subGalleries.reduce(
+            (sum, subGallery) => sum + subGallery.images.length,
+            0,
+          ) ?? 0,
+      },
+      incomingGalleryComponent
+        ? { subGalleries: incomingGalleryComponent.subGalleries }
+        : undefined,
+    );
+
     const heroMediaId = await this.resolveUpdateSlot(
       dto.heroProfilePhoto,
       ECARD_HERO_PHOTO_FIELD,
@@ -583,6 +621,7 @@ export class EcardsService {
           phoneCountryDialCode: dto.phoneCountryDialCode,
           phoneNumber: dto.phoneNumber,
           isExchangeContactEnabled: dto.isExchangeContactEnabled,
+          autoDownloadContact: dto.autoDownloadContact,
           heroProfilePhotoMediaId: heroMediaId ?? null,
         },
       });
@@ -1002,6 +1041,7 @@ export class EcardsService {
         phoneCountryDialCode: card.phoneCountryDialCode,
         phoneNumber: card.phoneNumber,
         isExchangeContactEnabled: card.isExchangeContactEnabled,
+        autoDownloadContact: card.autoDownloadContact,
       },
       components: card.components.map((component) =>
         this.componentToResponse(component, ownerOrganisationId),

@@ -13,6 +13,8 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "pretest": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-test-fallback-plan.ts",
+    "seed:test-fallback-plan": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-test-fallback-plan.ts",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:cov": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
@@ -21,7 +23,9 @@
     "reconcile:auth-accounts": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/reconcile-orphaned-accounts.ts",
     "seed:super-admin": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-super-admin.ts",
     "seed:smart-card-templates": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-smart-card-templates.ts",
-    "seed:og-preview-image": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-og-preview-image.ts"
+    "seed:og-preview-image": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-og-preview-image.ts",
+    "seed:fallback-plan": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-fallback-plan.ts",
+    "seed:event-policy-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-event-policy-defaults.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1081.0",
@@ -83,6 +87,7 @@
     "setupFiles": [
       "dotenv/config"
     ],
+    "maxWorkers": 1,
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },

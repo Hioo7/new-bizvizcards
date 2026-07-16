@@ -11,6 +11,8 @@ import type {
   UploadMediaParams,
 } from '../../../common/media/storage/media-storage-provider.interface';
 import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
+import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { SmartCardsService } from './smart-cards.service';
 import type { CreateSmartCardDto } from '../dto/create-smart-card.dto';
 
@@ -78,7 +80,15 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
       [MediaSource.MINIO]: fakeProvider,
     };
     const mediaService = new MediaService(prisma, registry);
-    service = new SmartCardsService(prisma, mediaService);
+    const planEnforcementService = new PlanEnforcementService(
+      prisma,
+      new PlanPolicyResolverService(prisma),
+    );
+    service = new SmartCardsService(
+      prisma,
+      mediaService,
+      planEnforcementService,
+    );
   });
 
   afterEach(async () => {

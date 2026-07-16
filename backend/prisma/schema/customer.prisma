@@ -10,6 +10,10 @@ model Customer {
   smartCards SmartCard[]
   ecards     ECard[]
 
+  currentPlanId       String?               @db.Uuid
+  currentPlan         Plan?                 @relation(fields: [currentPlanId], references: [id], onDelete: SetNull)
+  planPurchaseHistory PlanPurchaseHistory[]
+
   defaultLeadFolderId String?     @db.Uuid
   defaultLeadFolder   LeadFolder? @relation("CustomerDefaultLeadFolder", fields: [defaultLeadFolderId], references: [id], onDelete: SetNull)
 
@@ -20,6 +24,11 @@ model Customer {
   createdOrganisations    Organisation[]       @relation("OrganisationCreatedBy")
   sentInvites             OrganisationInvite[] @relation("OrganisationInvitesSent")
   acceptedInvites         OrganisationInvite[] @relation("OrganisationInvitesAccepted")
+
+  eventMemberships        EventMember[]
+  eventGuestEntries       EventGuest[]               @relation("EventGuestCustomer")
+  checkedInEventGuests    EventGuest[]               @relation("EventGuestCheckedInBy")
+  scannedEventRedemptions EventTrackableRedemption[]
 
   @@map("Customer")
 }

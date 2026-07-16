@@ -8,6 +8,8 @@ import type {
 } from '../../../common/media/storage/media-storage-provider.interface';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaSource } from '../../../generated/prisma/client';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
+import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { ORGANISATION_MAX_MEMBERSHIPS_PER_CUSTOMER } from '../organisations.constants';
 import { OrganisationsService } from './organisations.service';
 
@@ -44,7 +46,15 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
       [MediaSource.MINIO]: new FakeMediaStorageProvider(),
     };
     mediaService = new MediaService(prisma, registry);
-    service = new OrganisationsService(prisma, mediaService);
+    const planEnforcementService = new PlanEnforcementService(
+      prisma,
+      new PlanPolicyResolverService(prisma),
+    );
+    service = new OrganisationsService(
+      prisma,
+      mediaService,
+      planEnforcementService,
+    );
   });
 
   afterAll(async () => {

@@ -14,6 +14,7 @@ import type {
 import type { CreateOrganisationDto } from '../dto/create-organisation.dto';
 import type { ListOrganisationsQueryDto } from '../dto/list-organisations-query.dto';
 import type { UpdateOrganisationDto } from '../dto/update-organisation.dto';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import {
   ORGANISATION_LIST_DEFAULT_PAGE,
   ORGANISATION_LIST_DEFAULT_PAGE_SIZE,
@@ -71,6 +72,7 @@ export class OrganisationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mediaService: MediaService,
+    private readonly planEnforcementService: PlanEnforcementService,
   ) {}
 
   async create(
@@ -85,6 +87,9 @@ export class OrganisationsService {
         `This customer already belongs to the maximum of ${ORGANISATION_MAX_MEMBERSHIPS_PER_CUSTOMER} organisations`,
       );
     }
+
+    await this.planEnforcementService.assertCanCreateOrganisation(customerId);
+    await this.planEnforcementService.assertCanJoinOrganisation(customerId);
 
     const organisation = await this.prisma.organisation.create({
       data: {
