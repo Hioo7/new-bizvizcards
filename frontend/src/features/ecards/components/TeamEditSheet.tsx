@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { User, UserPlus, Users, X } from "lucide-react";
-import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import EditSheetShell from "@components/EditSheetShell";
 import TeamMemberPickerModal from "@features/ecards/components/TeamMemberPickerModal";
 import { useOrganisationMembers } from "@features/ecards/hooks/useOrganisationMembers";
 import { ECARD_TEXT_SHORT_MAX_LENGTH } from "@features/ecards/config/ecardBuilder.config";
@@ -40,7 +40,7 @@ export default function TeamEditSheet({
 
   return (
     <>
-      <ComponentEditSheetShell
+      <EditSheetShell
         open={open}
         icon={Users}
         title="Team"
@@ -109,7 +109,7 @@ export default function TeamEditSheet({
             Add teammates
           </button>
         </div>
-      </ComponentEditSheetShell>
+      </EditSheetShell>
 
       <TeamMemberPickerModal
         open={isPickerOpen}

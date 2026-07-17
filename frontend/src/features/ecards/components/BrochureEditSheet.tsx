@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BookOpen } from "lucide-react";
 import BrochurePdfField from "@features/ecards/components/BrochurePdfField";
-import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import EditSheetShell from "@components/EditSheetShell";
 import type { BrochureComponentDraft } from "@features/ecards/types/ecardBuilder.types";
 import type { ImageFieldValue } from "@app-types/media.types";
 
@@ -37,7 +37,7 @@ export default function BrochureEditSheet({
   }
 
   return (
-    <ComponentEditSheetShell
+    <EditSheetShell
       open={open}
       icon={BookOpen}
       title="Brochure"
@@ -50,6 +50,6 @@ export default function BrochureEditSheet({
         Visitors who tap this card open your brochure PDF in a new tab.
       </p>
       <BrochurePdfField label="Brochure PDF" value={pdf} onChange={setPdf} />
-    </ComponentEditSheetShell>
+    </EditSheetShell>
   );
 }

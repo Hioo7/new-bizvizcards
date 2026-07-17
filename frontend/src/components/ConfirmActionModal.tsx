@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { LucideIcon } from "lucide-react";
 
 interface ConfirmActionModalProps {
@@ -35,12 +36,30 @@ export default function ConfirmActionModal({
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  return (
-    <dialog
-      ref={dialogRef}
-      className="modal modal-bottom sm:modal-middle"
-      onClose={onCancel}
-    >
+  // The native "close" event is wired via addEventListener, not the JSX
+  // onClose prop: React's synthetic handling of <dialog> onClose bubbles
+  // through the *React* tree, and when this dialog is portaled while nested
+  // (in React terms) inside another open <dialog>, that cross-bubbling fires
+  // the ANCESTOR dialog's onClose too — closing a sheet this is opened from
+  // on top of. addEventListener only ever fires for events dispatched on
+  // this exact DOM node, which is what "close" actually is (a native,
+  // non-bubbling event).
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    dialog.addEventListener("close", onCancel);
+    return () => dialog.removeEventListener("close", onCancel);
+  }, [onCancel]);
+
+  // Portaled to <body> — this can be opened while another dialog (e.g. an
+  // edit sheet) is already showModal()'d above it. Two native <dialog>
+  // elements where one is a DOM descendant of the other is unreliable
+  // across browsers (closing the inner one can take the outer one with it);
+  // rendering both as top-level siblings avoids that entirely. showModal()
+  // already visually escapes normal layout via the browser's top layer, so
+  // this changes nothing about where it appears on screen.
+  return createPortal(
+    <dialog ref={dialogRef} className="modal modal-bottom sm:modal-middle">
       <div className="modal-box">
         <div className="flex items-center gap-3">
           <div
@@ -79,6 +98,7 @@ export default function ConfirmActionModal({
       <form method="dialog" className="modal-backdrop">
         <button type="submit">close</button>
       </form>
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

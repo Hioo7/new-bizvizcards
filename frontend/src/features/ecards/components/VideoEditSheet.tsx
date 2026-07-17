@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link2, Video as VideoIcon } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
-import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import EditSheetShell from "@components/EditSheetShell";
 import {
   videoSheetSchema,
   type VideoSheetValues,
@@ -40,7 +40,7 @@ export default function VideoEditSheet({
   }
 
   return (
-    <ComponentEditSheetShell
+    <EditSheetShell
       open={open}
       icon={VideoIcon}
       title="Video"
@@ -64,6 +64,6 @@ export default function VideoEditSheet({
         registration={register("videoUrl")}
         error={errors.videoUrl?.message}
       />
-    </ComponentEditSheetShell>
+    </EditSheetShell>
   );
 }

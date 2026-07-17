@@ -1,0 +1,27 @@
+// Customer-owned shipping address book. Deleting an Address never touches
+// past orders — Order snapshots every field it needs at placement time (see
+// order.prisma), this is only the live, editable copy.
+model Address {
+  id                          String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId                  String   @db.Uuid
+  customer                    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label                       String
+  contactName                 String
+  contactPhoneCountryDialCode String
+  contactPhoneNumber          String
+  line1                       String
+  line2                       String?
+  city                        String
+  state                       String
+  country                     String
+  pincode                     String
+  latitude                    Decimal? @db.Decimal(9, 6)
+  longitude                   Decimal? @db.Decimal(9, 6)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([customerId])
+  @@map("Address")
+}

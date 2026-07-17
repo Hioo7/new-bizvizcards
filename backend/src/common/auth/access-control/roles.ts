@@ -28,6 +28,12 @@ const EMPLOYEE_ORGANISATION_ACTIONS = [
 ] as const;
 const EMPLOYEE_PLAN_ACTIONS = ['list', 'get', 'create', 'update'] as const;
 const EMPLOYEE_EVENT_ACTIONS = ['list', 'get', 'create', 'update'] as const;
+const EMPLOYEE_PRODUCT_ACTIONS = ['list', 'get', 'create', 'update'] as const;
+// No ADMIN_EXTRA_ORDER_ACTIONS exists — status changes (including
+// cancel/refund, which are just OrderStatus values) all go through the same
+// 'update' action, so every tier gets the identical set, same as
+// smartCardTemplate above.
+const EMPLOYEE_ORDER_ACTIONS = ['list', 'get', 'update'] as const;
 
 const ADMIN_EXTRA_USER_ACTIONS = [
   'create',
@@ -45,6 +51,7 @@ const ADMIN_EXTRA_REDIRECT_ACTIONS = ['create', 'update', 'delete'] as const;
 const ADMIN_EXTRA_ORGANISATION_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_PLAN_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_EVENT_ACTIONS = ['delete'] as const;
+const ADMIN_EXTRA_PRODUCT_ACTIONS = ['delete'] as const;
 
 const SUPER_ADMIN_EXTRA_USER_ACTIONS = [
   'set-role',
@@ -64,6 +71,8 @@ export const employeeRole = employeeAccessControl.newRole({
   organisation: [...EMPLOYEE_ORGANISATION_ACTIONS],
   plan: [...EMPLOYEE_PLAN_ACTIONS],
   event: [...EMPLOYEE_EVENT_ACTIONS],
+  product: [...EMPLOYEE_PRODUCT_ACTIONS],
+  order: [...EMPLOYEE_ORDER_ACTIONS],
 });
 
 export const adminRole = employeeAccessControl.newRole({
@@ -83,6 +92,10 @@ export const adminRole = employeeAccessControl.newRole({
   ],
   plan: [...EMPLOYEE_PLAN_ACTIONS, ...ADMIN_EXTRA_PLAN_ACTIONS],
   event: [...EMPLOYEE_EVENT_ACTIONS, ...ADMIN_EXTRA_EVENT_ACTIONS],
+  product: [...EMPLOYEE_PRODUCT_ACTIONS, ...ADMIN_EXTRA_PRODUCT_ACTIONS],
+  // admin gets the same order actions as employee — no admin-only order
+  // action exists (see EMPLOYEE_ORDER_ACTIONS above).
+  order: [...EMPLOYEE_ORDER_ACTIONS],
 });
 
 export const superAdminRole = employeeAccessControl.newRole({
@@ -132,4 +145,11 @@ export const superAdminRole = employeeAccessControl.newRole({
   // event action exists, so it's spread from the same admin-tier const
   // rather than duplicated, keeping super_admin ⊇ admin by construction.
   event: [...EMPLOYEE_EVENT_ACTIONS, ...ADMIN_EXTRA_EVENT_ACTIONS],
+  // super_admin gets the same product actions as admin — no super-admin-only
+  // product action exists, so it's spread from the same admin-tier const
+  // rather than duplicated, keeping super_admin ⊇ admin by construction.
+  product: [...EMPLOYEE_PRODUCT_ACTIONS, ...ADMIN_EXTRA_PRODUCT_ACTIONS],
+  // super_admin gets the same order actions as admin/employee — no
+  // super-admin-only order action exists (see EMPLOYEE_ORDER_ACTIONS above).
+  order: [...EMPLOYEE_ORDER_ACTIONS],
 });

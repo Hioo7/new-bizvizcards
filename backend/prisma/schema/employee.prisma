@@ -11,6 +11,8 @@ model Employee {
   createdEcards            ECard[]
   assignedPlans            PlanPurchaseHistory[]
   createdBusinessEvents    BusinessEvent[]
+  createdProducts          Product[]
+  orderStatusChanges       OrderStatusHistory[]
 
   @@map("Employee")
 }

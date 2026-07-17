@@ -5,7 +5,9 @@ import {
   CreditCard,
   IdCard,
   LogOut,
+  Package,
   Route as RouteIcon,
+  ShoppingBag,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -79,6 +81,20 @@ export const ADMIN_APP_TILES: AdminAppTile[] = [
     icon: CalendarDays,
     color: "secondary",
     route: ROUTES.adminBusinessEvents,
+  },
+  {
+    id: "products",
+    label: "Products",
+    icon: Package,
+    color: "accent",
+    route: ROUTES.adminProducts,
+  },
+  {
+    id: "orders",
+    label: "Orders",
+    icon: ShoppingBag,
+    color: "primary",
+    route: ROUTES.adminOrders,
   },
   {
     id: "logout",

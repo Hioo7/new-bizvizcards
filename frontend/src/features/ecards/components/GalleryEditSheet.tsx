@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Images, Plus, Trash2 } from "lucide-react";
 import ImageSlotField from "@components/media/ImageSlotField";
 import EmptyStepState from "@components/EmptyStepState";
-import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import EditSheetShell from "@components/EditSheetShell";
 import {
   ECARD_MAX_GALLERY_IMAGES,
   ECARD_MAX_SUB_GALLERIES,
@@ -87,7 +87,7 @@ export default function GalleryEditSheet({
   }
 
   return (
-    <ComponentEditSheetShell
+    <EditSheetShell
       open={open}
       icon={Images}
       title="Gallery"
@@ -160,6 +160,6 @@ export default function GalleryEditSheet({
           Add sub-gallery
         </button>
       )}
-    </ComponentEditSheetShell>
+    </EditSheetShell>
   );
 }

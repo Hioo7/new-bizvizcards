@@ -2,6 +2,7 @@ export const IMAGE_ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/gif",
 ];
 export const IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 

@@ -30,5 +30,11 @@ model Customer {
   checkedInEventGuests    EventGuest[]               @relation("EventGuestCheckedInBy")
   scannedEventRedemptions EventTrackableRedemption[]
 
+  linkedProductUnits ProductUnitLink[]
+
+  addresses Address[]
+  cart      Cart?
+  orders    Order[]
+
   @@map("Customer")
 }

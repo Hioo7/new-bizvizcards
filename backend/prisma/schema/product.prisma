@@ -1,0 +1,136 @@
+enum ProductType {
+  STANDALONE
+  VARIANT_BASED
+
+  @@map("ProductType")
+}
+
+enum ProductMediaPurpose {
+  GALLERY
+  PREVIEW
+
+  @@map("ProductMediaPurpose")
+}
+
+enum LinkedCardType {
+  ECARD
+  SMART_CARD
+
+  @@map("LinkedCardType")
+}
+
+// A Product is either a standalone sellable item or a container for
+// variants, never both — productType decides which, and ProductUnit's
+// productId/variantId FKs follow suit (see ProductUnit below). price follows
+// the same split: required (service-enforced) when STANDALONE, left null
+// when VARIANT_BASED since each variant is priced independently instead.
+model Product {
+  id                  String      @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  name                String
+  description         String?
+  productType         ProductType
+  price               Decimal?    @db.Decimal(10, 2)
+  isActive            Boolean     @default(true)
+  createdByEmployeeId String?     @db.Uuid
+  createdByEmployee   Employee?   @relation(fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  variants   ProductVariant[]
+  units      ProductUnit[]
+  media      ProductMedia[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([createdByEmployeeId])
+  @@map("Product")
+}
+
+model ProductVariant {
+  id        String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  sku       String   @unique
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  units      ProductUnit[]
+  media      ProductMedia[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("ProductVariant")
+}
+
+// The physical, printable/writable instance — one row per NFC/QR unit.
+// Exactly one of productId/variantId is set, matching the parent
+// Product.productType (enforced in the service layer, not the DB).
+// printedAt/printBatchId track manufacturing hand-off, independent of
+// ProductUnitLink (claim state) and of the not-yet-built order/fulfillment
+// system.
+model ProductUnit {
+  id            String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  productId     String?         @db.Uuid
+  product       Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId     String?         @db.Uuid
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  code          String          @unique
+  printedAt     DateTime?
+  printBatchId  String?         @db.Uuid
+  provisionedAt DateTime        @default(now())
+
+  link ProductUnitLink?
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([printBatchId])
+  @@map("ProductUnit")
+}
+
+// References the shared Media model (any file type, incl. gif), scoped to a
+// Product or a ProductVariant (exactly one, service-enforced). purpose
+// distinguishes browsing gallery images from the single connect-popup
+// preview asset — same upload mechanism, different role.
+model ProductMedia {
+  id        String              @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  productId String?             @db.Uuid
+  product   Product?            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?             @db.Uuid
+  variant   ProductVariant?     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  mediaId   String              @unique @db.Uuid
+  media     Media               @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  purpose   ProductMediaPurpose @default(GALLERY)
+  sortOrder Int                 @default(0)
+
+  @@index([productId])
+  @@index([variantId])
+  @@map("ProductMedia")
+}
+
+// Assembler: current link state, decoupled from unit identity/provisioning
+// above. Absence of this row = the unit is unclaimed. Exactly one of
+// ecardId/smartCardId is set, matching cardType (service-enforced). Deleting
+// the linked ECard/SmartCard cascades here too, so a unit whose target card
+// was deleted automatically returns to the unclaimed state rather than
+// pointing at nothing.
+model ProductUnitLink {
+  id            String         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  productUnitId String         @unique @db.Uuid
+  productUnit   ProductUnit    @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
+  customerId    String         @db.Uuid
+  customer      Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  cardType      LinkedCardType
+  ecardId       String?        @db.Uuid
+  ecard         ECard?         @relation(fields: [ecardId], references: [id], onDelete: Cascade)
+  smartCardId   String?        @db.Uuid
+  smartCard     SmartCard?     @relation(fields: [smartCardId], references: [id], onDelete: Cascade)
+  linkedAt      DateTime       @default(now())
+
+  @@index([customerId])
+  @@index([ecardId])
+  @@index([smartCardId])
+  @@map("ProductUnitLink")
+}

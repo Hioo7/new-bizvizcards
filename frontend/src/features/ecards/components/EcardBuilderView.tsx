@@ -52,8 +52,20 @@ export default function EcardBuilderView() {
     ecardId: string;
   }>();
   const navigate = useNavigate();
-  const location = useLocation() as { state?: { customer?: Customer } };
+  const location = useLocation() as {
+    key: string;
+    state?: { customer?: Customer };
+  };
   const customer = location.state?.customer;
+  // Mirrors EcardListView's back button: react-router gives a fresh
+  // page-load/direct-link its initial entry a location.key of "default" —
+  // nothing to go back to there, so fall back to the list. Otherwise use
+  // real history-back so this doesn't push a duplicate list entry every
+  // time — pushing here (as this used to) grows the stack on every
+  // list->builder->list round trip, so "back" from the list this button
+  // pushes lands on the builder instead of wherever the user actually came
+  // from (e.g. a customer or organisation page).
+  const canGoBack = location.key !== "default";
   const isNew = ecardIdParam === ECARD_NEW_ID;
   const ecardId = isNew ? null : (ecardIdParam ?? null);
 
@@ -147,7 +159,11 @@ export default function EcardBuilderView() {
         <button
           type="button"
           onClick={() =>
-            navigate(adminCustomerEcardsPath(customerId), { state: { customer } })
+            canGoBack
+              ? navigate(-1)
+              : navigate(adminCustomerEcardsPath(customerId), {
+                  state: { customer },
+                })
           }
           aria-label="Back to e-cards"
           className="flex min-h-11 min-w-11 items-center justify-center rounded-field text-base-content/60 hover:bg-base-200"

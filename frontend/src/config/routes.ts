@@ -18,6 +18,10 @@ export const ROUTES = {
   adminPlans: "/admin/plans",
   adminBusinessEvents: "/admin/business-events",
   adminEventDetail: "/admin/business-events/:eventId",
+  adminProducts: "/admin/products",
+  adminProductDetail: "/admin/products/:productId",
+  adminOrders: "/admin/orders",
+  adminOrderDetail: "/admin/orders/:orderId",
   smartCardPublic: "/smartcard/:endpoint",
   ecardPublic: "/ecard/:endpoint",
 } as const;
@@ -58,4 +62,12 @@ export function adminOrganisationDetailPath(organisationId: string): string {
 
 export function adminEventDetailPath(eventId: string): string {
   return `/admin/business-events/${eventId}`;
+}
+
+export function adminProductDetailPath(productId: string): string {
+  return `/admin/products/${productId}`;
+}
+
+export function adminOrderDetailPath(orderId: string): string {
+  return `/admin/orders/${orderId}`;
 }

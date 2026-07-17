@@ -49,6 +49,8 @@ model ECard {
   components ECardComponent[]
   events     ECardEvent[]
 
+  linkedProductUnits ProductUnitLink[]
+
   @@unique([customerId, organisationId])
   @@index([customerId])
   @@index([createdByEmployeeId])

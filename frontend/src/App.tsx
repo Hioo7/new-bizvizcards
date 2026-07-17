@@ -17,6 +17,10 @@ import OrganisationDetailPage from "@pages/OrganisationDetailPage";
 import PlansPage from "@pages/PlansPage";
 import BusinessEventsPage from "@pages/BusinessEventsPage";
 import EventDetailPage from "@pages/EventDetailPage";
+import ProductsPage from "@pages/ProductsPage";
+import ProductDetailPage from "@pages/ProductDetailPage";
+import OrdersPage from "@pages/OrdersPage";
+import OrderDetailPage from "@pages/OrderDetailPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import EcardPublicPage from "@pages/EcardPublicPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
@@ -63,6 +67,16 @@ function App() {
           <Route
             path={ROUTES.adminEventDetail}
             element={<EventDetailPage />}
+          />
+          <Route path={ROUTES.adminProducts} element={<ProductsPage />} />
+          <Route
+            path={ROUTES.adminProductDetail}
+            element={<ProductDetailPage />}
+          />
+          <Route path={ROUTES.adminOrders} element={<OrdersPage />} />
+          <Route
+            path={ROUTES.adminOrderDetail}
+            element={<OrderDetailPage />}
           />
         </Route>
       </Route>

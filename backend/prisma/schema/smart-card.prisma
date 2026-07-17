@@ -41,6 +41,8 @@ model SmartCard {
   testimonials SmartCardTestimonial[]
   galleries    SmartCardGallery[]
 
+  linkedProductUnits ProductUnitLink[]
+
   @@index([customerId])
   @@index([templateId])
   @@index([createdByEmployeeId])

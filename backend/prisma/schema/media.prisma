@@ -26,5 +26,7 @@ model Media {
 
   organisation Organisation?
 
+  productMedia ProductMedia?
+
   @@map("Media")
 }

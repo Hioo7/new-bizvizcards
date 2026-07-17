@@ -12,8 +12,12 @@ import {
  * browser-image-compression returns a plain Blob with a `.name` property
  * patched on, not a real File — FormData ignores that property and sends
  * the part as filename "blob" (no extension), which the backend's
- * extension check then rejects. Re-wrap it in an actual File to fix that. */
+ * extension check then rejects. Re-wrap it in an actual File to fix that.
+ *
+ * GIFs are passed through untouched: the compression step rasterizes via
+ * canvas, which collapses an animated GIF to a single static frame. */
 export async function compressImage(file: File): Promise<File> {
+  if (file.type === "image/gif") return file;
   try {
     const compressed = await imageCompression(file, {
       maxSizeMB: IMAGE_COMPRESSION_MAX_SIZE_MB,

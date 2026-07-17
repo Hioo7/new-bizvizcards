@@ -1,0 +1,97 @@
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+
+  @@map("OrderStatus")
+}
+
+// Immutable once placed. Every field the order needs to display — buyer
+// contact, shipping address, item names/prices — is snapshotted as a flat
+// column at placement time (mirrors PlanPurchaseHistory.businessModelTypeAtPurchase
+// in plan.prisma, the existing snapshot convention in this codebase), so
+// later edits to Customer/Address/Product/ProductVariant never change
+// history. shippingAddressId is a live pointer kept only for admin
+// convenience (click through to the current Address if it still exists);
+// the shipping* columns below are what's actually authoritative and shown.
+model Order {
+  id         String      @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId String      @db.Uuid
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  status     OrderStatus @default(PLACED)
+
+  buyerName  String
+  buyerEmail String
+
+  shippingAddressId                   String?  @db.Uuid
+  shippingAddress                     Address? @relation(fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  shippingLabel                       String
+  shippingContactName                 String
+  shippingContactPhoneCountryDialCode String
+  shippingContactPhoneNumber          String
+  shippingLine1                       String
+  shippingLine2                       String?
+  shippingCity                        String
+  shippingState                       String
+  shippingCountry                     String
+  shippingPincode                     String
+  shippingLatitude                    Decimal? @db.Decimal(9, 6)
+  shippingLongitude                   Decimal? @db.Decimal(9, 6)
+
+  totalAmount Decimal @db.Decimal(10, 2)
+
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  placedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@map("Order")
+}
+
+// Exactly one of productId/variantId is set, matching Product.productType
+// (service-enforced). productNameSnapshot/variantNameSnapshot/skuSnapshot/
+// unitPriceSnapshot are authoritative regardless of later edits to the live
+// Product/ProductVariant rows.
+model OrderItem {
+  id        String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  orderId   String          @db.Uuid
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?         @db.Uuid
+  product   Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId String?         @db.Uuid
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  productNameSnapshot String
+  variantNameSnapshot String?
+  skuSnapshot         String?
+  unitPriceSnapshot   Decimal @db.Decimal(10, 2)
+  quantity            Int
+  lineTotal           Decimal @db.Decimal(10, 2)
+
+  @@index([orderId])
+  @@map("OrderItem")
+}
+
+// Audit trail of every stage change. changedByEmployeeId is null for the
+// initial PLACED row, written by the customer's own checkout with no
+// employee involved.
+model OrderStatusHistory {
+  id                  String       @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  orderId             String       @db.Uuid
+  order               Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus          OrderStatus?
+  toStatus            OrderStatus
+  changedByEmployeeId String?      @db.Uuid
+  changedByEmployee   Employee?    @relation(fields: [changedByEmployeeId], references: [id], onDelete: SetNull)
+  createdAt           DateTime     @default(now())
+
+  @@index([orderId])
+  @@map("OrderStatusHistory")
+}

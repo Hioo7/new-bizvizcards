@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Download, MessageCircle, Phone } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
-import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import EditSheetShell from "@components/EditSheetShell";
 import {
   whatsappSheetSchema,
   type WhatsAppSheetValues,
@@ -58,7 +58,7 @@ export default function WhatsAppEditSheet({
   }
 
   return (
-    <ComponentEditSheetShell
+    <EditSheetShell
       open={open}
       icon={MessageCircle}
       title="WhatsApp"
@@ -100,6 +100,6 @@ export default function WhatsAppEditSheet({
           <Download className="h-4 w-4" />
         </button>
       </div>
-    </ComponentEditSheetShell>
+    </EditSheetShell>
   );
 }

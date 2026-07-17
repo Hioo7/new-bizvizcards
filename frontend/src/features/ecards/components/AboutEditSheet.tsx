@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import FormTextareaField from "@components/forms/FormTextareaField";
-import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import EditSheetShell from "@components/EditSheetShell";
 import {
   aboutSheetSchema,
   type AboutSheetValues,
@@ -46,7 +46,7 @@ export default function AboutEditSheet({
   }
 
   return (
-    <ComponentEditSheetShell
+    <EditSheetShell
       open={open}
       icon={FileText}
       title="About / Bio"
@@ -83,6 +83,6 @@ export default function AboutEditSheet({
         registration={register("aboutMe")}
         error={errors.aboutMe?.message}
       />
-    </ComponentEditSheetShell>
+    </EditSheetShell>
   );
 }

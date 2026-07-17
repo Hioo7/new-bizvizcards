@@ -13,6 +13,8 @@ export const employeeStatements = {
   organisation: ['list', 'get', 'create', 'update', 'delete'],
   plan: ['list', 'get', 'create', 'update', 'delete'],
   event: ['list', 'get', 'create', 'update', 'delete'],
+  product: ['list', 'get', 'create', 'update', 'delete'],
+  order: ['list', 'get', 'update'],
 } as const;
 
 export const employeeAccessControl = createAccessControl(employeeStatements);

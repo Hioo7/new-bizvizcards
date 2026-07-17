@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link2 } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
-import ComponentEditSheetShell from "@features/ecards/components/ComponentEditSheetShell";
+import EditSheetShell from "@components/EditSheetShell";
 import {
   socialLinksSheetSchema,
   type SocialLinksSheetValues,
@@ -54,7 +54,7 @@ export default function SocialLinksEditSheet({
   }
 
   return (
-    <ComponentEditSheetShell
+    <EditSheetShell
       open={open}
       icon={Link2}
       title="Social Links"
@@ -73,6 +73,6 @@ export default function SocialLinksEditSheet({
           error={errors[field.name]?.message}
         />
       ))}
-    </ComponentEditSheetShell>
+    </EditSheetShell>
   );
 }

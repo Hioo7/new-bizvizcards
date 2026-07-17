@@ -15,6 +15,11 @@ import { EcardsModule } from './modules/ecards/ecards.module';
 import { RedirectsModule } from './modules/redirects/redirects.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { BusinessEventsModule } from './modules/business-events/business-events.module';
+import { ProductsModule } from './modules/products/products.module';
+import { ProductLinkingModule } from './modules/product-linking/product-linking.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
+import { CartModule } from './modules/cart/cart.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -32,6 +37,11 @@ import { BusinessEventsModule } from './modules/business-events/business-events.
     RedirectsModule,
     PlansModule,
     BusinessEventsModule,
+    ProductsModule,
+    ProductLinkingModule,
+    AddressesModule,
+    CartModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
