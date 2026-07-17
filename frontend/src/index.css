@@ -45,3 +45,63 @@
   --radius-box: 1rem;
   --radius-field: 0.75rem;
 }
+
+/* Restores the legacy eCard's dark visual identity (see
+   legacy-artifacts/cards-app/src/components/cardone.template/template.tsx).
+   Scoped via data-theme="ecard-legacy" on the public eCard's root only —
+   every other surface (including SmartCard) keeps using "bizviz". */
+@plugin "daisyui/theme" {
+  name: "ecard-legacy";
+  color-scheme: dark;
+
+  /* Card/panel fill — legacy's repeated inline linear-gradient(rgb(21,20,20)) */
+  --color-base-100: #151414;
+  /* Pill-button fill (Exchange/Save/Social/Brochure) — legacy's bg-zinc-950 */
+  --color-base-200: #09090b;
+  --color-base-300: #57534e;
+  --color-base-content: #ffffff;
+
+  /* Legacy's sky-300 accent — name, "contact"/"WhatsApp" highlight text */
+  --color-primary: #7dd3fc;
+  --color-primary-content: #0c4a6e;
+
+  /* Page gradient middle stop (neutral-900) */
+  --color-secondary: #171717;
+  --color-secondary-content: #ffffff;
+
+  --color-accent: #38bdf8;
+  --color-accent-content: #0c4a6e;
+
+  /* Page gradient outer stops (black) */
+  --color-neutral: #000000;
+  --color-neutral-content: #ffffff;
+
+  --color-info: #60a5fa;
+  --color-info-content: #0f172a;
+
+  --color-success: #16a34a;
+  --color-success-content: #ffffff;
+
+  --color-warning: #fbbf24;
+  --color-warning-content: #78350f;
+
+  --color-error: #dc2626;
+  --color-error-content: #ffffff;
+
+  --radius-box: 1rem;
+  --radius-field: 0.75rem;
+}
+
+/* Legacy eCard "Intro Scroller" marquee (see cardone.template/template.tsx). */
+@keyframes ticker {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker 25s linear infinite;
+}

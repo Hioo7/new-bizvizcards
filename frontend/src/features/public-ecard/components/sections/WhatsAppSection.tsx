@@ -1,54 +1,37 @@
-import whatsappSparkleIcon from "@assets/icons/whatsapp-sparkle.png";
-import { WhatsAppIcon } from "@components/icons/BrandIcons";
+import whatsAppDecorativeIcon from "@assets/icons/ecard-whatsapp-icon2.png";
+import whatsAppLogo from "@assets/icons/ecard-whatsapp-logo.png";
+import { buildEcardWhatsAppLink } from "@features/public-ecard/utils/buildEcardWhatsAppLink";
 import type { EcardWhatsAppComponent } from "@app-types/ecard";
 
 interface WhatsAppSectionProps {
   component: EcardWhatsAppComponent;
+  heroName: string;
 }
 
-function buildWhatsAppLink(dialCode: string, phoneNumber: string): string {
-  const digits = `${dialCode}${phoneNumber}`.replace(/\D/g, "");
-  const message = "Hi, I'd like to connect with you.";
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-}
-
-// Re-themed 1:1 from the legacy E-card's WhatsApp CTA panel (rounded dark
-// card, small outlined sparkle top-left, bold two-line "Connect with me on
-// / WhatsApp" heading, brand icon inline after the word) — only the near-
-// black panel becomes a light card here, nothing else changes.
-export function WhatsAppSection({ component }: WhatsAppSectionProps) {
+export function WhatsAppSection({ component, heroName }: WhatsAppSectionProps) {
   if (!component.phoneCountryDialCode || !component.phoneNumber) return null;
 
-  const href = buildWhatsAppLink(
+  const href = buildEcardWhatsAppLink(
     component.phoneCountryDialCode,
     component.phoneNumber,
+    heroName,
   );
 
   return (
-    <div className="px-6 py-4 bg-white border-b">
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block rounded-3xl border border-indigo-100 bg-indigo-50 px-7 pb-7"
-      >
-        {/* Source asset is a tall 37x76 sparkle (white-on-transparent, made
-            for legacy's dark panel) — h-auto preserves its native ratio so
-            the tail doesn't squash, and brightness-0 recolors it dark for
-            this light card. */}
-        <img
-          src={whatsappSparkleIcon}
-          alt=""
-          className="h-16 w-auto brightness-0 opacity-40"
-        />
-        <p className="mt-3 text-3xl font-bold leading-tight text-gray-900">
-          Connect with me on
-        </p>
-        <p className="mt-1 flex items-center gap-2 text-3xl font-bold leading-tight text-green-600">
-          WhatsApp
-          <WhatsAppIcon className="h-8 w-8 text-green-600" />
-        </p>
-      </a>
-    </div>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block w-full rounded-2xl border border-base-300 bg-base-100 px-6 pb-6 shadow-xl"
+    >
+      <img src={whatsAppDecorativeIcon} alt="" className="block h-10 w-auto" />
+      <p className="mt-2 text-3xl font-normal leading-tight md:text-5xl">
+        Connect with me on
+      </p>
+      <p className="mt-1 flex items-center gap-3 text-3xl font-normal leading-tight text-primary md:text-5xl">
+        WhatsApp
+        <img src={whatsAppLogo} alt="WhatsApp" className="h-10 w-10" />
+      </p>
+    </a>
   );
 }

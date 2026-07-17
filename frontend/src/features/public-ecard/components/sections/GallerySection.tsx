@@ -16,7 +16,7 @@ function SubGalleryCarousel({ images, title }: { images: string[]; title: string
 
   return (
     <div className="mt-4 space-y-4">
-      <div className="relative bg-gray-100 rounded-xl overflow-hidden">
+      <div className="relative overflow-hidden rounded-xl bg-base-200">
         {images[currentIndex] && (
           <img
             src={images[currentIndex]}
@@ -30,7 +30,7 @@ function SubGalleryCarousel({ images, title }: { images: string[]; title: string
               type="button"
               onClick={prev}
               aria-label="Previous photo"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2"
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-base-100/80 p-2 hover:bg-base-100"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -38,7 +38,7 @@ function SubGalleryCarousel({ images, title }: { images: string[]; title: string
               type="button"
               onClick={next}
               aria-label="Next photo"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-base-100/80 p-2 hover:bg-base-100"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -49,7 +49,7 @@ function SubGalleryCarousel({ images, title }: { images: string[]; title: string
             <div
               key={idx}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                idx === currentIndex ? "bg-white" : "bg-white/50"
+                idx === currentIndex ? "bg-base-content" : "bg-base-content/50"
               }`}
             />
           ))}
@@ -63,7 +63,7 @@ function SubGalleryCarousel({ images, title }: { images: string[]; title: string
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               className={`relative w-16 h-16 shrink-0 rounded-md border-2 overflow-hidden ${
-                currentIndex === idx ? "border-indigo-500" : "border-transparent"
+                currentIndex === idx ? "border-primary" : "border-transparent"
               }`}
             >
               <img
@@ -85,11 +85,11 @@ function SubGalleryItem({ subGallery }: { subGallery: EcardSubGallery }) {
   if (imageUrls.length === 0) return null;
 
   return (
-    <div className="px-6 py-4 bg-white border-b">
+    <div className="w-full rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full text-left font-semibold text-gray-700 hover:text-indigo-600 transition-colors flex items-center justify-between"
+        className="w-full text-left font-semibold hover:text-primary transition-colors flex items-center justify-between"
       >
         <span className="text-lg">{subGallery.title || "Gallery"}</span>
         <span>{isOpen ? "▼" : "▶"}</span>

@@ -8,9 +8,9 @@ export function VideoSection({ component }: VideoSectionProps) {
   if (!component.videoUrl) return null;
 
   return (
-    <div className="px-6 py-6 bg-white border-b">
+    <div className="w-full rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
       {component.title && (
-        <h3 className="font-semibold text-gray-800 mb-3 text-xl">{component.title}</h3>
+        <h3 className="mb-3 text-xl font-semibold">{component.title}</h3>
       )}
       <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingTop: "56.25%" }}>
         <iframe

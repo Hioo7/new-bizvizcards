@@ -7,17 +7,17 @@ export interface GeolocationCoords {
   longitude: number;
 }
 
-interface ExchangeContactLocationStageProps {
+interface SmartCardExchangeContactLocationStageProps {
   isSubmitting: boolean;
   onShareLocation: (coords: GeolocationCoords) => void;
   onSkip: () => void;
 }
 
-export default function ExchangeContactLocationStage({
+export default function SmartCardExchangeContactLocationStage({
   isSubmitting,
   onShareLocation,
   onSkip,
-}: ExchangeContactLocationStageProps) {
+}: SmartCardExchangeContactLocationStageProps) {
   const [isLocating, setIsLocating] = useState(false);
 
   function handleShareLocation() {

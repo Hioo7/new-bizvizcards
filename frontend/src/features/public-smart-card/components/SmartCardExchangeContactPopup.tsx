@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { StickyNote, Trash2 } from "lucide-react";
 import { useAsyncAction } from "@hooks/useAsyncAction";
-import ExchangeContactLocationStage from "@components/ExchangeContactLocationStage";
-import type { GeolocationCoords } from "@components/ExchangeContactLocationStage";
+import SmartCardExchangeContactLocationStage from "@features/public-smart-card/components/SmartCardExchangeContactLocationStage";
+import type { GeolocationCoords } from "@features/public-smart-card/components/SmartCardExchangeContactLocationStage";
 import type { ExchangeContactSubmission } from "@app-types/lead";
 
 interface Country {
@@ -74,7 +74,7 @@ function validate(form: FormState): FieldErrors {
   return errors;
 }
 
-export interface ExchangeContactPopupProps {
+export interface SmartCardExchangeContactPopupProps {
   isOpen: boolean;
   /** URL the visitor's browser is redirected to (to save/open the owner's
    * contact) once the exchange submission succeeds. */
@@ -85,12 +85,12 @@ export interface ExchangeContactPopupProps {
 
 type Stage = "form" | "location";
 
-export function ExchangeContactPopup({
+export function SmartCardExchangeContactPopup({
   isOpen,
   vcardUrl,
   onSubmit,
   onClose,
-}: ExchangeContactPopupProps) {
+}: SmartCardExchangeContactPopupProps) {
   const [form, setForm] = useState<FormState>({
     name: "",
     countryIso: COUNTRIES[0].iso,
@@ -182,7 +182,7 @@ export function ExchangeContactPopup({
             )}
 
             {stage === "location" ? (
-              <ExchangeContactLocationStage
+              <SmartCardExchangeContactLocationStage
                 isSubmitting={submitAction.isSubmitting}
                 onShareLocation={(coords) => finalizeSubmit(coords)}
                 onSkip={() => finalizeSubmit()}
