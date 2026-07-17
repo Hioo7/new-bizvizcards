@@ -24,6 +24,7 @@ export default function UserDashboardLayout() {
     error: leadsError,
     loadAll,
     createLead,
+    updateLead,
     deleteLead,
     createFolder,
     renameFolder,
@@ -64,6 +65,7 @@ export default function UserDashboardLayout() {
             loading={leadsLoading}
             error={leadsError}
             onCreateLead={createLead}
+            onUpdateLead={updateLead}
             onDeleteLead={deleteLead}
             onCreateFolder={createFolder}
             onSetDefaultFolder={setDefaultFolder}

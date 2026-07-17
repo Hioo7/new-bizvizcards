@@ -24,6 +24,7 @@ import OrderDetailPage from "@pages/OrderDetailPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import EcardPublicPage from "@pages/EcardPublicPage";
 import UserDashboardPage from "@pages/UserDashboardPage";
+import OrgDashboardPage from "@pages/OrgDashboardPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
 import RequireAuth from "@components/RequireAuth";
 import AdminLayout from "@layouts/AdminLayout";
@@ -41,6 +42,7 @@ function App() {
 
       <Route element={<RequireAuth />}>
         <Route path={ROUTES.userDashboard} element={<UserDashboardPage />} />
+        <Route path={ROUTES.orgDashboard} element={<OrgDashboardPage />} />
       </Route>
 
       <Route element={<RequireStaffAuth />}>

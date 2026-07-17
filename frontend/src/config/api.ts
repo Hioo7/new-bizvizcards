@@ -56,3 +56,8 @@ export const CUSTOMER_ENDPOINTS = {
   updateProfilePicture: `${CUSTOMERS_BASE_PATH}/me/profile-picture`,
 } as const;
 
+export const ECARDS_BASE_PATH = "/api/ecards";
+
+export const ECARD_ENDPOINTS = {
+  me: `${ECARDS_BASE_PATH}/me`,
+} as const;

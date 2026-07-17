@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { AuthUser } from "@app-types/auth";
+import { apiRequest } from "@services/apiClient";
+import { ECARD_ENDPOINTS } from "@config/api";
+import { ecardPublicPath } from "@config/routes";
 
 interface ProfileBannerProps {
   user: AuthUser;
@@ -39,6 +42,21 @@ export default function ProfileBanner({
   const initials = getInitials(user.name);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [viewCardLoading, setViewCardLoading] = useState(false);
+
+  async function handleViewCard() {
+    setViewCardLoading(true);
+    try {
+      const ecard = await apiRequest<{ endpoint: string }>(ECARD_ENDPOINTS.me);
+      window.open(ecardPublicPath(ecard.endpoint), "_blank", "noopener,noreferrer");
+    } catch {
+      // ecard not set up yet — fall back to email prefix
+      const fallback = user.email.split("@")[0];
+      window.open(ecardPublicPath(fallback), "_blank", "noopener,noreferrer");
+    } finally {
+      setViewCardLoading(false);
+    }
+  }
 
   function handleWallet(type: "google" | "apple") {
     setWalletLoading(true);
@@ -176,13 +194,19 @@ export default function ProfileBanner({
         </button>
         <button
           type="button"
-          className="flex flex-1 min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:bg-white/20 active:opacity-75"
+          disabled={viewCardLoading}
+          onClick={() => void handleViewCard()}
+          className="flex flex-1 min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:bg-white/20 active:opacity-75 disabled:opacity-60"
         >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-            <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
-            <circle cx="8" cy="12" r="2" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M14 10h4M14 14h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
+          {viewCardLoading ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+              <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+              <circle cx="8" cy="12" r="2" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M14 10h4M14 14h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          )}
           View Card
         </button>
         <button

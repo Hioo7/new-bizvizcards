@@ -3,7 +3,12 @@ import type {
   Lead,
   LeadFolder,
   CreateLeadPayload,
+  UpdateLeadPayload,
 } from "@features/user-dashboard/types";
+import {
+  RECENT_LEADS_MAX,
+  LEADS_FOLDERS_PREVIEW_MAX,
+} from "@features/user-dashboard/config";
 import LeadCard from "./LeadCard";
 import FolderCard from "./FolderCard";
 import CreateLeadModal from "./CreateLeadModal";
@@ -19,6 +24,7 @@ interface LeadsSectionProps {
   loading: boolean;
   error: string | null;
   onCreateLead: (payload: CreateLeadPayload) => Promise<void>;
+  onUpdateLead: (id: string, payload: UpdateLeadPayload) => Promise<void>;
   onDeleteLead: (id: string) => Promise<void>;
   onCreateFolder: (name: string) => Promise<void>;
   onSetDefaultFolder: (id: string | null) => Promise<void>;
@@ -35,19 +41,25 @@ export default function LeadsSection({
   loading,
   error,
   onCreateLead,
+  onUpdateLead,
   onDeleteLead,
   onCreateFolder,
   onSetDefaultFolder,
   onRenameFolder,
   onDeleteFolder,
 }: LeadsSectionProps) {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("folders");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("leads");
   const [searchQuery, setSearchQuery] = useState("");
   const [folderFilterId, setFolderFilterId] = useState<string | null>(null);
   const [showFolderDropdown, setShowFolderDropdown] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  // Derive from the leads prop so the detail view always reflects the latest state
+  // after any update (e.g. stage change) without needing a separate sync.
+  const selectedLead = selectedLeadId
+    ? (leads.find((l) => l.id === selectedLeadId) ?? null)
+    : null;
   const [renamingFolder, setRenamingFolder] = useState<LeadFolder | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<LeadFolder | null>(null);
 
@@ -57,7 +69,7 @@ export default function LeadsSection({
     f.name.toLowerCase().includes(q),
   );
 
-  const displayedLeads = leads.filter((l) => {
+  const allFilteredLeads = leads.filter((l) => {
     const matchesFolder = folderFilterId ? l.folderId === folderFilterId : true;
     const matchesSearch =
       !q ||
@@ -67,16 +79,19 @@ export default function LeadsSection({
     return matchesFolder && matchesSearch;
   });
 
-  const selectedFolderName = folderFilterId
-    ? (folders.find((f) => f.id === folderFilterId)?.name ?? null)
+  const selectedFolder = folderFilterId
+    ? (folders.find((f) => f.id === folderFilterId) ?? null)
     : null;
 
-  function handlePlusClick() {
-    if (activeTab === "folders") {
-      setShowCreateFolderModal(true);
-    } else {
-      setShowCreateLeadModal(true);
-    }
+  function handleFolderSelect(id: string) {
+    setFolderFilterId(id);
+    setShowFolderDropdown(false);
+    setActiveTab("leads");
+  }
+
+  function handleClearFolderFilter() {
+    setFolderFilterId(null);
+    setShowFolderDropdown(false);
   }
 
   return (
@@ -137,7 +152,7 @@ export default function LeadsSection({
           </div>
         </div>
 
-        {/* Row 2: search + download + plus */}
+        {/* Search row */}
         <div className="flex gap-2 px-4 pb-4">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
@@ -185,33 +200,11 @@ export default function LeadsSection({
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
           </button>
-          <button
-            type="button"
-            aria-label="Add"
-            onClick={handlePlusClick}
-            className="flex h-10 w-10 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-white/30 text-white"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-              aria-hidden="true"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
         </div>
       </header>
 
       {/* Content */}
-      <div className="px-4 pt-4 pb-24">
-        {/* Error */}
+      <div className="px-4 pt-4 pb-28">
         {error && (
           <div className="alert alert-error mb-4">
             <span>{error}</span>
@@ -219,9 +212,17 @@ export default function LeadsSection({
         )}
 
         {/* Filter pills row */}
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           {/* All Leads pill */}
-          <div className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-white">
+          <button
+            type="button"
+            onClick={handleClearFolderFilter}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              folderFilterId === null
+                ? "bg-primary text-primary-content"
+                : "border border-base-300 bg-base-100 text-base-content/60"
+            }`}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -239,7 +240,7 @@ export default function LeadsSection({
               <path d="M16 3.13a4 4 0 010 7.75" />
             </svg>
             All Leads
-          </div>
+          </button>
 
           {/* Folder filter pill */}
           <div className="relative">
@@ -252,7 +253,11 @@ export default function LeadsSection({
             <button
               type="button"
               onClick={() => setShowFolderDropdown((v) => !v)}
-              className="flex items-center gap-1.5 rounded-full border border-base-300 bg-base-100 px-3 py-1.5 text-sm font-medium text-base-content/60"
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                folderFilterId !== null
+                  ? "bg-primary text-primary-content"
+                  : "border border-base-300 bg-base-100 text-base-content/60"
+              }`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -267,7 +272,7 @@ export default function LeadsSection({
               >
                 <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
               </svg>
-              {selectedFolderName ?? "No folder selected"}
+              {selectedFolder?.name ?? "Select folder"}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -283,15 +288,11 @@ export default function LeadsSection({
               </svg>
             </button>
 
-            {/* Dropdown */}
             {showFolderDropdown && folders.length > 0 && (
               <div className="absolute left-0 top-full z-20 mt-1 w-48 overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-lg">
                 <button
                   type="button"
-                  onClick={() => {
-                    setFolderFilterId(null);
-                    setShowFolderDropdown(false);
-                  }}
+                  onClick={handleClearFolderFilter}
                   className="w-full px-4 py-2.5 text-left text-sm text-base-content/60 hover:bg-base-200"
                 >
                   All folders
@@ -300,11 +301,7 @@ export default function LeadsSection({
                   <button
                     key={f.id}
                     type="button"
-                    onClick={() => {
-                      setFolderFilterId(f.id);
-                      setShowFolderDropdown(false);
-                      setActiveTab("leads");
-                    }}
+                    onClick={() => handleFolderSelect(f.id)}
                     className={`w-full px-4 py-2.5 text-left text-sm hover:bg-base-200 ${
                       folderFilterId === f.id
                         ? "font-medium text-primary"
@@ -375,99 +372,277 @@ export default function LeadsSection({
         {/* Tab content */}
         {loading ? (
           <div className="flex flex-col gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="skeleton h-12 w-12 shrink-0 rounded-xl" />
-                <div className="flex flex-1 flex-col gap-1">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 rounded-2xl border border-base-300 bg-base-100 px-4 py-3"
+              >
+                <div className="skeleton h-11 w-11 shrink-0 rounded-xl" />
+                <div className="flex flex-1 flex-col gap-1.5">
                   <div className="skeleton h-4 w-32 rounded" />
-                  <div className="skeleton h-3 w-20 rounded" />
+                  <div className="skeleton h-3 w-24 rounded" />
                 </div>
+                <div className="skeleton h-9 w-9 shrink-0 rounded-full" />
               </div>
             ))}
           </div>
         ) : activeTab === "folders" ? (
-          displayedFolders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-8 w-8 text-base-content/30"
-                  aria-hidden="true"
-                >
-                  <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-base-content/60">
-                No folders yet
-              </p>
-              <p className="mt-1 text-xs text-base-content/40">
-                Tap + to create a folder
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {displayedFolders.map((folder) => (
-                <FolderCard
-                  key={folder.id}
-                  folder={folder}
-                  leadCount={leads.filter((l) => l.folderId === folder.id).length}
-                  isDefault={defaultFolderId === folder.id}
-                  onClick={() => {
-                    setFolderFilterId(folder.id);
-                    setActiveTab("leads");
-                  }}
-                  onSetDefault={() =>
-                    onSetDefaultFolder(
-                      folder.id === defaultFolderId ? null : folder.id,
-                    )
-                  }
-                  onRename={() => setRenamingFolder(folder)}
-                  onDelete={() => setDeletingFolder(folder)}
-                />
-              ))}
-            </div>
-          )
-        ) : displayedLeads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-8 w-8 text-base-content/30"
-                aria-hidden="true"
+          /* ── Folders tab ─────────────────────────────────────────── */
+          <div>
+            {/* Folders tab header with create button */}
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-base-content">Folders</h2>
+              <button
+                type="button"
+                onClick={() => setShowCreateFolderModal(true)}
+                className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
               >
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                New Folder
+              </button>
             </div>
-            <p className="text-sm font-medium text-base-content/60">
-              No leads yet
-            </p>
-            <p className="mt-1 text-xs text-base-content/40">
-              Tap + to add your first contact
-            </p>
+            {displayedFolders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-8 w-8 text-base-content/30"
+                    aria-hidden="true"
+                  >
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-base-content/60">
+                  No folders yet
+                </p>
+                <p className="mt-1 text-xs text-base-content/40">
+                  Tap &ldquo;New Folder&rdquo; above to get started
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {displayedFolders.map((folder) => (
+                  <FolderCard
+                    key={folder.id}
+                    folder={folder}
+                    leadCount={leads.filter((l) => l.folderId === folder.id).length}
+                    isDefault={defaultFolderId === folder.id}
+                    onClick={() => {
+                      setFolderFilterId(folder.id);
+                      setActiveTab("leads");
+                    }}
+                    onSetDefault={() =>
+                      onSetDefaultFolder(
+                        folder.id === defaultFolderId ? null : folder.id,
+                      )
+                    }
+                    onRename={() => setRenamingFolder(folder)}
+                    onDelete={() => setDeletingFolder(folder)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm">
-            {displayedLeads.map((lead, i) => (
-              <div key={lead.id}>
-                {i > 0 && <div className="mx-4 border-t border-base-200" />}
-                <div className="px-2 py-1">
-                  <LeadCard lead={lead} onClick={(l) => setSelectedLead(l)} />
+        ) : /* ── Leads tab ───────────────────────────────────────────── */
+        folderFilterId === null ? (
+          /* Combined dashboard: folders snippet + recent leads */
+          <div className="space-y-6">
+            {/* Folders snippet */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-base-content">Folders</h2>
+                {folders.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("folders")}
+                    className="text-xs font-medium text-primary"
+                  >
+                    View all
+                  </button>
+                )}
+              </div>
+              {folders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <p className="text-sm text-base-content/50">No folders yet</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateFolderModal(true)}
+                    className="mt-2 text-xs font-medium text-primary"
+                  >
+                    Create a folder
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {folders.slice(0, LEADS_FOLDERS_PREVIEW_MAX).map((folder) => (
+                    <FolderCard
+                      key={folder.id}
+                      folder={folder}
+                      leadCount={
+                        leads.filter((l) => l.folderId === folder.id).length
+                      }
+                      isDefault={defaultFolderId === folder.id}
+                      onClick={() => handleFolderSelect(folder.id)}
+                      onSetDefault={() =>
+                        onSetDefaultFolder(
+                          folder.id === defaultFolderId ? null : folder.id,
+                        )
+                      }
+                      onRename={() => setRenamingFolder(folder)}
+                      onDelete={() => setDeletingFolder(folder)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent leads snippet */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-base-content">
+                  Recent Leads
+                </h2>
+                <div className="flex items-center gap-2">
+                  {leads.length > RECENT_LEADS_MAX && (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary"
+                    >
+                      View all
+                    </button>
+                  )}
+                  {leads.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateLeadModal(true)}
+                      className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                      Add Lead
+                    </button>
+                  )}
                 </div>
               </div>
-            ))}
+              {leads.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-8 w-8 text-base-content/30"
+                      aria-hidden="true"
+                    >
+                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-base-content/60">No leads yet</p>
+                  <p className="mt-1 text-xs text-base-content/40">Add your first lead to get started</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateLeadModal(true)}
+                    className="mt-4 flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Add your first lead
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {leads.slice(0, RECENT_LEADS_MAX).map((lead) => (
+                    <LeadCard
+                      key={lead.id}
+                      lead={lead}
+                      onClick={(l) => setSelectedLeadId(l.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Filtered by folder */
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-base-content">
+                Leads in &ldquo;{selectedFolder?.name}&rdquo;
+              </h2>
+              <div className="flex items-center gap-2">
+                {allFilteredLeads.length > 0 && (
+                  <span className="text-xs text-base-content/50">
+                    {allFilteredLeads.length}{" "}
+                    {allFilteredLeads.length === 1 ? "lead" : "leads"}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowCreateLeadModal(true)}
+                  className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  Add Lead
+                </button>
+              </div>
+            </div>
+            {allFilteredLeads.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-8 w-8 text-base-content/30"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-base-content/60">
+                  No leads in this folder
+                </p>
+                <p className="mt-1 text-xs text-base-content/40">
+                  Tap &ldquo;Add Lead&rdquo; above to add one here
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allFilteredLeads.map((lead) => (
+                  <LeadCard
+                    key={lead.id}
+                    lead={lead}
+                    onClick={(l) => setSelectedLeadId(l.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -503,8 +678,9 @@ export default function LeadsSection({
 
       <LeadDetailModal
         lead={selectedLead}
-        onClose={() => setSelectedLead(null)}
+        onClose={() => setSelectedLeadId(null)}
         onDelete={onDeleteLead}
+        onUpdate={onUpdateLead}
       />
     </div>
   );

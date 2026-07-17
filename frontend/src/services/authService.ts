@@ -41,6 +41,13 @@ export function updateUserName(name: string): Promise<{ user: AuthUser }> {
   });
 }
 
+export function updateUserImage(image: string): Promise<{ user: AuthUser }> {
+  return apiRequest<{ user: AuthUser }>(AUTH_ENDPOINTS.updateUser, {
+    method: "POST",
+    body: JSON.stringify({ image }),
+  });
+}
+
 export function updateProfilePicture(
   file: File,
 ): Promise<{ pfpMediaId: string | null; pfpUrl: string }> {

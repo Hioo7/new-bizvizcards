@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { AuthUser } from "@app-types/auth";
-import { updateUserName, updateProfilePicture } from "@services/authService";
+import { updateUserName, updateUserImage, updateProfilePicture } from "@services/authService";
 import { ApiError } from "@services/apiClient";
 
 interface EditProfileModalProps {
@@ -55,6 +55,7 @@ function FormInner({ user, onSave, onClose }: FormInnerProps) {
 
       if (pendingFile) {
         const res = await updateProfilePicture(pendingFile);
+        await updateUserImage(res.pfpUrl);
         updatedUser = { ...updatedUser, image: res.pfpUrl };
       }
 

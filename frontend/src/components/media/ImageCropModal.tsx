@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { Crop, ZoomIn } from "lucide-react";
@@ -45,7 +46,7 @@ export default function ImageCropModal({
     }
   }
 
-  return (
+  return createPortal(
     <dialog
       ref={dialogRef}
       className="modal modal-bottom sm:modal-middle"
@@ -111,6 +112,7 @@ export default function ImageCropModal({
       <form method="dialog" className="modal-backdrop">
         <button type="submit">close</button>
       </form>
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }
