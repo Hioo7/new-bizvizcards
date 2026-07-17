@@ -25,6 +25,7 @@
     "seed:smart-card-templates": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-smart-card-templates.ts",
     "seed:og-preview-image": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-og-preview-image.ts",
     "seed:fallback-plan": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-fallback-plan.ts",
+    "seed:dummy-members": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-dummy-members.ts",
     "seed:event-policy-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-event-policy-defaults.ts"
   },
   "dependencies": {

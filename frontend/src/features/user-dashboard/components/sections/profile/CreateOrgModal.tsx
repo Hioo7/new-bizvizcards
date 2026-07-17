@@ -98,7 +98,6 @@ export default function CreateOrgModal({
               onChange={(e) => setName(e.target.value)}
               className="mt-1 w-full bg-transparent text-sm font-medium text-base-content outline-none placeholder:text-base-content/30"
               placeholder="My Company"
-              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
           </div>

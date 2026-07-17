@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MediaModule } from '../../common/media/media.module';
 import { CustomersModule } from '../customers/customers.module';
 import { PlansModule } from '../plans/plans.module';
 import { AcceptOrganisationInviteController } from './accept-organisation-invite.controller';
@@ -11,7 +12,7 @@ import { OrganisationMembersService } from './services/organisation-members.serv
 import { OrganisationsService } from './services/organisations.service';
 
 @Module({
-  imports: [CustomersModule, PlansModule],
+  imports: [CustomersModule, PlansModule, MediaModule],
   controllers: [
     OrganisationsController,
     OrganisationMembersController,

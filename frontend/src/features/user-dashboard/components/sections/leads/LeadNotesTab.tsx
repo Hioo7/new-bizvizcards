@@ -116,7 +116,6 @@ function NoteItem({
               onChange={(e) => setEditContent(e.target.value)}
               rows={3}
               className="w-full resize-none rounded-xl bg-base-200/60 px-3 py-2 text-sm text-base-content outline-none"
-              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
             <div className="flex gap-2">
@@ -227,7 +226,6 @@ export default function LeadNotesTab({
               placeholder="Write a note…"
               rows={3}
               className="w-full resize-none rounded-xl bg-base-200/60 px-3 py-2 text-sm text-base-content outline-none placeholder:text-base-content/30"
-              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
             <div className="flex gap-2">

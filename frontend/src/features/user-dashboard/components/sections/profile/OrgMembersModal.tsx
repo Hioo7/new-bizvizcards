@@ -69,15 +69,17 @@ function MemberCard({
     <div className="rounded-2xl bg-base-100 border border-base-200 shadow-sm p-4">
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-            member.role === "SPOC"
-              ? "bg-primary text-primary-content"
-              : "bg-base-200 text-base-content/60"
-          }`}
-        >
-          {initials}
-        </div>
+        {member.profilePicture ? (
+          <img
+            src={member.profilePicture}
+            alt={member.name}
+            className="h-12 w-12 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-content">
+            {initials}
+          </div>
+        )}
 
         {/* Info */}
         <div className="min-w-0 flex-1">

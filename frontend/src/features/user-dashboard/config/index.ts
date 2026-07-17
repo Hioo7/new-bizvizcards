@@ -6,9 +6,9 @@ export const DASHBOARD_API = {
   leadFolderDefault: "/api/lead-folders/default",
   organisation: "/api/organisations/me",
   organisations: "/api/organisations",
-  orgMembers: "/api/organisations/members",
+  orgMembers: (organisationId: string) => `/api/organisations/members/${organisationId}`,
   orgMember: (id: string) => `/api/organisations/members/${id}`,
-  orgInvites: "/api/organisations/invites",
+  orgInvites: (organisationId: string) => `/api/organisations/invites/${organisationId}`,
   orgInvite: (id: string) => `/api/organisations/invites/${id}`,
   acceptOrgInvite: (token: string) => `/api/organisation-invites/${token}/accept`,
   leadReferenceNotes: (leadId: string) => `/api/leads/${leadId}/reference-notes`,
@@ -17,7 +17,11 @@ export const DASHBOARD_API = {
   leadReminders: (leadId: string) => `/api/leads/${leadId}/reminders`,
   leadReminder: (leadId: string, reminderId: string) =>
     `/api/leads/${leadId}/reminders/${reminderId}`,
-} as const;
+  orgEcards: (organisationId: string) =>
+    `/api/organisations/${organisationId}/ecards`,
+  orgEcard: (organisationId: string, ecardId: string) =>
+    `/api/organisations/${organisationId}/ecards/${ecardId}`,
+};
 
 export const PROFILE_CARD_ORDER_STORAGE_KEY = (userId: string) =>
   `bizviz_card_order_${userId}`;

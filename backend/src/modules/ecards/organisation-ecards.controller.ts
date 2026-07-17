@@ -109,6 +109,22 @@ export class OrganisationEcardsController {
     );
   }
 
+  @Get(':ecardId')
+  async get(
+    @Req() request: CustomerAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
+    @Param('ecardId') ecardId: string,
+  ) {
+    const customer = await this.customersService.getByAccountId(
+      request.customerSession.user.id,
+    );
+    return this.ecardsService.getForOrganisationSpoc(
+      customer.id,
+      organisationId,
+      ecardId,
+    );
+  }
+
   @Get(':ecardId/analytics')
   async getAnalytics(
     @Req() request: CustomerAuthenticatedRequest,

@@ -12,10 +12,10 @@ interface UseOrgMembersReturn {
   invites: OrgInvite[];
   loading: boolean;
   error: string | null;
-  load: () => Promise<void>;
+  load: (organisationId: string) => Promise<void>;
   updateMember: (id: string, payload: UpdateMemberPayload) => Promise<void>;
   removeMember: (id: string) => Promise<void>;
-  invite: (payload: InviteMemberPayload) => Promise<void>;
+  invite: (organisationId: string, payload: InviteMemberPayload) => Promise<void>;
   revokeInvite: (id: string) => Promise<void>;
 }
 
@@ -25,13 +25,13 @@ export function useOrgMembers(): UseOrgMembersReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (organisationId: string) => {
     setLoading(true);
     setError(null);
     try {
       const [fetchedMembers, fetchedInvites] = await Promise.all([
-        userDashboardService.listOrgMembers(),
-        userDashboardService.listOrgInvites(),
+        userDashboardService.listOrgMembers(organisationId),
+        userDashboardService.listOrgInvites(organisationId),
       ]);
       setMembers(fetchedMembers);
       setInvites(fetchedInvites);
@@ -68,8 +68,8 @@ export function useOrgMembers(): UseOrgMembersReturn {
     setMembers((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
-  const invite = useCallback(async (payload: InviteMemberPayload) => {
-    const newInvite = await userDashboardService.inviteOrgMember(payload);
+  const invite = useCallback(async (organisationId: string, payload: InviteMemberPayload) => {
+    const newInvite = await userDashboardService.inviteOrgMember(organisationId, payload);
     setInvites((prev) => [newInvite, ...prev]);
   }, []);
 

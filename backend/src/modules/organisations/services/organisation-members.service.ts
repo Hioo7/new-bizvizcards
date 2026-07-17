@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   OrganisationMemberRole,
@@ -21,6 +22,7 @@ export interface OrganisationMemberLinkedEcard {
   id: string;
   endpoint: string;
   heroName: string;
+  isExchangeContactEnabled: boolean;
 }
 
 export interface OrganisationMemberListItem {
@@ -31,6 +33,7 @@ export interface OrganisationMemberListItem {
   role: OrganisationMemberRole;
   status: OrganisationMemberStatus;
   joinedAt: Date;
+  profilePicture: string | null;
   linkedEcard: OrganisationMemberLinkedEcard | null;
 }
 
@@ -40,6 +43,7 @@ export class OrganisationMembersService {
     private readonly prisma: PrismaService,
     private readonly organisationsService: OrganisationsService,
     private readonly planEnforcementService: PlanEnforcementService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async list(
@@ -59,11 +63,12 @@ export class OrganisationMembersService {
         customer: {
           include: {
             account: true,
+            pfpMedia: true,
             // At most one row per customer per organisationId (unique
             // constraint on ECard), so [0] below is safe.
             ecards: {
               where: { organisationId },
-              select: { id: true, endpoint: true, heroName: true },
+              select: { id: true, endpoint: true, heroName: true, isExchangeContactEnabled: true },
             },
           },
         },
@@ -79,6 +84,9 @@ export class OrganisationMembersService {
       role: member.role,
       status: member.status,
       joinedAt: member.joinedAt,
+      profilePicture: member.customer.pfpMedia
+        ? this.mediaService.getPublicUrl(member.customer.pfpMedia)
+        : null,
       linkedEcard: member.customer.ecards[0] ?? null,
     }));
   }

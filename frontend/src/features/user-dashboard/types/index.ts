@@ -166,6 +166,13 @@ export interface CreateOrganisationPayload {
   name: string;
 }
 
+export interface OrgMemberLinkedEcard {
+  id: string;
+  endpoint: string;
+  heroName: string;
+  isExchangeContactEnabled: boolean;
+}
+
 export interface OrgMemberListItem {
   id: string;
   customerId: string;
@@ -174,6 +181,74 @@ export interface OrgMemberListItem {
   role: "SPOC" | "MEMBER";
   status: "ACTIVE" | "SUSPENDED";
   joinedAt: string;
+  profilePicture?: string | null;
+  linkedEcard: OrgMemberLinkedEcard | null;
+}
+
+// ── Org Ecards ────────────────────────────────────────────────────────────────
+
+export interface OrgEcardHero {
+  name: string;
+  email: string;
+  companyName: string | null;
+  profilePhotoUrl: string | null;
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
+  isExchangeContactEnabled: boolean;
+  autoDownloadContact: boolean;
+}
+
+export interface OrgEcardAboutComponent {
+  id: string;
+  order: number;
+  type: "ABOUT";
+  profession: string | null;
+  shortNote: string | null;
+  description: string | null;
+  aboutMe: string | null;
+}
+
+export interface OrgEcardWhatsAppComponent {
+  id: string;
+  order: number;
+  type: "WHATSAPP";
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
+}
+
+export type OrgEcardComponent =
+  | OrgEcardAboutComponent
+  | OrgEcardWhatsAppComponent
+  | { id: string; order: number; type: "SOCIAL_LINKS" | "GALLERY" | "VIDEO" | "TEAM" | "BROCHURE"; [key: string]: unknown };
+
+export interface OrgEcard {
+  id: string;
+  endpoint: string;
+  customerId: string;
+  organisationId: string | null;
+  hero: OrgEcardHero;
+  components: OrgEcardComponent[];
+}
+
+export interface OrgEcardListResponse {
+  ecards: OrgEcard[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface UpdateOrgEcardPayload {
+  endpoint: string;
+  heroName: string;
+  heroEmail: string;
+  heroCompanyName?: string;
+  isExchangeContactEnabled: boolean;
+  autoDownloadContact: boolean;
+  components: Array<
+    | { type: "ABOUT"; profession?: string; shortNote?: string; description?: string; aboutMe?: string }
+    | { type: "WHATSAPP"; phoneCountryDialCode: string; phoneNumber: string }
+    | { type: string; [key: string]: unknown }
+  >;
 }
 
 export interface OrgInvite {

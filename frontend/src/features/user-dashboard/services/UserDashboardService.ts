@@ -20,6 +20,9 @@ import type {
   LeadReminder,
   CreateLeadReminderPayload,
   UpdateLeadReminderPayload,
+  OrgEcard,
+  OrgEcardListResponse,
+  UpdateOrgEcardPayload,
 } from "@features/user-dashboard/types";
 
 export class UserDashboardService {
@@ -103,9 +106,10 @@ export class UserDashboardService {
   // ── Organisation ───────────────────────────────────────────────────────────
 
   async getOrganisation(): Promise<OrganisationWithMembership | null> {
-    return apiRequest<OrganisationWithMembership | null>(
+    const results = await apiRequest<OrganisationWithMembership[]>(
       DASHBOARD_API.organisation,
     );
+    return results[0] ?? null;
   }
 
   async createOrganisation(
@@ -126,8 +130,8 @@ export class UserDashboardService {
 
   // ── Organisation Members ────────────────────────────────────────────────────
 
-  async listOrgMembers(): Promise<OrgMemberListItem[]> {
-    return apiRequest<OrgMemberListItem[]>(DASHBOARD_API.orgMembers);
+  async listOrgMembers(organisationId: string): Promise<OrgMemberListItem[]> {
+    return apiRequest<OrgMemberListItem[]>(DASHBOARD_API.orgMembers(organisationId));
   }
 
   async updateOrgMember(id: string, payload: UpdateMemberPayload): Promise<void> {
@@ -143,12 +147,15 @@ export class UserDashboardService {
 
   // ── Organisation Invites ────────────────────────────────────────────────────
 
-  async listOrgInvites(): Promise<OrgInvite[]> {
-    return apiRequest<OrgInvite[]>(DASHBOARD_API.orgInvites);
+  async listOrgInvites(organisationId: string): Promise<OrgInvite[]> {
+    return apiRequest<OrgInvite[]>(DASHBOARD_API.orgInvites(organisationId));
   }
 
-  async inviteOrgMember(payload: InviteMemberPayload): Promise<OrgInvite> {
-    return apiRequest<OrgInvite>(DASHBOARD_API.orgInvites, {
+  async inviteOrgMember(
+    organisationId: string,
+    payload: InviteMemberPayload,
+  ): Promise<OrgInvite> {
+    return apiRequest<OrgInvite>(DASHBOARD_API.orgInvites(organisationId), {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -229,6 +236,29 @@ export class UserDashboardService {
   async deleteReminder(leadId: string, reminderId: string): Promise<void> {
     await apiRequest<void>(DASHBOARD_API.leadReminder(leadId, reminderId), {
       method: "DELETE",
+    });
+  }
+
+  // ── Org Ecards ──────────────────────────────────────────────────────────────
+
+  async listOrgEcards(organisationId: string): Promise<OrgEcardListResponse> {
+    return apiRequest<OrgEcardListResponse>(DASHBOARD_API.orgEcards(organisationId));
+  }
+
+  async getOrgEcard(organisationId: string, ecardId: string): Promise<OrgEcard> {
+    return apiRequest<OrgEcard>(DASHBOARD_API.orgEcard(organisationId, ecardId));
+  }
+
+  async updateOrgEcard(
+    organisationId: string,
+    ecardId: string,
+    payload: UpdateOrgEcardPayload,
+  ): Promise<OrgEcard> {
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(payload));
+    return apiRequest<OrgEcard>(DASHBOARD_API.orgEcard(organisationId, ecardId), {
+      method: "PATCH",
+      body: formData,
     });
   }
 }

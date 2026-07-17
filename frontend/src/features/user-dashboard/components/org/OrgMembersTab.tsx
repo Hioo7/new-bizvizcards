@@ -8,6 +8,7 @@ interface OrgMembersTabProps {
   currentCustomerId: string;
   onUpdate: (id: string, payload: UpdateMemberPayload) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
+  onShowEcards: (member: OrgMemberListItem) => void;
 }
 
 function MemberCard({
@@ -16,14 +17,17 @@ function MemberCard({
   isSelf,
   onUpdate,
   onRemove,
+  onShowEcards,
 }: {
   member: OrgMemberListItem;
   isSpoc: boolean;
   isSelf: boolean;
   onUpdate: (id: string, payload: UpdateMemberPayload) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
+  onShowEcards: (member: OrgMemberListItem) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const isSuspended = member.status === "SUSPENDED";
 
   const initials = member.name
@@ -33,16 +37,8 @@ function MemberCard({
     .toUpperCase()
     .slice(0, 2);
 
-  async function handleToggleSuspend() {
-    setBusy(true);
-    try {
-      await onUpdate(member.id, {
-        status: isSuspended ? "ACTIVE" : "SUSPENDED",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
+  const hasEcard = member.linkedEcard !== null;
+  const exchangeEnabled = member.linkedEcard?.isExchangeContactEnabled ?? false;
 
   async function handleRemove() {
     setBusy(true);
@@ -58,15 +54,17 @@ function MemberCard({
       {/* Main row */}
       <div className="flex items-start gap-4 px-4 pt-4 pb-3">
         {/* Avatar */}
-        <div
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-base font-bold ${
-            member.role === "SPOC"
-              ? "bg-primary text-primary-content"
-              : "bg-base-200 text-base-content/60"
-          }`}
-        >
-          {initials}
-        </div>
+        {member.profilePicture ? (
+          <img
+            src={member.profilePicture}
+            alt={member.name}
+            className="h-14 w-14 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-content">
+            {initials}
+          </div>
+        )}
 
         {/* Info */}
         <div className="min-w-0 flex-1">
@@ -78,7 +76,7 @@ function MemberCard({
               )}
             </p>
             {member.role === "SPOC" ? (
-              <span className="rounded-full bg-warning/20 px-2.5 py-0.5 text-xs font-semibold text-warning-content border border-warning/30">
+              <span className="rounded-full bg-warning/20 px-2.5 py-0.5 text-xs font-semibold text-warning border border-warning/30">
                 ⭐ SPOC
               </span>
             ) : (
@@ -93,80 +91,197 @@ function MemberCard({
             )}
           </div>
           <p className="mt-0.5 text-sm text-base-content/50">{member.email}</p>
+
+          {/* Status badges */}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-0.5 text-xs font-semibold ${
+                hasEcard
+                  ? "border-success/40 bg-success/10 text-success"
+                  : "border-base-300 bg-base-200 text-base-content/40"
+              }`}
+            >
+              {hasEcard ? (
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              )}
+              E-Card {hasEcard ? "On" : "Off"}
+            </span>
+
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-0.5 text-xs font-semibold ${
+                exchangeEnabled
+                  ? "border-success/40 bg-success/10 text-success"
+                  : "border-base-300 bg-base-200 text-base-content/40"
+              }`}
+            >
+              {exchangeEnabled ? (
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              )}
+              Exchange {exchangeEnabled ? "On" : "Off"}
+            </span>
+          </div>
         </div>
 
-        {/* View/Edit icons */}
-        <div className="flex shrink-0 gap-1">
+        {/* Action icons */}
+        <div className="flex shrink-0 flex-col gap-1 items-end mt-0.5">
           {isSpoc && !isSelf && (
             <button
               type="button"
-              onClick={() => void handleToggleSuspend()}
+              onClick={() => setEditOpen((v) => !v)}
+              aria-label="Edit member"
+              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                editOpen
+                  ? "bg-primary text-primary-content"
+                  : "hover:bg-base-200 text-primary/60 hover:text-primary"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Inline member edit panel */}
+      {editOpen && isSpoc && !isSelf && (
+        <div className="border-t border-base-200 bg-base-50 px-4 py-3 flex flex-col gap-3">
+          {/* Role */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-base-content/60">Role</p>
+            <div className="flex gap-1.5">
+              {(["MEMBER", "SPOC"] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  disabled={busy || member.role === r}
+                  onClick={async () => {
+                    setBusy(true);
+                    try { await onUpdate(member.id, { role: r }); } finally { setBusy(false); }
+                  }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                    member.role === r
+                      ? "bg-primary text-primary-content"
+                      : "border border-base-300 text-base-content/60 hover:border-primary hover:text-primary"
+                  }`}
+                >
+                  {r === "SPOC" ? "⭐ SPOC" : "Member"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-base-content/60">Status</p>
+            <div className="flex gap-1.5">
+              {(["ACTIVE", "SUSPENDED"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={busy || member.status === s}
+                  onClick={async () => {
+                    setBusy(true);
+                    try { await onUpdate(member.id, { status: s }); } finally { setBusy(false); }
+                  }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                    member.status === s
+                      ? s === "SUSPENDED"
+                        ? "bg-error text-white"
+                        : "bg-success text-white"
+                      : "border border-base-300 text-base-content/60 hover:border-primary hover:text-primary"
+                  }`}
+                >
+                  {s === "ACTIVE" ? "Active" : "Suspended"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom action bar */}
+      <div className="flex items-center gap-2 border-t border-base-100 bg-base-50 px-4 py-2">
+        {/* Suspend / Reactivate + Remove — SPOC only, non-self */}
+        {isSpoc && !isSelf && (
+          <>
+            <button
+              type="button"
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await onUpdate(member.id, {
+                    status: isSuspended ? "ACTIVE" : "SUSPENDED",
+                  });
+                } finally {
+                  setBusy(false);
+                }
+              }}
               disabled={busy}
-              aria-label={isSuspended ? "Reactivate" : "Suspend"}
-              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-base-200 text-primary/60 hover:text-primary transition-colors"
+              aria-label={isSuspended ? "Reactivate member" : "Suspend member"}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/40 hover:text-warning hover:border-warning transition-colors"
             >
               {busy ? (
                 <span className="loading loading-spinner loading-xs" />
               ) : (
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M16 11V7a4 4 0 00-8 0v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="2" y="11" width="20" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
                 </svg>
               )}
             </button>
-          )}
-          <button
-            type="button"
-            aria-label="View member"
-            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-base-200 text-primary/60 hover:text-primary transition-colors"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.6" />
-              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
-            </svg>
-          </button>
-        </div>
-      </div>
+            <button
+              type="button"
+              onClick={() => void handleRemove()}
+              disabled={busy}
+              aria-label="Remove member"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/40 hover:text-error hover:border-error transition-colors"
+            >
+              {busy ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
+          </>
+        )}
 
-      {/* Bottom action bar — SPOC only, non-self */}
-      {isSpoc && !isSelf && (
-        <div className="flex items-center gap-2 border-t border-base-100 bg-base-50 px-4 py-2">
-          <button
-            type="button"
-            onClick={() => void handleToggleSuspend()}
-            disabled={busy}
-            aria-label={isSuspended ? "Reactivate member" : "Suspend member"}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/40 hover:text-warning hover:border-warning transition-colors"
-          >
-            {busy ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path d="M16 11V7a4 4 0 00-8 0v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <rect x="2" y="11" width="20" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleRemove()}
-            disabled={busy}
-            aria-label="Remove member"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/40 hover:text-error hover:border-error transition-colors"
-          >
-            {busy ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </button>
-        </div>
-      )}
+        {/* Card icon — always shown, opens ecard sheet — pushed to right */}
+        <button
+          type="button"
+          onClick={() => onShowEcards(member)}
+          aria-label="View e-cards"
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/40 hover:text-primary hover:border-primary transition-colors"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+            <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+            <path d="M2 10h20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            <path d="M6 15h4M6 17h2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -178,6 +293,7 @@ export default function OrgMembersTab({
   currentCustomerId,
   onUpdate,
   onRemove,
+  onShowEcards,
 }: OrgMembersTabProps) {
   const q = search.toLowerCase();
   const filtered = members.filter(
@@ -212,6 +328,7 @@ export default function OrgMembersTab({
           isSelf={m.customerId === currentCustomerId}
           onUpdate={onUpdate}
           onRemove={onRemove}
+          onShowEcards={onShowEcards}
         />
       ))}
     </div>

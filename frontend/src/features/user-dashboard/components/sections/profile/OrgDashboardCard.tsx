@@ -224,7 +224,6 @@ export default function OrgDashboardCard({
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               className="mt-0.5 w-full bg-transparent text-sm font-medium text-base-content outline-none"
-              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
           </div>

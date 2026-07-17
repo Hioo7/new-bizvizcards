@@ -60,4 +60,6 @@ export const ECARDS_BASE_PATH = "/api/ecards";
 
 export const ECARD_ENDPOINTS = {
   me: `${ECARDS_BASE_PATH}/me`,
-} as const;
+  create: ECARDS_BASE_PATH,
+  meById: (id: string) => `${ECARDS_BASE_PATH}/me/${id}`,
+};

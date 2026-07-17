@@ -1,14 +1,12 @@
 import { useState } from "react";
 import type { AuthUser } from "@app-types/auth";
-import { apiRequest } from "@services/apiClient";
-import { ECARD_ENDPOINTS } from "@config/api";
-import { ecardPublicPath } from "@config/routes";
 
 interface ProfileBannerProps {
   user: AuthUser;
   phone?: string;
   countryCode?: string;
   onEditProfile: () => void;
+  onManageEcards: () => void;
 }
 
 function getInitials(name: string): string {
@@ -20,43 +18,16 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-async function handleShare(user: AuthUser): Promise<void> {
-  const shareText = `Connect with ${user.name} on BizVizCards`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: user.name, text: shareText });
-    } catch {
-      // user dismissed
-    }
-  } else {
-    await navigator.clipboard.writeText(shareText);
-  }
-}
-
 export default function ProfileBanner({
   user,
   phone,
   countryCode,
   onEditProfile,
+  onManageEcards,
 }: ProfileBannerProps) {
   const initials = getInitials(user.name);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
-  const [viewCardLoading, setViewCardLoading] = useState(false);
-
-  async function handleViewCard() {
-    setViewCardLoading(true);
-    try {
-      const ecard = await apiRequest<{ endpoint: string }>(ECARD_ENDPOINTS.me);
-      window.open(ecardPublicPath(ecard.endpoint), "_blank", "noopener,noreferrer");
-    } catch {
-      // ecard not set up yet — fall back to email prefix
-      const fallback = user.email.split("@")[0];
-      window.open(ecardPublicPath(fallback), "_blank", "noopener,noreferrer");
-    } finally {
-      setViewCardLoading(false);
-    }
-  }
 
   function handleWallet(type: "google" | "apple") {
     setWalletLoading(true);
@@ -86,55 +57,42 @@ export default function ProfileBanner({
           </span>
           <span className="text-base font-bold text-white">BizVizCards</span>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Bell icon */}
+        <div className="flex items-center gap-2">
+          {/* Edit Profile */}
           <button
             type="button"
-            aria-label="Notifications"
-            className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-white hover:bg-white/10"
+            onClick={onEditProfile}
+            aria-label="Edit profile"
+            className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-sm transition-all hover:bg-white/25 hover:border-white/50 active:scale-95"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="h-6 w-6"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5" aria-hidden="true">
               <path
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
                 stroke="currentColor"
-                strokeWidth="1.6"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                stroke="currentColor"
+                strokeWidth="1.7"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </svg>
           </button>
-          {/* Question mark icon */}
+          {/* Manage E-Cards */}
           <button
             type="button"
-            aria-label="Help"
-            className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-white hover:bg-white/10"
+            onClick={onManageEcards}
+            aria-label="Manage e-cards"
+            className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-sm transition-all hover:bg-white/25 hover:border-white/50 active:scale-95"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="h-6 w-6"
-              aria-hidden="true"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="9"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              />
-              <path
-                d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="currentColor" strokeWidth="1" />
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+              <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
+              <path d="M2 10h20" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              <path d="M6 15h4M6 17h2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
           </button>
         </div>
@@ -167,75 +125,14 @@ export default function ProfileBanner({
         )}
       </div>
 
-      {/* 3-button row */}
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={onEditProfile}
-          className="flex flex-1 min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-primary transition-opacity hover:opacity-90 active:opacity-75"
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-            <path
-              d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Edit Profile
-        </button>
-        <button
-          type="button"
-          disabled={viewCardLoading}
-          onClick={() => void handleViewCard()}
-          className="flex flex-1 min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:bg-white/20 active:opacity-75 disabled:opacity-60"
-        >
-          {viewCardLoading ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-              <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
-              <circle cx="8" cy="12" r="2" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M14 10h4M14 14h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-          )}
-          View Card
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleShare(user)}
-          className="flex flex-1 min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:bg-white/20 active:opacity-75"
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-            <path
-              d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Share Card
-        </button>
-      </div>
-
       {/* Wallet buttons row */}
-      <div className="mt-3 flex gap-2">
+      <div className="mt-4 flex gap-2">
         <button
           type="button"
           disabled={walletLoading}
           onClick={() => handleWallet("google")}
           className="flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-full bg-neutral px-3 py-2.5 text-xs font-semibold text-neutral-content transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-60"
         >
-          {/* Colorful G icon */}
           <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" aria-hidden="true">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -252,7 +149,6 @@ export default function ProfileBanner({
           onClick={() => handleWallet("apple")}
           className="flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-full bg-neutral px-3 py-2.5 text-xs font-semibold text-neutral-content transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-60"
         >
-          {/* Apple icon */}
           <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 fill-neutral-content" aria-hidden="true">
             <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
           </svg>

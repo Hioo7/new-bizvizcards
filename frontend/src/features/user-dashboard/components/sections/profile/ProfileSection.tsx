@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@config/routes";
 import type { AuthUser } from "@app-types/auth";
+import type { Ecard } from "@app-types/ecard";
 import { useUserProfile } from "@features/user-dashboard/hooks/useUserProfile";
 import { useOrganisation } from "@features/user-dashboard/hooks/useOrganisation";
+import { useCustomerEcards } from "@features/user-dashboard/hooks/useCustomerEcards";
 import {
   PROFILE_CARD_IDS,
   PROFILE_CARD_ORDER_STORAGE_KEY,
@@ -19,6 +21,8 @@ import EditBioModal from "./EditBioModal";
 import EditSocialsModal from "./EditSocialsModal";
 import CreateOrgModal from "./CreateOrgModal";
 import ReorderSheet from "./ReorderSheet";
+import CustomerEcardsSheet from "./CustomerEcardsSheet";
+import CustomerEcardBuilderSheet from "./CustomerEcardBuilderSheet";
 
 type CardId = (typeof PROFILE_CARD_IDS)[number];
 type ModalType = "profile" | "contact" | "bio" | "socials" | "createOrg" | null;
@@ -62,6 +66,10 @@ export default function ProfileSection({ user: initialUser }: ProfileSectionProp
   );
   const { profile, updateContact, updateBio, updateSocials } = useUserProfile(user.id);
   const org = useOrganisation();
+  const customerEcards = useCustomerEcards();
+  const [ecardsSheetOpen, setEcardsSheetOpen] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderEcard, setBuilderEcard] = useState<Ecard | null>(null);
 
   useEffect(() => {
     void org.load();
@@ -153,6 +161,10 @@ export default function ProfileSection({ user: initialUser }: ProfileSectionProp
         phone={profile.phone}
         countryCode={profile.countryCode}
         onEditProfile={() => setOpenModal("profile")}
+        onManageEcards={() => {
+          void customerEcards.load();
+          setEcardsSheetOpen(true);
+        }}
       />
 
       <div className="-mt-10 relative z-10 px-4 pb-4">
@@ -246,6 +258,35 @@ export default function ProfileSection({ user: initialUser }: ProfileSectionProp
           </div>
         </div>
       )}
+
+      <CustomerEcardsSheet
+        open={ecardsSheetOpen}
+        ecards={customerEcards.ecards}
+        loading={customerEcards.loading}
+        error={customerEcards.error}
+        onClose={() => setEcardsSheetOpen(false)}
+        onCreateNew={() => {
+          setBuilderEcard(null);
+          setBuilderOpen(true);
+        }}
+        onEdit={(ecard) => {
+          setBuilderEcard(ecard);
+          setBuilderOpen(true);
+        }}
+        onDelete={customerEcards.remove}
+      />
+
+      <CustomerEcardBuilderSheet
+        key={builderEcard?.id ?? "new"}
+        open={builderOpen}
+        existingEcard={builderEcard}
+        prefillName={user.name}
+        prefillEmail={user.email}
+        onClose={() => setBuilderOpen(false)}
+        onSaved={() => {
+          void customerEcards.load();
+        }}
+      />
     </div>
   );
 }

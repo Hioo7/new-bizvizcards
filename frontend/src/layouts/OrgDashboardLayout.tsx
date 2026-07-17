@@ -6,6 +6,9 @@ import { useOrgMembers } from "@features/user-dashboard/hooks/useOrgMembers";
 import { useOrganisation } from "@features/user-dashboard/hooks/useOrganisation";
 import OrgMembersTab from "@features/user-dashboard/components/org/OrgMembersTab";
 import OrgRequestsTab from "@features/user-dashboard/components/org/OrgRequestsTab";
+import MemberEcardEditModal from "@features/user-dashboard/components/org/MemberEcardEditModal";
+import MemberEcardsSheet from "@features/user-dashboard/components/org/MemberEcardsSheet";
+import type { OrgMemberListItem } from "@features/user-dashboard/types";
 
 type OrgTab = "members" | "requests" | "contacts";
 
@@ -18,14 +21,31 @@ export default function OrgDashboardLayout() {
   const org = useOrganisation();
   const orgMembers = useOrgMembers();
 
+  // Per-member ecard sheet
+  const [sheetMember, setSheetMember] = useState<OrgMemberListItem | null>(null);
+
+  // Ecard edit modal
+  const [editingMember, setEditingMember] = useState<OrgMemberListItem | null>(null);
+
   useEffect(() => {
     void org.load();
-    void orgMembers.load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (org.data) {
+      void orgMembers.load(org.data.organisation.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [org.data]);
+
   const isSpoc = org.data?.membership.role === "SPOC";
   const currentCustomerId = org.data?.membership.customerId ?? "";
+
+  function handleEditEcard(member: OrgMemberListItem) {
+    setSheetMember(null);
+    setEditingMember(member);
+  }
 
   return (
     <div className="flex h-screen flex-col bg-base-200">
@@ -144,12 +164,13 @@ export default function OrgDashboardLayout() {
               currentCustomerId={currentCustomerId}
               onUpdate={orgMembers.updateMember}
               onRemove={orgMembers.removeMember}
+              onShowEcards={setSheetMember}
             />
           ) : activeTab === "requests" ? (
             <OrgRequestsTab
               isSpoc={isSpoc}
               invites={orgMembers.invites}
-              onInvite={orgMembers.invite}
+              onInvite={(payload) => orgMembers.invite(org.data!.organisation.id, payload)}
               onRevoke={orgMembers.revokeInvite}
             />
           ) : (
@@ -166,6 +187,28 @@ export default function OrgDashboardLayout() {
           )}
         </div>
       </main>
+
+      {/* Per-member ecard sheet */}
+      <MemberEcardsSheet
+        open={sheetMember !== null}
+        member={sheetMember}
+        onClose={() => setSheetMember(null)}
+        onEditEcard={handleEditEcard}
+      />
+
+      {/* Member ecard edit modal */}
+      {editingMember?.linkedEcard && org.data && (
+        <MemberEcardEditModal
+          open={editingMember !== null}
+          organisationId={org.data.organisation.id}
+          ecardId={editingMember.linkedEcard.id}
+          memberName={editingMember.name}
+          memberEmail={editingMember.email}
+          memberProfilePicture={editingMember.profilePicture}
+          onClose={() => setEditingMember(null)}
+          onSaved={() => void orgMembers.load(org.data!.organisation.id)}
+        />
+      )}
 
       {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-base-300 bg-base-100">

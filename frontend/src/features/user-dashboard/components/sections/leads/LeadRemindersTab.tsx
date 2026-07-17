@@ -168,7 +168,6 @@ function ReminderItem({
               onChange={(e) => setEditTitle(e.target.value)}
               placeholder="Follow up call"
               className="mt-0.5 w-full bg-transparent text-sm font-medium text-base-content outline-none placeholder:text-base-content/30"
-              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
           </div>
@@ -357,7 +356,6 @@ export default function LeadRemindersTab({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Follow up call"
                 className="mt-0.5 w-full bg-transparent text-sm font-medium text-base-content outline-none placeholder:text-base-content/30"
-                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
               />
             </div>
