@@ -67,6 +67,31 @@ export const envSchema = z.object({
   APPLE_OAUTH_KEY_ID: z.string().optional(),
   APPLE_OAUTH_PRIVATE_KEY: z.string().optional(),
   APPLE_OAUTH_APP_BUNDLE_IDENTIFIER: z.string().optional(),
+
+  // Not required for normal app operation — only used by the one-time
+  // legacy-data migration tool (src/modules/migration). Left unset outside
+  // of an active migration window (e.g. in production after cutover), the
+  // migration module's pre-flight checks simply report themselves as failed
+  // rather than the app failing to boot. LEGACY_DATABASE_URL points at a
+  // read-only role on the legacy Postgres DB, tunneled in for the migration
+  // window (see the migration plan). LEGACY_MEDIA_STAGING_BUCKET is the name
+  // of a bucket on the SAME MinIO instance/credentials as MINIO_* above that
+  // the one-time `mc mirror` bulk copy (Phase A of the media transfer
+  // strategy) writes legacy media objects into — read via the app's own S3
+  // client during Phase B, then re-uploaded through the normal MediaService
+  // into the real MINIO_BUCKET.
+  LEGACY_DATABASE_URL: z.string().url().optional(),
+  // No .min(1) — matches the GOOGLE_WALLET_*-style optional vars below,
+  // which are left as a blank string (not absent) in .env when unconfigured.
+  // Consumers treat an empty string as "not set" via a plain falsy check.
+  LEGACY_MEDIA_STAGING_BUCKET: z.string().optional(),
+  // Only needed to resolve the rare legacy Media row still on
+  // source: CLOUDINARY (rather than MINIO or a plain-string URL column) —
+  // used to reconstruct that row's public URL from its fileKey (Cloudinary
+  // public_id), matching legacy's CloudinaryStorageProvider.getPublicUrl()
+  // exactly. Most legacy media resolves via MinIO or the plain-string
+  // fallback columns and never needs this.
+  LEGACY_CLOUDINARY_CLOUD_NAME: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

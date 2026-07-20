@@ -26,6 +26,13 @@ export const CUSTOMER_BANNED_MESSAGE =
 // row outside of better-auth's own account-linking flow.
 export const CREDENTIAL_PROVIDER_ID = 'credential';
 
+// The providerId better-auth's Google social provider uses for the
+// CustomerCredential row it creates on a Google sign-in — matches the
+// `providers.google` key in social-providers.builder.ts. Reused by the
+// legacy-data migration (google-oauth-credential.migrator.ts) to pre-link a
+// migrated customer's existing legacy CardUser.googleId.
+export const GOOGLE_PROVIDER_ID = 'google';
+
 // "Sign in with Apple" POSTs its callback (response_mode=form_post), so
 // Apple's own origin must be explicitly trusted for that request to pass
 // better-auth's CSRF/origin check — see customer-auth.factory.ts.
@@ -40,3 +47,11 @@ export const APPLE_SIGN_IN_TRUSTED_ORIGIN = 'https://appleid.apple.com';
 export const APPLE_CLIENT_SECRET_ALGORITHM = 'ES256';
 export const APPLE_CLIENT_SECRET_AUDIENCE = 'https://appleid.apple.com';
 export const APPLE_CLIENT_SECRET_TTL_SECONDS = 180 * 24 * 60 * 60;
+
+// bcrypt (not better-auth's default scrypt) is used for customer passwords
+// specifically so the legacy-data migration can carry over legacy CardUser
+// bcrypt hashes directly, with zero forced password resets — see
+// customer-password-hasher.ts and the migration plan for why. 10 rounds
+// matches the legacy app's own bcryptjs usage exactly (migrationJobService.ts),
+// so migrated and newly-hashed passwords are indistinguishable.
+export const CUSTOMER_PASSWORD_BCRYPT_ROUNDS = 10;

@@ -1,9 +1,9 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { hashPassword } from 'better-auth/crypto';
 import {
   CREDENTIAL_PROVIDER_ID,
   CUSTOMER_AUTH,
 } from '../../../common/auth/auth.constants';
+import { hashCustomerPassword } from '../../../common/auth/customer-password-hasher';
 import type { CustomerAuth } from '../../../common/auth/customer-auth.factory';
 import { PRISMA_ERROR_CODES } from '../../../common/constants/prisma-error-codes.constants';
 import { MediaService } from '../../../common/media/media.service';
@@ -152,11 +152,12 @@ export class CustomersService {
    * plugin (which isn't attached to the customer-auth instance — see
    * customer-auth.factory.ts). Mirrors the exact hashing/account-linking
    * logic better-auth's own admin plugin uses for setUserPassword
-   * (node_modules/better-auth/dist/plugins/admin/routes.mjs): hash via the
-   * same `hashPassword` function emailAndPassword defaults to, then
-   * update-or-create the CustomerCredential row. If customer-auth.factory.ts
-   * ever overrides emailAndPassword.password.hash, this would need updating
-   * to match.
+   * (node_modules/better-auth/dist/plugins/admin/routes.mjs), but hashes via
+   * hashCustomerPassword — the same bcrypt function
+   * customer-auth.factory.ts's emailAndPassword.password.hash is overridden
+   * to (see that file and customer-password-hasher.ts for why: it lets the
+   * legacy-data migration carry over legacy bcrypt hashes directly). Keep
+   * both in sync if the hashing strategy ever changes again.
    */
   async setPasswordForEmployee(
     customerId: string,
@@ -165,7 +166,7 @@ export class CustomersService {
     const customer = await this.prisma.customer.findUniqueOrThrow({
       where: { id: customerId },
     });
-    const hashed = await hashPassword(dto.newPassword);
+    const hashed = await hashCustomerPassword(dto.newPassword);
 
     const existingCredential = await this.prisma.customerCredential.findFirst({
       where: {

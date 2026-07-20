@@ -25,7 +25,9 @@ import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import EcardPublicPage from "@pages/EcardPublicPage";
 import UserDashboardPage from "@pages/UserDashboardPage";
 import OrgDashboardPage from "@pages/OrgDashboardPage";
+import DataMigrationPage from "@pages/DataMigrationPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
+import RequireSuperAdmin from "@components/RequireSuperAdmin";
 import RequireAuth from "@components/RequireAuth";
 import AdminLayout from "@layouts/AdminLayout";
 import { ROUTES } from "@config/routes";
@@ -86,6 +88,13 @@ function App() {
             path={ROUTES.adminOrderDetail}
             element={<OrderDetailPage />}
           />
+
+          <Route element={<RequireSuperAdmin />}>
+            <Route
+              path={ROUTES.adminDataMigration}
+              element={<DataMigrationPage />}
+            />
+          </Route>
         </Route>
       </Route>
     </Routes>

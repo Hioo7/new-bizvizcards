@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { verifyPassword } from 'better-auth/crypto';
+import { verifyCustomerPassword } from '../../../common/auth/customer-password-hasher';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { createCustomerAuth } from '../../../common/auth/customer-auth.factory';
 import type { CustomerAuth } from '../../../common/auth/customer-auth.factory';
@@ -329,7 +329,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
         where: { userId: customer.accountId, providerId: 'credential' },
       });
       await expect(
-        verifyPassword({
+        verifyCustomerPassword({
           hash: credential.password as string,
           password: 'brand-new-password',
         }),
@@ -357,7 +357,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
       });
       expect(credentials).toHaveLength(1);
       await expect(
-        verifyPassword({
+        verifyCustomerPassword({
           hash: credentials[0].password as string,
           password: 'replaced-password',
         }),

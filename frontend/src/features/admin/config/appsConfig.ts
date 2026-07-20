@@ -3,6 +3,7 @@ import {
   CalendarDays,
   Contact,
   CreditCard,
+  DatabaseZap,
   IdCard,
   LogOut,
   Package,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "@config/routes";
+import type { StaffRole } from "@app-types/staffAuth";
 
 export type AdminAppTileColor = "primary" | "secondary" | "accent" | "neutral";
 
@@ -23,6 +25,11 @@ export interface AdminAppTile {
   color: AdminAppTileColor;
   route?: string;
   action?: "logout";
+  /** Tile is hidden from the grid unless the viewing staff member's role
+   * matches — currently only used to hide Data Migration from non-super-admins.
+   * The route itself is also hard-gated separately (RequireSuperAdmin), this
+   * is purely to avoid showing a tile that would just redirect on click. */
+  requiredRole?: StaffRole;
 }
 
 export const ADMIN_APP_TILES: AdminAppTile[] = [
@@ -95,6 +102,14 @@ export const ADMIN_APP_TILES: AdminAppTile[] = [
     icon: ShoppingBag,
     color: "primary",
     route: ROUTES.adminOrders,
+  },
+  {
+    id: "data-migration",
+    label: "Data Migration",
+    icon: DatabaseZap,
+    color: "secondary",
+    route: ROUTES.adminDataMigration,
+    requiredRole: "super_admin",
   },
   {
     id: "logout",

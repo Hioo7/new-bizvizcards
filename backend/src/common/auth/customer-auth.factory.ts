@@ -10,6 +10,10 @@ import {
 import { linkAccountWithRetry } from './link-account-with-retry';
 import { buildSocialProviders } from './social-providers.builder';
 import type { SocialProvidersDeps } from './social-providers.builder';
+import {
+  hashCustomerPassword,
+  verifyCustomerPassword,
+} from './customer-password-hasher';
 
 export interface CreateCustomerAuthDeps extends SocialProvidersDeps {
   secret: string;
@@ -113,6 +117,16 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
     },
     emailAndPassword: {
       enabled: true,
+      // bcrypt in place of better-auth's default scrypt — the one thing this
+      // enables is the legacy-data migration copying legacy CardUser bcrypt
+      // hashes directly into CustomerCredential.password with zero forced
+      // resets (see the migration plan and customer-password-hasher.ts).
+      // customers.service.ts's admin-set-password flow hashes through this
+      // exact same function for the same reason — keep both in sync.
+      password: {
+        hash: hashCustomerPassword,
+        verify: verifyCustomerPassword,
+      },
     },
     socialProviders: buildSocialProviders(deps),
     trustedOrigins: [APPLE_SIGN_IN_TRUSTED_ORIGIN, deps.frontendOrigin],

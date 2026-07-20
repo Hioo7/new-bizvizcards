@@ -15,6 +15,10 @@ export const employeeStatements = {
   event: ['list', 'get', 'create', 'update', 'delete'],
   product: ['list', 'get', 'create', 'update', 'delete'],
   order: ['list', 'get', 'update'],
+  // Legacy-data migration tool — super_admin only, see roles.ts. Not spread
+  // into employeeRole/adminRole at all (empty array), unlike every other
+  // resource here which every tier gets at least partial access to.
+  migration: ['run', 'list', 'get'],
 } as const;
 
 export const employeeAccessControl = createAccessControl(employeeStatements);

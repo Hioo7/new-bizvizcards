@@ -42,7 +42,9 @@ export default function AppsGrid() {
         variants={GRID_CONTAINER_VARIANTS}
         className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5"
       >
-        {ADMIN_APP_TILES.map((tile) => (
+        {ADMIN_APP_TILES.filter(
+          (tile) => !tile.requiredRole || tile.requiredRole === staffUser?.role,
+        ).map((tile) => (
           <AppTile
             key={tile.id}
             tile={tile}

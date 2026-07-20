@@ -34,6 +34,11 @@ const EMPLOYEE_PRODUCT_ACTIONS = ['list', 'get', 'create', 'update'] as const;
 // 'update' action, so every tier gets the identical set, same as
 // smartCardTemplate above.
 const EMPLOYEE_ORDER_ACTIONS = ['list', 'get', 'update'] as const;
+// Empty for both employee and admin — the legacy-data migration tool is
+// granted to super_admin only (see SUPER_ADMIN_EXTRA_MIGRATION_ACTIONS
+// below), unlike every other resource which at least employee gets partial
+// access to.
+const EMPLOYEE_MIGRATION_ACTIONS = [] as const;
 
 const ADMIN_EXTRA_USER_ACTIONS = [
   'create',
@@ -59,6 +64,7 @@ const SUPER_ADMIN_EXTRA_USER_ACTIONS = [
   'impersonate-admins',
 ] as const;
 const SUPER_ADMIN_EXTRA_SESSION_ACTIONS = ['delete'] as const;
+const SUPER_ADMIN_EXTRA_MIGRATION_ACTIONS = ['run', 'list', 'get'] as const;
 
 export const employeeRole = employeeAccessControl.newRole({
   user: [...EMPLOYEE_USER_ACTIONS],
@@ -73,6 +79,7 @@ export const employeeRole = employeeAccessControl.newRole({
   event: [...EMPLOYEE_EVENT_ACTIONS],
   product: [...EMPLOYEE_PRODUCT_ACTIONS],
   order: [...EMPLOYEE_ORDER_ACTIONS],
+  migration: [...EMPLOYEE_MIGRATION_ACTIONS],
 });
 
 export const adminRole = employeeAccessControl.newRole({
@@ -96,6 +103,9 @@ export const adminRole = employeeAccessControl.newRole({
   // admin gets the same order actions as employee — no admin-only order
   // action exists (see EMPLOYEE_ORDER_ACTIONS above).
   order: [...EMPLOYEE_ORDER_ACTIONS],
+  // admin gets no migration access at all — same as employee, see
+  // EMPLOYEE_MIGRATION_ACTIONS above.
+  migration: [...EMPLOYEE_MIGRATION_ACTIONS],
 });
 
 export const superAdminRole = employeeAccessControl.newRole({
@@ -152,4 +162,10 @@ export const superAdminRole = employeeAccessControl.newRole({
   // super_admin gets the same order actions as admin/employee — no
   // super-admin-only order action exists (see EMPLOYEE_ORDER_ACTIONS above).
   order: [...EMPLOYEE_ORDER_ACTIONS],
+  // Migration is the one resource super_admin alone is granted — neither
+  // employee nor admin get any access (see EMPLOYEE_MIGRATION_ACTIONS above).
+  migration: [
+    ...EMPLOYEE_MIGRATION_ACTIONS,
+    ...SUPER_ADMIN_EXTRA_MIGRATION_ACTIONS,
+  ],
 });

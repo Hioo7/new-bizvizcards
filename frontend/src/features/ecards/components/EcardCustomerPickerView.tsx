@@ -1,11 +1,28 @@
 import { Search, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useCustomerSearch } from "@hooks/useCustomerSearch";
+import { useCustomerList } from "@hooks/useCustomerList";
+import Pagination from "@components/Pagination";
 import { adminCustomerEcardsPath } from "@config/routes";
+import {
+  ECARD_CUSTOMER_PICKER_PAGE_SIZE,
+  ECARD_CUSTOMER_PICKER_SEARCH_DEBOUNCE_MS,
+} from "@features/ecards/config/ecardCustomerPicker.config";
 
 export default function EcardCustomerPickerView() {
   const navigate = useNavigate();
-  const { search, setSearch, customers, isLoading } = useCustomerSearch();
+  const {
+    search,
+    setSearch,
+    customers,
+    isLoading,
+    page,
+    pageSize,
+    total,
+    setPage,
+  } = useCustomerList({
+    pageSize: ECARD_CUSTOMER_PICKER_PAGE_SIZE,
+    debounceMs: ECARD_CUSTOMER_PICKER_SEARCH_DEBOUNCE_MS,
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
@@ -63,6 +80,13 @@ export default function EcardCustomerPickerView() {
           ))}
         </div>
       )}
+
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

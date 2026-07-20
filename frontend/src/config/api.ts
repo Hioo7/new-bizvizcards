@@ -53,6 +53,8 @@ export const ADMIN_PRODUCT_UNITS_BASE_PATH = "/api/admin/product-units";
 
 export const EMPLOYEE_ORDERS_BASE_PATH = "/api/employee/orders";
 
+export const MIGRATION_BASE_PATH = "/api/migration";
+
 export const CUSTOMER_ENDPOINTS = {
   updateProfilePicture: `${CUSTOMERS_BASE_PATH}/me/profile-picture`,
 } as const;

@@ -24,6 +24,7 @@ export const ROUTES = {
   adminProductDetail: "/admin/products/:productId",
   adminOrders: "/admin/orders",
   adminOrderDetail: "/admin/orders/:orderId",
+  adminDataMigration: "/admin/data-migration",
   smartCardPublic: "/smartcard/:endpoint",
   ecardPublic: "/ecard/:endpoint",
 } as const;

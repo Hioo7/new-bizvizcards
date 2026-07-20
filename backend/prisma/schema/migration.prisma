@@ -1,0 +1,91 @@
+enum MigrationDomain {
+  STAFF_IDENTITY
+  CUSTOMER_IDENTITY
+  ORGANISATION
+  ORGANISATION_MEMBER
+  SMART_CARD
+  ECARD
+  LEAD_FOLDER
+  LEAD
+  MEDIA
+  RESTRICTED_ROUTE
+  INTERNAL_REDIRECT
+  EXTERNAL_REDIRECT
+
+  @@map("MigrationDomain")
+}
+
+enum MigrationJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+
+  @@map("MigrationJobStatus")
+}
+
+enum MigrationRecordStatus {
+  SUCCESS
+  REJECTED
+  SKIPPED
+
+  @@map("MigrationRecordStatus")
+}
+
+model MigrationJob {
+  id     String             @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  status MigrationJobStatus @default(PENDING)
+
+  triggeredByEmployeeId String   @db.Uuid
+  triggeredByEmployee   Employee @relation(fields: [triggeredByEmployeeId], references: [id], onDelete: Restrict)
+
+  totalRecords     Int @default(0)
+  processedRecords Int @default(0)
+  successCount     Int @default(0)
+  rejectedCount    Int @default(0)
+  skippedCount     Int @default(0)
+
+  errorMessage String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  touchedRecords MigrationRecord[]
+
+  @@map("MigrationJob")
+}
+
+// Persistent legacy-id -> new-id map AND the idempotency ledger — one row
+// ever per (domain, sourceTable, sourceId), upserted every time that legacy
+// entity is (re)processed by any job. A SUCCESS row is terminal (never
+// reprocessed, guaranteeing no duplicate target rows across re-runs); a
+// REJECTED row is retried automatically on the next run with no special
+// "retry" flag needed. Downstream migrators resolve legacy->new ids purely
+// by reading targetId off SUCCESS rows from earlier domains — this table
+// doubles as that id map.
+model MigrationRecord {
+  id String @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+
+  domain      MigrationDomain
+  sourceTable String
+  sourceId    String
+
+  status MigrationRecordStatus
+  reason String?
+
+  targetTable String?
+  targetId    String? @db.Uuid
+
+  lastProcessedJobId String?       @db.Uuid
+  lastProcessedJob   MigrationJob? @relation(fields: [lastProcessedJobId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([domain, sourceTable, sourceId])
+  @@index([lastProcessedJobId])
+  @@index([domain, status])
+  @@map("MigrationRecord")
+}

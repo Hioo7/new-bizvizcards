@@ -1,0 +1,364 @@
+// Read-only mirror of the legacy app's Postgres schema
+// (legacy-artifacts/cards-app/prisma/schema.prisma), limited to the models
+// in scope for the data migration pipeline (see the approved migration plan).
+// This schema is never touched by `prisma migrate` — the legacy database
+// already exists and isn't ours to alter. Models are prefixed `Legacy*` to
+// keep them unambiguous from the new app's own models of similar name, each
+// `@@map`'d back to the real legacy table name.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../../src/generated/legacy-prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LegacyRole {
+  USER
+  ADMIN
+
+  @@map("Role")
+}
+
+enum LegacyStorageSource {
+  CLOUDINARY
+  MINIO
+  S3
+  DIGITAL_OCEAN
+
+  @@map("StorageSource")
+}
+
+enum LegacyOrgMemberRole {
+  SPOC
+  MEMBER
+
+  @@map("OrgMemberRole")
+}
+
+model LegacyUser {
+  id           String    @id
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         LegacyRole @default(USER)
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("User")
+}
+
+model LegacyCardUser {
+  id       String  @id
+  name     String
+  email    String  @unique
+  password String?
+  googleId String? @unique
+
+  defaultLeadFolderId String?
+
+  ecard          LegacyECard?
+  leads          LegacyCardUserLead[]
+  leadFolders    LegacyLeadFolder[]         @relation("UserLeadFolders")
+  smartCards     LegacySmartCard[]
+  permissions    LegacyCardUserPermission?
+  orgMemberships LegacyOrganisationMember[]
+
+  @@map("CardUser")
+}
+
+model LegacyCardUserPermission {
+  id                       String   @id
+  cardUserId               String   @unique
+  isEcardEnabled           Boolean  @default(false)
+  isMiniWebsiteEnabled     Boolean  @default(false)
+  isExchangeContactEnabled Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  cardUser LegacyCardUser @relation(fields: [cardUserId], references: [id])
+
+  @@map("CardUserPermission")
+}
+
+model LegacyECard {
+  id               String   @id
+  cardUserId       String   @unique
+  endpoint         String   @unique
+  Profession       String?
+  shortNote        String?
+  description      String?
+  aboutme          String?
+  whatsapp         String?
+  mob_country_code Int?
+  mobile_number    BigInt?
+  imageUrl         String?
+  mediaId          String?
+  website          String?
+  instagram        String?
+  facebook         String?
+  twitter          String?
+  linkedin         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  cardUser LegacyCardUser @relation(fields: [cardUserId], references: [id])
+  media    LegacyMedia?   @relation(fields: [mediaId], references: [id])
+
+  @@map("ECard")
+}
+
+model LegacyCardUserLead {
+  id                 String   @id
+  cardUserId         String
+  name               String?
+  email              String?
+  mob_country_code   Int?
+  mobile_number      BigInt?
+  note               String?
+  location           String?
+  location_latitude  Float?
+  location_longitude Float?
+  company            String?
+  profession         String?
+  folderId           String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  cardUser LegacyCardUser    @relation(fields: [cardUserId], references: [id])
+  folder   LegacyLeadFolder? @relation(fields: [folderId], references: [id])
+
+  @@map("CardUserLead")
+}
+
+model LegacyLeadFolder {
+  id         String   @id
+  name       String
+  cardUserId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  cardUser LegacyCardUser       @relation("UserLeadFolders", fields: [cardUserId], references: [id])
+  leads    LegacyCardUserLead[]
+
+  @@map("LeadFolder")
+}
+
+model LegacySmartCardTemplate {
+  id              String  @id
+  slug            String  @unique
+  name            String
+  previewImageUrl String?
+  mediaId         String?
+
+  cards LegacySmartCard[]
+
+  @@map("SmartCardTemplate")
+}
+
+model LegacySmartCard {
+  id         String   @id
+  cardUserId String?
+  templateId String
+  endpoint   String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  cardUser LegacyCardUser?          @relation(fields: [cardUserId], references: [id])
+  template LegacySmartCardTemplate  @relation(fields: [templateId], references: [id])
+
+  profile      LegacySmartCardProfile?
+  contact      LegacySmartCardContact?
+  socialMedia  LegacySmartCardSocialMedia?
+  founder      LegacySmartCardFounder?
+  services     LegacySmartCardService[]
+  testimonials LegacySmartCardTestimonial[]
+  galleries    LegacySmartCardGallery[]
+
+  @@map("SmartCard")
+}
+
+model LegacySmartCardProfile {
+  smartCardId String  @id
+  companyName String?
+  logoUrl     String?
+  mediaId     String?
+  tagline     String?
+  subTagline  String?
+  aboutText   String?
+
+  smartCard LegacySmartCard @relation(fields: [smartCardId], references: [id])
+
+  @@map("SmartCardProfile")
+}
+
+model LegacySmartCardContact {
+  smartCardId   String  @id
+  contactNumber String?
+  email         String?
+  address       String?
+
+  smartCard LegacySmartCard @relation(fields: [smartCardId], references: [id])
+
+  @@map("SmartCardContact")
+}
+
+model LegacySmartCardSocialMedia {
+  smartCardId String  @id
+  whatsapp    String?
+  instagram   String?
+  facebook    String?
+  linkedIn    String?
+  twitter     String?
+  youtube     String?
+  googleMap   String?
+  website     String?
+  other       String?
+
+  smartCard LegacySmartCard @relation(fields: [smartCardId], references: [id])
+
+  @@map("SmartCardSocialMedia")
+}
+
+model LegacySmartCardFounder {
+  smartCardId    String  @id
+  name           String?
+  title          String?
+  imageUrl       String?
+  mediaId        String?
+  experience     Int?
+  projects       Int?
+  satisfaction   Int?
+  introText      String?
+  philosophyText String?
+  quote          String?
+
+  smartCard LegacySmartCard @relation(fields: [smartCardId], references: [id])
+
+  @@map("SmartCardFounder")
+}
+
+model LegacySmartCardService {
+  id          String  @id
+  smartCardId String
+  title       String?
+  imageUrl    String?
+  mediaId     String?
+  description String?
+  order       Int     @default(0)
+
+  smartCard LegacySmartCard @relation(fields: [smartCardId], references: [id])
+
+  @@map("SmartCardService")
+}
+
+model LegacySmartCardTestimonial {
+  id          String  @id
+  smartCardId String
+  name        String?
+  initials    String?
+  text        String?
+  order       Int     @default(0)
+
+  smartCard LegacySmartCard @relation(fields: [smartCardId], references: [id])
+
+  @@map("SmartCardTestimonial")
+}
+
+model LegacySmartCardGallery {
+  id          String  @id
+  smartCardId String
+  title       String?
+  order       Int     @default(0)
+
+  smartCard LegacySmartCard               @relation(fields: [smartCardId], references: [id])
+  images    LegacySmartCardGalleryImage[]
+
+  @@map("SmartCardGallery")
+}
+
+model LegacySmartCardGalleryImage {
+  id        String  @id
+  galleryId String
+  url       String
+  mediaId   String?
+  order     Int     @default(0)
+
+  gallery LegacySmartCardGallery @relation(fields: [galleryId], references: [id])
+
+  @@map("SmartCardGalleryImage")
+}
+
+model LegacyOrganisation {
+  id          String   @id
+  displayName String
+  domainName  String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members LegacyOrganisationMember[]
+
+  @@map("Organisation")
+}
+
+model LegacyOrganisationMember {
+  id             String              @id
+  cardUserId     String
+  organisationId String
+  role           LegacyOrgMemberRole @default(MEMBER)
+  joinedAt       DateTime            @default(now())
+
+  cardUser     LegacyCardUser     @relation(fields: [cardUserId], references: [id])
+  organisation LegacyOrganisation @relation(fields: [organisationId], references: [id])
+
+  @@unique([cardUserId, organisationId])
+  @@map("OrganisationMember")
+}
+
+model LegacyRestrictedRoute {
+  id        String   @id
+  endpoint  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("RestrictedRoute")
+}
+
+model LegacyRedirectRoute {
+  id        String   @id
+  oldRoute  String   @unique
+  newRoute  String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("RedirectRoute")
+}
+
+model LegacyExternalRedirectRoute {
+  id           String   @id
+  internalPath String   @unique
+  externalUrl  String
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("ExternalRedirectRoute")
+}
+
+model LegacyMedia {
+  id        String              @id
+  fileKey   String              @unique
+  fileType  String
+  source    LegacyStorageSource
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  ecards LegacyECard[]
+
+  @@map("Media")
+}

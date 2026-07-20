@@ -148,4 +148,16 @@ export class AppConfigService {
   get appleOAuthAppBundleIdentifier(): string | undefined {
     return this.env.APPLE_OAUTH_APP_BUNDLE_IDENTIFIER;
   }
+
+  get legacyDatabaseUrl(): string | undefined {
+    return this.env.LEGACY_DATABASE_URL;
+  }
+
+  get legacyMediaStagingBucket(): string | undefined {
+    return this.env.LEGACY_MEDIA_STAGING_BUCKET;
+  }
+
+  get legacyCloudinaryCloudName(): string | undefined {
+    return this.env.LEGACY_CLOUDINARY_CLOUD_NAME;
+  }
 }
