@@ -12,7 +12,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { ArrowLeft, Check, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Eye, Plus, Trash2 } from "lucide-react";
 import ConfirmActionModal from "@components/ConfirmActionModal";
 import EmptyStepState from "@components/EmptyStepState";
 import { useAsyncAction } from "@hooks/useAsyncAction";
@@ -21,6 +21,7 @@ import {
   ECARD_NEW_ID,
   adminCustomerEcardsPath,
   adminEcardBuilderPath,
+  ecardPublicPath,
 } from "@config/routes";
 import type { Customer } from "@app-types/customer";
 import HeroCard from "@features/ecards/components/HeroCard";
@@ -179,14 +180,30 @@ export default function EcardBuilderView() {
           </p>
         </div>
         {builder.existingCard && (
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(true)}
-            aria-label="Delete e-card"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-error hover:bg-error/10"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() =>
+                window.open(
+                  ecardPublicPath(builder.existingCard!.endpoint),
+                  "_blank",
+                  "noopener,noreferrer",
+                )
+              }
+              aria-label="View live e-card"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base-content/60 hover:bg-base-200 hover:text-primary"
+            >
+              <Eye className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsConfirmingDelete(true)}
+              aria-label="Delete e-card"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-error hover:bg-error/10"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          </>
         )}
       </div>
 

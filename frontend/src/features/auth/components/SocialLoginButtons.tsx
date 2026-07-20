@@ -1,3 +1,13 @@
+import { useState } from "react";
+import FormErrorRibbon from "@components/forms/FormErrorRibbon";
+import { signInSocial } from "@services/authService";
+import type { SocialProvider } from "@app-types/auth";
+import {
+  APPLE_SIGNIN_COMING_SOON_MESSAGE,
+  GENERIC_SOCIAL_SIGNIN_ERROR_MESSAGE,
+  IS_APPLE_SIGNIN_ENABLED,
+} from "@features/auth/config";
+
 function GoogleIcon() {
   return (
     <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -30,26 +40,59 @@ function AppleIcon() {
 }
 
 export default function SocialLoginButtons() {
+  const [pendingProvider, setPendingProvider] = useState<SocialProvider | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function handleClick(provider: SocialProvider) {
+    setErrorMessage(null);
+    setPendingProvider(provider);
+    try {
+      // On success this hands the browser off to the OAuth provider (full
+      // page navigation), so there's no "success" state to return to here —
+      // only the failure path resets pendingProvider.
+      await signInSocial(provider);
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : GENERIC_SOCIAL_SIGNIN_ERROR_MESSAGE,
+      );
+      setPendingProvider(null);
+    }
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <button
-        type="button"
-        disabled
-        title="Google sign-in coming soon"
-        className="flex min-h-11 items-center justify-center gap-2.5 rounded-field border border-base-300 bg-base-100 py-2.5 text-sm font-medium text-base-content/40 shadow-sm transition-colors"
-      >
-        <GoogleIcon />
-        Google
-      </button>
-      <button
-        type="button"
-        disabled
-        title="Apple sign-in coming soon"
-        className="flex min-h-11 items-center justify-center gap-2.5 rounded-field border border-base-300 bg-base-100 py-2.5 text-sm font-medium text-base-content/40 shadow-sm transition-colors"
-      >
-        <AppleIcon />
-        Apple
-      </button>
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => void handleClick("google")}
+          disabled={pendingProvider !== null}
+          className="flex min-h-11 items-center justify-center gap-2.5 rounded-field border border-base-300 bg-base-100 py-2.5 text-sm font-medium text-base-content shadow-sm transition-colors hover:bg-base-200 disabled:text-base-content/40"
+        >
+          {pendingProvider === "google" ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            <GoogleIcon />
+          )}
+          Google
+        </button>
+        <button
+          type="button"
+          onClick={
+            IS_APPLE_SIGNIN_ENABLED ? () => void handleClick("apple") : undefined
+          }
+          disabled={!IS_APPLE_SIGNIN_ENABLED || pendingProvider !== null}
+          title={IS_APPLE_SIGNIN_ENABLED ? undefined : APPLE_SIGNIN_COMING_SOON_MESSAGE}
+          className="flex min-h-11 items-center justify-center gap-2.5 rounded-field border border-base-300 bg-base-100 py-2.5 text-sm font-medium text-base-content shadow-sm transition-colors hover:bg-base-200 disabled:text-base-content/40"
+        >
+          {IS_APPLE_SIGNIN_ENABLED && pendingProvider === "apple" ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            <AppleIcon />
+          )}
+          Apple
+        </button>
+      </div>
+      <FormErrorRibbon message={errorMessage} />
     </div>
   );
 }

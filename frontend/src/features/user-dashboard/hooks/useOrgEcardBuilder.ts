@@ -105,18 +105,28 @@ export function useOrgEcardBuilder(
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    setLoadError(null);
-    userDashboardService
-      .getOrgEcard(organisationId, ecardId)
-      .then((data) => {
+    let cancelled = false;
+
+    async function loadEcard() {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const data = await userDashboardService.getOrgEcard(organisationId, ecardId);
+        if (cancelled) return;
         setOrgEcard(data);
         setStateInternal(orgEcardToBuilderState(data));
-      })
-      .catch((err) => {
+      } catch (err) {
+        if (cancelled) return;
         setLoadError(err instanceof Error ? err.message : "Failed to load e-card");
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadEcard();
+    return () => {
+      cancelled = true;
+    };
   }, [open, organisationId, ecardId]);
 
   const setState = useCallback(

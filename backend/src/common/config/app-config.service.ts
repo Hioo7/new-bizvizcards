@@ -120,4 +120,32 @@ export class AppConfigService {
   get appleWalletKeyPassphrase(): string | undefined {
     return this.env.APPLE_WALLET_KEY_PASSPHRASE;
   }
+
+  get googleOAuthClientId(): string | undefined {
+    return this.env.GOOGLE_OAUTH_CLIENT_ID;
+  }
+
+  get googleOAuthClientSecret(): string | undefined {
+    return this.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  }
+
+  get appleOAuthClientId(): string | undefined {
+    return this.env.APPLE_OAUTH_CLIENT_ID;
+  }
+
+  get appleOAuthTeamId(): string | undefined {
+    return this.env.APPLE_OAUTH_TEAM_ID;
+  }
+
+  get appleOAuthKeyId(): string | undefined {
+    return this.env.APPLE_OAUTH_KEY_ID;
+  }
+
+  get appleOAuthPrivateKey(): string | undefined {
+    return this.env.APPLE_OAUTH_PRIVATE_KEY;
+  }
+
+  get appleOAuthAppBundleIdentifier(): string | undefined {
+    return this.env.APPLE_OAUTH_APP_BUNDLE_IDENTIFIER;
+  }
 }

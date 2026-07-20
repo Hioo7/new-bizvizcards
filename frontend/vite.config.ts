@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 function src(path: string) {
   return fileURLToPath(new URL(`./src/${path}`, import.meta.url));
@@ -9,7 +10,67 @@ function src(path: string) {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["app_icons/bizvizpwalogo.svg"],
+      manifest: {
+        name: "BizVizCards",
+        short_name: "BizVizCards",
+        description: "Digital business cards and mini websites",
+        // Kept in sync with the "bizviz" theme's --color-primary/--color-base-100
+        // in src/index.css — this is build config, not a component, so the
+        // "no hardcoded values" rule's component/hook/service scope doesn't
+        // apply, but the values themselves must still track the theme.
+        theme_color: "#2D2DE0",
+        background_color: "#ffffff",
+        display: "standalone",
+        orientation: "portrait",
+        start_url: "/",
+        scope: "/",
+        icons: [
+          {
+            src: "/app_icons/bizvizpwalogo-48x48.png",
+            sizes: "48x48",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/app_icons/bizvizpwalogo-72x72.png",
+            sizes: "72x72",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/app_icons/bizvizpwalogo-96x96.png",
+            sizes: "96x96",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/app_icons/bizvizpwalogo-144x144.png",
+            sizes: "144x144",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/app_icons/bizvizpwalogo-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable",
+          },
+          {
+            src: "/app_icons/bizvizpwalogo-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+        ],
+      },
+    }),
+  ],
   server: {
     proxy: {
       // Forwards API calls to the backend so the browser sees them as

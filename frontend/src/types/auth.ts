@@ -28,3 +28,10 @@ export interface SessionResponse {
   session: { token: string } | null;
   user: AuthUser | null;
 }
+
+export type SocialProvider = "google" | "apple";
+
+export interface SocialSignInResponse {
+  url: string;
+  redirect: boolean;
+}

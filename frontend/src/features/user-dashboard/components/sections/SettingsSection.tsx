@@ -1,4 +1,12 @@
+import { useState } from "react";
 import { DASHBOARD_APP_VERSION } from "@features/user-dashboard/config";
+import {
+  PWAInstallModal,
+  PWA_INSTALL_ROW_DESCRIPTION_INSTALLABLE,
+  PWA_INSTALL_ROW_DESCRIPTION_INSTALLED,
+  PWA_INSTALL_ROW_DESCRIPTION_UNSUPPORTED,
+  usePWAInstall,
+} from "@features/pwa-install";
 
 interface SettingsSectionProps {
   onSignOut: () => Promise<void>;
@@ -101,6 +109,15 @@ function Divider() {
 }
 
 export default function SettingsSection({ onSignOut }: SettingsSectionProps) {
+  const { canInstall, isInstalled, triggerInstall } = usePWAInstall();
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+
+  const installRowDescription = isInstalled
+    ? PWA_INSTALL_ROW_DESCRIPTION_INSTALLED
+    : canInstall
+      ? PWA_INSTALL_ROW_DESCRIPTION_INSTALLABLE
+      : PWA_INSTALL_ROW_DESCRIPTION_UNSUPPORTED;
+
   return (
     <div className="min-h-screen pb-24">
       {/* Sticky blue header */}
@@ -238,7 +255,9 @@ export default function SettingsSection({ onSignOut }: SettingsSectionProps) {
               </div>
             }
             label="Install App"
-            description="Use your browser's menu to install this app"
+            description={installRowDescription}
+            showChevron={canInstall}
+            onClick={canInstall ? () => setIsInstallModalOpen(true) : undefined}
           />
           <Divider />
           <SettingsRow
@@ -299,6 +318,15 @@ export default function SettingsSection({ onSignOut }: SettingsSectionProps) {
           />
         </SettingsGroup>
       </div>
+
+      <PWAInstallModal
+        open={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        onInstall={async () => {
+          await triggerInstall();
+          setIsInstallModalOpen(false);
+        }}
+      />
     </div>
   );
 }

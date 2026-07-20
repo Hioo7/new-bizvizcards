@@ -22,6 +22,7 @@ describe('createCustomerAuth — ban enforcement (integration, TEST_DATABASE_URL
     customerAuth = createCustomerAuth({
       secret: appConfig.betterAuthCustomerSecret,
       baseUrl: appConfig.betterAuthUrl,
+      frontendOrigin: appConfig.publicAppBaseUrl,
       prisma,
     });
   });

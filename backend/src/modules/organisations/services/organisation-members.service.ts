@@ -68,7 +68,12 @@ export class OrganisationMembersService {
             // constraint on ECard), so [0] below is safe.
             ecards: {
               where: { organisationId },
-              select: { id: true, endpoint: true, heroName: true, isExchangeContactEnabled: true },
+              select: {
+                id: true,
+                endpoint: true,
+                heroName: true,
+                isExchangeContactEnabled: true,
+              },
             },
           },
         },

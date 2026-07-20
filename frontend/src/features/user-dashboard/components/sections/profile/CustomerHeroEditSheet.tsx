@@ -4,8 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link2, Mail, Phone, Sparkles, User } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import ImageSlotField from "@components/media/ImageSlotField";
+import EditSheetShell from "@components/EditSheetShell";
 import {
-  ComponentEditSheetShell,
   heroSheetSchema,
   type HeroSheetValues,
 } from "@features/ecards";
@@ -57,7 +57,7 @@ export default function CustomerHeroEditSheet({
   }
 
   return (
-    <ComponentEditSheetShell
+    <EditSheetShell
       open={open}
       icon={Sparkles}
       title="Hero"
@@ -122,6 +122,6 @@ export default function CustomerHeroEditSheet({
           />
         </div>
       </div>
-    </ComponentEditSheetShell>
+    </EditSheetShell>
   );
 }

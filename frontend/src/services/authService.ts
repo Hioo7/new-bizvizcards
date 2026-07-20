@@ -1,4 +1,5 @@
 import { AUTH_ENDPOINTS, CUSTOMER_ENDPOINTS } from "@config/api";
+import { ROUTES } from "@config/routes";
 import { apiRequest } from "@services/apiClient";
 import type {
   AuthSession,
@@ -6,6 +7,8 @@ import type {
   SessionResponse,
   SignInPayload,
   SignUpPayload,
+  SocialProvider,
+  SocialSignInResponse,
 } from "@app-types/auth";
 
 export function signUpEmail(payload: SignUpPayload): Promise<AuthSession> {
@@ -20,6 +23,23 @@ export function signInEmail(payload: SignInPayload): Promise<AuthSession> {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+// Better Auth's sign-in/social returns a provider URL rather than actually
+// redirecting the fetch itself (it sets a Location header, but that's inert
+// for a same-origin XHR/fetch call) — the caller hands the browser off to it.
+export async function signInSocial(provider: SocialProvider): Promise<void> {
+  const { url } = await apiRequest<SocialSignInResponse>(
+    AUTH_ENDPOINTS.signInSocial,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        provider,
+        callbackURL: `${window.location.origin}${ROUTES.userDashboard}`,
+      }),
+    },
+  );
+  window.location.href = url;
 }
 
 export function signOut(): Promise<{ success: boolean }> {

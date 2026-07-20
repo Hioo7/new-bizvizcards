@@ -3,7 +3,6 @@ export { default as EcardListView } from "@features/ecards/components/EcardListV
 export { default as EcardBuilderView } from "@features/ecards/components/EcardBuilderView";
 
 // Builder components — also consumed by the customer-facing ecard builder
-export { default as ComponentEditSheetShell } from "@features/ecards/components/ComponentEditSheetShell";
 export { default as HeroCard } from "@features/ecards/components/HeroCard";
 export { default as EcardSettingsCard } from "@features/ecards/components/EcardSettingsCard";
 export { default as SortableComponentRow } from "@features/ecards/components/SortableComponentRow";

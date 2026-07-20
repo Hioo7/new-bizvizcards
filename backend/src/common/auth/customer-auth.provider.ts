@@ -10,7 +10,15 @@ export const customerAuthProvider: Provider = {
     createCustomerAuth({
       secret: appConfig.betterAuthCustomerSecret,
       baseUrl: appConfig.betterAuthUrl,
+      frontendOrigin: appConfig.publicAppBaseUrl,
       prisma,
+      googleClientId: appConfig.googleOAuthClientId,
+      googleClientSecret: appConfig.googleOAuthClientSecret,
+      appleClientId: appConfig.appleOAuthClientId,
+      appleTeamId: appConfig.appleOAuthTeamId,
+      appleKeyId: appConfig.appleOAuthKeyId,
+      applePrivateKey: appConfig.appleOAuthPrivateKey,
+      appleAppBundleIdentifier: appConfig.appleOAuthAppBundleIdentifier,
     }),
   inject: [AppConfigService, PrismaService],
 };

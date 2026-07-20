@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, Plus, Sparkles, Trash2 } from "lucide-react";
 import ConfirmActionModal from "@components/ConfirmActionModal";
 import EmptyStepState from "@components/EmptyStepState";
 import { useAsyncAction } from "@hooks/useAsyncAction";
@@ -9,6 +9,7 @@ import {
   ROUTES,
   adminEcardBuilderPath,
   adminNewEcardPath,
+  ecardPublicPath,
 } from "@config/routes";
 import { useEcardList } from "@hooks/useEcardList";
 import type { Customer } from "@app-types/customer";
@@ -129,6 +130,16 @@ export default function EcardListView() {
                     {card.hero.companyName || `/${card.endpoint}`}
                   </p>
                 </div>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(ecardPublicPath(card.endpoint), "_blank", "noopener,noreferrer")
+                }
+                aria-label="View live e-card"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base-content/60 hover:bg-base-200 hover:text-primary"
+              >
+                <Eye className="h-4 w-4" />
               </button>
               <button
                 type="button"

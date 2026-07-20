@@ -33,7 +33,6 @@ export default function CustomerEcardsSheet({
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 640px)");
-    setIsDesktop(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);

@@ -3,6 +3,7 @@ export const AUTH_BASE_PATH = "/api/auth/customers";
 export const AUTH_ENDPOINTS = {
   signUp: `${AUTH_BASE_PATH}/sign-up/email`,
   signIn: `${AUTH_BASE_PATH}/sign-in/email`,
+  signInSocial: `${AUTH_BASE_PATH}/sign-in/social`,
   signOut: `${AUTH_BASE_PATH}/sign-out`,
   session: `${AUTH_BASE_PATH}/get-session`,
   updateUser: `${AUTH_BASE_PATH}/update-user`,

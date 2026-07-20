@@ -50,6 +50,23 @@ export const envSchema = z.object({
   APPLE_WALLET_KEY_PEM: z.string().optional(),
   APPLE_WALLET_WWDR_PEM: z.string().optional(),
   APPLE_WALLET_KEY_PASSPHRASE: z.string().optional(),
+
+  // Not required — customer "Sign in with Google" stays disabled (Better Auth
+  // simply won't register the provider) until these are provisioned.
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
+
+  // Not required — same reasoning, for customer "Sign in with Apple".
+  // APPLE_OAUTH_CLIENT_ID is Apple's "Services ID"; the client secret isn't a
+  // static value but a short-lived JWT signed from the team/key id + private
+  // key at request time (see common/auth/apple-client-secret.ts).
+  // APPLE_OAUTH_APP_BUNDLE_IDENTIFIER is optional even among these — only
+  // needed for native-app (not web) Sign in with Apple verification.
+  APPLE_OAUTH_CLIENT_ID: z.string().optional(),
+  APPLE_OAUTH_TEAM_ID: z.string().optional(),
+  APPLE_OAUTH_KEY_ID: z.string().optional(),
+  APPLE_OAUTH_PRIVATE_KEY: z.string().optional(),
+  APPLE_OAUTH_APP_BUNDLE_IDENTIFIER: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

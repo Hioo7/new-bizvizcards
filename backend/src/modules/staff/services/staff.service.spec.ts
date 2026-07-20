@@ -102,25 +102,38 @@ describe('StaffService (integration, TEST_DATABASE_URL only)', () => {
 
   describe('list', () => {
     it('filters by role, searches by name/email, and paginates', async () => {
+      // TEST_DATABASE_URL is a shared, persistent database, not reset per
+      // run — a role/count-only assertion can't tell this test's own seeded
+      // rows apart from ones left behind by an interrupted run of some other
+      // spec (afterEach-based cleanup doesn't fire if a process is killed
+      // mid-test). A per-test marker, folded into every role/search query
+      // below, scopes every assertion to just this test's own rows so it
+      // can't be thrown off by whatever else happens to already be in the
+      // table.
+      const marker = randomUUID().slice(0, 8);
       const employeeA = await seedAccount(
         EMPLOYEE_ROLE.EMPLOYEE,
-        'Alice Employee',
+        `Alice Employee ${marker}`,
       );
       const employeeB = await seedAccount(
         EMPLOYEE_ROLE.EMPLOYEE,
-        'Bob Employee',
+        `Bob Employee ${marker}`,
       );
-      const admin = await seedAccount(EMPLOYEE_ROLE.ADMIN, 'Carol Admin');
+      const admin = await seedAccount(
+        EMPLOYEE_ROLE.ADMIN,
+        `Carol Admin ${marker}`,
+      );
 
       const byRole = await service.list({
         role: EMPLOYEE_ROLE.ADMIN,
+        search: marker,
         page: 1,
         pageSize: 20,
       });
       expect(byRole.staff.map((s) => s.id)).toEqual([admin.id]);
 
       const bySearch = await service.list({
-        search: 'Alice',
+        search: `Alice Employee ${marker}`,
         page: 1,
         pageSize: 20,
       });
@@ -135,6 +148,7 @@ describe('StaffService (integration, TEST_DATABASE_URL only)', () => {
 
       const paged = await service.list({
         role: EMPLOYEE_ROLE.EMPLOYEE,
+        search: marker,
         page: 1,
         pageSize: 1,
       });
