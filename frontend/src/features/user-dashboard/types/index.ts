@@ -317,3 +317,72 @@ export interface UpdateLeadReminderPayload {
   triggerAt?: string;
   status?: ReminderStatus;
 }
+
+// ── Shop / Products ─────────────────────────────────────────────────────────
+
+export type ShopProductType = "STANDALONE" | "VARIANT_BASED";
+
+export interface ShopProductVariant {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  media: ShopProductMedia[];
+}
+
+export interface ShopProductMedia {
+  id: string;
+  mediaId: string;
+  purpose: "GALLERY" | "PREVIEW";
+  sortOrder: number;
+  url: string;
+}
+
+export interface ShopProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  productType: ShopProductType;
+  price: number | null;
+  isActive: boolean;
+  media: ShopProductMedia[];
+  variants: ShopProductVariant[];
+}
+
+export interface ShopProductListResponse {
+  products: ShopProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+// ── Cart ─────────────────────────────────────────────────────────────────────
+
+export interface CartItem {
+  id: string;
+  productId: string | null;
+  variantId: string | null;
+  productName: string;
+  variantName: string | null;
+  sku: string | null;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface Cart {
+  id: string;
+  items: CartItem[];
+  totalAmount: number;
+  updatedAt: string;
+}
+
+export interface AddToCartPayload {
+  productId?: string;
+  variantId?: string;
+  quantity: number;
+}
+
+export interface UpdateCartItemPayload {
+  quantity: number;
+}

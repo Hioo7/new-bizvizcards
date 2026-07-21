@@ -25,8 +25,8 @@ export const PLAN_FALLBACK_MAX_IMAGES_PER_GALLERY = 5;
 export const PLAN_FALLBACK_MAX_GALLERY_SIZE_BYTES = 5 * 1024 * 1024;
 export const PLAN_FALLBACK_MAX_ORGS_CAN_JOIN = 1;
 export const PLAN_FALLBACK_MAX_ORGS_CAN_CREATE = 0;
-export const PLAN_FALLBACK_MAX_EVENTS = 0;
-export const PLAN_FALLBACK_MAX_GUESTS_PER_EVENT = 0;
+export const PLAN_FALLBACK_MAX_EVENTS = 100;
+export const PLAN_FALLBACK_MAX_GUESTS_PER_EVENT = 500;
 
 // An empty SmartCardPolicy.whitelistedTemplates means no templates are
 // permitted (strict allowlist) — not "no restriction". Documented here since

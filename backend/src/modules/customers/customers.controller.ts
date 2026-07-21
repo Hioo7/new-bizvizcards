@@ -3,9 +3,12 @@ import {
   Controller,
   Delete,
   FileTypeValidator,
+  Get,
   MaxFileSizeValidator,
+  NotFoundException,
   Patch,
   ParseFilePipe,
+  Query,
   Req,
   UnsupportedMediaTypeException,
   UploadedFile,
@@ -15,17 +18,40 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomerAuthGuard } from '../../common/guards/customer-auth.guard';
 import type { CustomerAuthenticatedRequest } from '../../common/guards/customer-auth.guard';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import {
   PFP_ALLOWED_EXTENSIONS,
   PFP_ALLOWED_MIME_TYPE_PATTERN,
   PFP_MAX_SIZE_BYTES,
 } from './customers.constants';
+import { lookupCustomerQuerySchema } from './dto/lookup-customer-query.dto';
+import type { LookupCustomerQueryDto } from './dto/lookup-customer-query.dto';
+import { listCustomersQuerySchema } from './dto/list-customers-query.dto';
+import type { ListCustomersQueryDto } from './dto/list-customers-query.dto';
 import { CustomersService } from './services/customers.service';
 
 @Controller('api/customers')
 @UseGuards(CustomerAuthGuard)
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
+
+  @Get('search')
+  search(
+    @Query(new ZodValidationPipe(listCustomersQuerySchema))
+    query: ListCustomersQueryDto,
+  ) {
+    return this.customersService.list(query);
+  }
+
+  @Get('lookup')
+  async lookupByEmail(
+    @Query(new ZodValidationPipe(lookupCustomerQuerySchema))
+    query: LookupCustomerQueryDto,
+  ): Promise<{ id: string; name: string; email: string }> {
+    const result = await this.customersService.lookupByEmail(query.email);
+    if (!result) throw new NotFoundException('Customer not found');
+    return result;
+  }
 
   @Patch('me/profile-picture')
   @UseInterceptors(FileInterceptor('file'))

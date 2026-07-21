@@ -46,7 +46,9 @@ async function main() {
     });
   }
 
-  console.log(`Backfilled eventPolicyId for ${planPolicies.length} PlanPolicy row(s).`);
+  console.log(
+    `Backfilled eventPolicyId for ${planPolicies.length} PlanPolicy row(s).`,
+  );
 }
 
 main()

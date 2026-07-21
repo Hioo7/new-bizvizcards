@@ -41,6 +41,10 @@ export class AppConfigService {
     return this.env.PUBLIC_APP_BASE_URL;
   }
 
+  get corsAllowedOrigins(): string[] {
+    return this.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
+  }
+
   get smtpHost(): string {
     return this.env.SMTP_HOST;
   }

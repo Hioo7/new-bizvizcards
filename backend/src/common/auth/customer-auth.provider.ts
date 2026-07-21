@@ -10,7 +10,7 @@ export const customerAuthProvider: Provider = {
     createCustomerAuth({
       secret: appConfig.betterAuthCustomerSecret,
       baseUrl: appConfig.betterAuthUrl,
-      frontendOrigin: appConfig.publicAppBaseUrl,
+      trustedFrontendOrigins: appConfig.corsAllowedOrigins,
       prisma,
       googleClientId: appConfig.googleOAuthClientId,
       googleClientSecret: appConfig.googleOAuthClientSecret,

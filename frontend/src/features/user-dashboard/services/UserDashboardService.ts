@@ -24,6 +24,13 @@ import type {
   OrgEcardListResponse,
   UpdateOrgEcardPayload,
 } from "@features/user-dashboard/types";
+import { CUSTOMER_PRODUCTS_BASE_PATH, CART_BASE_PATH } from "@config/api";
+import type {
+  ShopProductListResponse,
+  Cart,
+  AddToCartPayload,
+  UpdateCartItemPayload,
+} from "@features/user-dashboard/types";
 
 export class UserDashboardService {
   // ── Leads ──────────────────────────────────────────────────────────────────
@@ -260,6 +267,48 @@ export class UserDashboardService {
       method: "PATCH",
       body: formData,
     });
+  }
+
+  // ── Shop / Products ────────────────────────────────────────────────────────
+
+  async listShopProducts(page: number, pageSize: number): Promise<ShopProductListResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+    return apiRequest<ShopProductListResponse>(
+      `${CUSTOMER_PRODUCTS_BASE_PATH}?${params.toString()}`,
+    );
+  }
+
+  // ── Cart ───────────────────────────────────────────────────────────────────
+
+  async getCart(): Promise<Cart> {
+    return apiRequest<Cart>(CART_BASE_PATH);
+  }
+
+  async addToCart(payload: AddToCartPayload): Promise<Cart> {
+    return apiRequest<Cart>(`${CART_BASE_PATH}/items`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateCartItem(itemId: string, payload: UpdateCartItemPayload): Promise<Cart> {
+    return apiRequest<Cart>(`${CART_BASE_PATH}/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async removeCartItem(itemId: string): Promise<Cart> {
+    return apiRequest<Cart>(`${CART_BASE_PATH}/items/${itemId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async clearCart(): Promise<void> {
+    await apiRequest<void>(CART_BASE_PATH, { method: "DELETE" });
   }
 }
 

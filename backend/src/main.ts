@@ -33,6 +33,11 @@ async function bootstrap() {
     toNodeHandler(customerAuth),
   );
 
+  app.enableCors({
+    origin: appConfig.corsAllowedOrigins,
+    credentials: true,
+  });
+
   app.use(express.json());
   app.useGlobalFilters(new BetterAuthApiErrorFilter());
 

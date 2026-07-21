@@ -19,13 +19,13 @@ export interface CreateCustomerAuthDeps extends SocialProvidersDeps {
   secret: string;
   baseUrl: string;
   prisma: PrismaClient;
-  // The frontend's own origin — social sign-in's `callbackURL` parameter (set
+  // The frontend origin(s) — social sign-in's `callbackURL` parameter (set
   // by the frontend to where it wants to land post-OAuth, e.g. the dashboard)
   // must itself be a trusted origin, or better-auth rejects the sign-in
   // request outright with "Invalid callbackURL" before ever reaching the
-  // provider. This is separate from the Origin-header same-origin check the
-  // dev proxy already handles (see frontend/vite.config.ts).
-  frontendOrigin: string;
+  // provider. Pass every dev-server origin that should be allowed (e.g. both
+  // the main app and the event-management sub-app ports).
+  trustedFrontendOrigins: string[];
 }
 
 export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
@@ -129,7 +129,7 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
       },
     },
     socialProviders: buildSocialProviders(deps),
-    trustedOrigins: [APPLE_SIGN_IN_TRUSTED_ORIGIN, deps.frontendOrigin],
+    trustedOrigins: [APPLE_SIGN_IN_TRUSTED_ORIGIN, ...deps.trustedFrontendOrigins],
   });
 }
 

@@ -19,6 +19,10 @@ export const envSchema = z.object({
   // is an auth-specific concept.
   PUBLIC_APP_BASE_URL: z.string().url(),
 
+  // Comma-separated list of allowed CORS origins (e.g. the Vite dev server
+  // origin(s) in development, the production domain in prod).
+  CORS_ALLOWED_ORIGINS: z.string().min(1),
+
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_SECURE: z.enum(['true', 'false']).transform((value) => value === 'true'),

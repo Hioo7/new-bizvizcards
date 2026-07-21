@@ -280,6 +280,21 @@ export class CustomersService {
     return updated;
   }
 
+  async lookupByEmail(
+    email: string,
+  ): Promise<{ id: string; name: string; email: string } | null> {
+    const customer = await this.prisma.customer.findFirst({
+      where: { account: { email: { equals: email, mode: 'insensitive' } } },
+      include: { account: true },
+    });
+    if (!customer) return null;
+    return {
+      id: customer.id,
+      name: customer.account.name,
+      email: customer.account.email,
+    };
+  }
+
   private async getSummaryById(customerId: string): Promise<CustomerListItem> {
     const customer = await this.prisma.customer.findUniqueOrThrow({
       where: { id: customerId },

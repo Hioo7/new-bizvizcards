@@ -44,3 +44,6 @@ export const INSIGHTS_DAYS_COUNT = 7;
 export const RECENT_LEADS_MAX = 5;
 export const LEADS_FOLDERS_PREVIEW_MAX = 3;
 export const DASHBOARD_APP_VERSION = "v1.0.0";
+
+export const SHOP_PAGE_SIZE = 20;
+export const CART_ITEM_MAX_QUANTITY = 99;
