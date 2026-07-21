@@ -39,6 +39,8 @@ model Organisation {
   invites OrganisationInvite[]
   ecards  ECard[]
 
+  ecardTemplate OrganisationEcardTemplate?
+
   @@map("Organisation")
 }
 
@@ -54,7 +56,8 @@ model OrganisationMember {
   status         OrganisationMemberStatus @default(ACTIVE)
   joinedAt       DateTime                 @default(now())
 
-  teamListings ECardTeamMember[]
+  teamListings         ECardTeamMember[]
+  templateTeamListings OrganisationEcardTemplateTeamMember[]
 
   @@unique([customerId, organisationId])
   @@index([organisationId])

@@ -14,6 +14,7 @@ import EcardListPage from "@pages/EcardListPage";
 import EcardBuilderPage from "@pages/EcardBuilderPage";
 import CustomerOrganisationManagementPage from "@pages/CustomerOrganisationManagementPage";
 import OrganisationDetailPage from "@pages/OrganisationDetailPage";
+import OrganisationEcardTemplatePage from "@pages/OrganisationEcardTemplatePage";
 import PlansPage from "@pages/PlansPage";
 import BusinessEventsPage from "@pages/BusinessEventsPage";
 import EventDetailPage from "@pages/EventDetailPage";
@@ -68,6 +69,10 @@ function App() {
           <Route
             path={ROUTES.adminOrganisationDetail}
             element={<OrganisationDetailPage />}
+          />
+          <Route
+            path={ROUTES.adminOrganisationEcardTemplate}
+            element={<OrganisationEcardTemplatePage />}
           />
           <Route path={ROUTES.adminPlans} element={<PlansPage />} />
           <Route

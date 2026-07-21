@@ -48,7 +48,10 @@ export function ecardToBuilderState(card: Ecard): EcardBuilderState {
   };
 }
 
-function componentToDraft(component: EcardComponent): ComponentDraft {
+// Exported — also reused by the organisation e-card template's own mapping
+// util (its response `components` shape is the exact same EcardComponent
+// union, just sourced from a template instead of a card).
+export function componentToDraft(component: EcardComponent): ComponentDraft {
   switch (component.type) {
     case "ABOUT":
       return {
@@ -111,7 +114,9 @@ function componentToDraft(component: EcardComponent): ComponentDraft {
   }
 }
 
-function buildImageSlot(
+// Exported — reused by the organisation e-card template's mapping util for
+// its own hero photo / gallery image / brochure pdf slots.
+export function buildImageSlot(
   value: ImageFieldValue,
   fieldName: string,
   files: EcardImageUpload[],

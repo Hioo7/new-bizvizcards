@@ -10,34 +10,46 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Put,
   Query,
   UnsupportedMediaTypeException,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { EmployeeAuthGuard } from '../../common/guards/employee-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { parseMultipartJson } from '../ecards/utils/parse-multipart-json';
 import { addOrganisationMemberAsEmployeeSchema } from './dto/add-organisation-member-as-employee.dto';
 import type { AddOrganisationMemberAsEmployeeDto } from './dto/add-organisation-member-as-employee.dto';
 import { createOrganisationAsEmployeeSchema } from './dto/create-organisation-as-employee.dto';
 import type { CreateOrganisationAsEmployeeDto } from './dto/create-organisation-as-employee.dto';
 import { listOrganisationsQuerySchema } from './dto/list-organisations-query.dto';
 import type { ListOrganisationsQueryDto } from './dto/list-organisations-query.dto';
+import { organisationEcardTemplateSchema } from './dto/organisation-ecard-template.dto';
+import type { OrganisationEcardTemplateDto } from './dto/organisation-ecard-template.dto';
 import { updateMemberSchema } from './dto/update-member.dto';
 import type { UpdateMemberDto } from './dto/update-member.dto';
 import { updateOrganisationSchema } from './dto/update-organisation.dto';
 import type { UpdateOrganisationDto } from './dto/update-organisation.dto';
 import {
+  ORGANISATION_ECARD_TEMPLATE_MULTIPART_DATA_FIELD,
   ORGANISATION_LOGO_ALLOWED_EXTENSIONS,
   ORGANISATION_LOGO_ALLOWED_MIME_TYPE_PATTERN,
   ORGANISATION_LOGO_MAX_SIZE_BYTES,
 } from './organisations.constants';
+import { OrganisationEcardTemplateService } from './services/organisation-ecard-template.service';
 import { OrganisationMembersService } from './services/organisation-members.service';
 import { OrganisationsService } from './services/organisations.service';
+import { assertValidOrganisationEcardTemplateFiles } from './utils/assert-valid-organisation-ecard-template-files';
+
+const ECARD_TEMPLATE_FILE_VALIDATION_PIPE = new ParseFilePipe({
+  fileIsRequired: false,
+});
 
 @Controller('api/employee/organisations')
 @UseGuards(EmployeeAuthGuard, PermissionsGuard)
@@ -45,6 +57,7 @@ export class EmployeeOrganisationsController {
   constructor(
     private readonly organisationsService: OrganisationsService,
     private readonly organisationMembersService: OrganisationMembersService,
+    private readonly organisationEcardTemplateService: OrganisationEcardTemplateService,
   ) {}
 
   @Get()
@@ -88,6 +101,45 @@ export class EmployeeOrganisationsController {
   @RequirePermissions({ organisation: ['get'] })
   listMembersByOrganisation(@Param('organisationId') organisationId: string) {
     return this.organisationMembersService.listByOrganisationId(organisationId);
+  }
+
+  @Get(':organisationId/ecard-template')
+  @RequirePermissions({ organisation: ['get'] })
+  getEcardTemplate(@Param('organisationId') organisationId: string) {
+    return this.organisationEcardTemplateService.getByOrganisationId(
+      organisationId,
+    );
+  }
+
+  @Put(':organisationId/ecard-template')
+  @RequirePermissions({ organisation: ['update'] })
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateEcardTemplate(
+    @Param('organisationId') organisationId: string,
+    @UploadedFiles(ECARD_TEMPLATE_FILE_VALIDATION_PIPE)
+    files: Express.Multer.File[],
+    @Body(ORGANISATION_ECARD_TEMPLATE_MULTIPART_DATA_FIELD) rawData: string,
+  ) {
+    assertValidOrganisationEcardTemplateFiles(files);
+    const dto = parseMultipartJson<OrganisationEcardTemplateDto>(
+      organisationEcardTemplateSchema,
+      rawData,
+    );
+    return this.organisationEcardTemplateService.upsertForEmployee(
+      organisationId,
+      dto,
+      files,
+    );
+  }
+
+  @Delete(':organisationId/ecard-template')
+  @RequirePermissions({ organisation: ['update'] })
+  async deleteEcardTemplate(
+    @Param('organisationId') organisationId: string,
+  ): Promise<void> {
+    await this.organisationEcardTemplateService.deleteForEmployee(
+      organisationId,
+    );
   }
 
   @Post(':organisationId/members')

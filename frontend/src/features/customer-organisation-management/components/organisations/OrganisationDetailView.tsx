@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Building2,
+  IdCard,
   Pencil,
   Trash2,
   UserPlus,
@@ -12,7 +13,11 @@ import { useStaffAuth } from "@hooks/useStaffAuth";
 import { useAsyncAction } from "@hooks/useAsyncAction";
 import ConfirmActionModal from "@components/ConfirmActionModal";
 import FormErrorRibbon from "@components/forms/FormErrorRibbon";
-import { adminCustomerEcardsPath, ROUTES } from "@config/routes";
+import {
+  adminCustomerEcardsPath,
+  adminOrganisationEcardTemplatePath,
+  ROUTES,
+} from "@config/routes";
 import type { OrganisationMemberSummary } from "@app-types/ecard";
 import { useOrganisationDetail } from "@features/customer-organisation-management/hooks/useOrganisationDetail";
 import { useOrganisationDetailMutations } from "@features/customer-organisation-management/hooks/useOrganisationDetailMutations";
@@ -214,6 +219,32 @@ export default function OrganisationDetailView() {
           }
           onRemove={() => mutations.removeOrganisationLogo(organisationId)}
         />
+      </div>
+
+      <div className="flex items-center justify-between gap-3 rounded-box border border-base-300 bg-base-100 p-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <IdCard className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-base-content">
+              E-card policy
+            </p>
+            <p className="text-xs text-base-content/60">
+              Branding &amp; components applied to every linked member e-card
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() =>
+            navigate(adminOrganisationEcardTemplatePath(organisationId))
+          }
+          className="flex items-center gap-1.5 rounded-field border border-base-300 px-3 py-2 text-xs font-semibold text-base-content/70 hover:bg-base-200"
+        >
+          <Pencil className="h-4 w-4" />
+          Manage
+        </button>
       </div>
 
       <div className="flex items-center justify-between">

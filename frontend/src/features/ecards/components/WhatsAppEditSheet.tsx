@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Download, MessageCircle, Phone } from "lucide-react";
+import type { ZodType } from "zod";
 import FormTextField from "@components/forms/FormTextField";
 import EditSheetShell from "@components/EditSheetShell";
 import {
@@ -20,6 +21,11 @@ interface WhatsAppEditSheetProps {
   error: string | null;
   onClose: () => void;
   onSave: (draft: WhatsAppComponentDraft) => void;
+  // Defaults to the e-card's own strict schema (both fields required). The
+  // organisation e-card template reuses this sheet but passes a relaxed
+  // schema, since a template component left blank means "defer to the
+  // customer" rather than "invalid input".
+  schema?: ZodType<WhatsAppSheetValues, WhatsAppSheetValues>;
 }
 
 export default function WhatsAppEditSheet({
@@ -30,6 +36,7 @@ export default function WhatsAppEditSheet({
   error,
   onClose,
   onSave,
+  schema = whatsappSheetSchema,
 }: WhatsAppEditSheetProps) {
   const {
     register,
@@ -37,7 +44,7 @@ export default function WhatsAppEditSheet({
     setValue,
     formState: { errors },
   } = useForm<WhatsAppSheetValues>({
-    resolver: zodResolver(whatsappSheetSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       phoneCountryDialCode: draft.phoneCountryDialCode,
       phoneNumber: draft.phoneNumber,

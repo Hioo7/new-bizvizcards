@@ -33,3 +33,21 @@ export const ORGANISATION_LOGO_STORAGE_KEY_PREFIX = 'organisation-logo';
 // Per-request cap on a single bulk-add-members call — a sanity guardrail on
 // payload size, independent of ORGANISATION_MAX_MEMBERS (the org-wide cap).
 export const ORGANISATION_BULK_ADD_MEMBERS_MAX_PER_REQUEST = 100;
+
+// Organisation e-card template — multipart field-name/storage-key
+// conventions mirroring ecards.constants.ts's own ECARD_* equivalents.
+export const ORGANISATION_ECARD_TEMPLATE_MULTIPART_DATA_FIELD = 'data';
+export const ORGANISATION_ECARD_TEMPLATE_HERO_PHOTO_FIELD = 'heroProfilePhoto';
+export const ORGANISATION_ECARD_TEMPLATE_GALLERY_IMAGE_FIELD_PREFIX =
+  'galleryImage_';
+export const ORGANISATION_ECARD_TEMPLATE_BROCHURE_FIELD = 'brochurePdf';
+
+export function organisationEcardTemplateGalleryImageField(
+  subGalleryIndex: number,
+  imageIndex: number,
+): string {
+  return `${ORGANISATION_ECARD_TEMPLATE_GALLERY_IMAGE_FIELD_PREFIX}${subGalleryIndex}_${imageIndex}`;
+}
+
+export const ORGANISATION_ECARD_TEMPLATE_STORAGE_KEY_PREFIX =
+  'organisation-ecard-templates';

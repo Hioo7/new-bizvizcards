@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link2, Video as VideoIcon } from "lucide-react";
+import type { ZodType } from "zod";
 import FormTextField from "@components/forms/FormTextField";
 import EditSheetShell from "@components/EditSheetShell";
 import {
@@ -16,6 +17,11 @@ interface VideoEditSheetProps {
   error: string | null;
   onClose: () => void;
   onSave: (draft: VideoComponentDraft) => void;
+  // Defaults to the e-card's own strict schema (URL required). The
+  // organisation e-card template reuses this sheet but passes a relaxed
+  // schema, since a template component left blank means "defer to the
+  // customer" rather than "invalid input".
+  schema?: ZodType<VideoSheetValues, VideoSheetValues>;
 }
 
 export default function VideoEditSheet({
@@ -25,13 +31,14 @@ export default function VideoEditSheet({
   error,
   onClose,
   onSave,
+  schema = videoSheetSchema,
 }: VideoEditSheetProps) {
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<VideoSheetValues>({
-    resolver: zodResolver(videoSheetSchema),
+    resolver: zodResolver(schema),
     defaultValues: { title: draft.title, videoUrl: draft.videoUrl },
   });
 

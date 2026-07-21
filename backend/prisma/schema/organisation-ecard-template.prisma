@@ -1,0 +1,164 @@
+// An organisation-scoped e-card template — mirrors ECard's own hero +
+// component shape exactly (see ecard.prisma), but every field is nullable.
+// A field left unset means "defer to the customer's own e-card", not
+// "invalid" — see organisation-ecard-template-merge.util.ts for how this is
+// merged, read-time only, onto every e-card linked to the organisation.
+model OrganisationEcardTemplate {
+  id             String       @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  organisationId String       @unique @db.Uuid
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  heroName                String?
+  heroEmail               String?
+  heroCompanyName         String?
+  heroProfilePhotoMediaId String? @unique @db.Uuid
+  heroProfilePhoto        Media?  @relation(fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
+
+  phoneCountryDialCode String?
+  phoneNumber          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  components OrganisationEcardTemplateComponent[]
+
+  @@map("OrganisationEcardTemplate")
+}
+
+model OrganisationEcardTemplateComponent {
+  id         String                    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  templateId String                    @db.Uuid
+  template   OrganisationEcardTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  type       ECardComponentType
+  order      Int                       @default(0)
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+
+  about       OrganisationEcardTemplateAboutComponent?
+  socialLinks OrganisationEcardTemplateSocialLinksComponent?
+  gallery     OrganisationEcardTemplateGalleryComponent?
+  video       OrganisationEcardTemplateVideoComponent?
+  team        OrganisationEcardTemplateTeamComponent?
+  whatsapp    OrganisationEcardTemplateWhatsAppComponent?
+  brochure    OrganisationEcardTemplateBrochureComponent?
+
+  @@unique([templateId, type])
+  @@index([templateId, order])
+  @@map("OrganisationEcardTemplateComponent")
+}
+
+model OrganisationEcardTemplateAboutComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  profession  String?
+  shortNote   String?
+  description String?
+  aboutMe     String?
+
+  @@map("OrganisationEcardTemplateAboutComponent")
+}
+
+model OrganisationEcardTemplateSocialLinksComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  website   String?
+  instagram String?
+  facebook  String?
+  twitter   String?
+  linkedIn  String?
+
+  @@map("OrganisationEcardTemplateSocialLinksComponent")
+}
+
+model OrganisationEcardTemplateWhatsAppComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  // Nullable unlike ECardWhatsAppComponent's own required fields — the org
+  // may only want to standardize the dial code and leave the number to the
+  // customer, or vice versa; the merge is per-field.
+  phoneCountryDialCode String?
+  phoneNumber          String?
+
+  @@map("OrganisationEcardTemplateWhatsAppComponent")
+}
+
+model OrganisationEcardTemplateVideoComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  title    String?
+  videoUrl String?
+
+  @@map("OrganisationEcardTemplateVideoComponent")
+}
+
+model OrganisationEcardTemplateGalleryComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  subGalleries OrganisationEcardTemplateSubGallery[]
+
+  @@map("OrganisationEcardTemplateGalleryComponent")
+}
+
+model OrganisationEcardTemplateSubGallery {
+  id                 String                                    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  galleryComponentId String                                    @db.Uuid
+  galleryComponent   OrganisationEcardTemplateGalleryComponent @relation(fields: [galleryComponentId], references: [templateComponentId], onDelete: Cascade)
+  title              String?
+  order              Int                                       @default(0)
+
+  images OrganisationEcardTemplateGalleryImage[]
+
+  @@index([galleryComponentId])
+  @@map("OrganisationEcardTemplateSubGallery")
+}
+
+model OrganisationEcardTemplateGalleryImage {
+  id           String                              @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  subGalleryId String                              @db.Uuid
+  subGallery   OrganisationEcardTemplateSubGallery @relation(fields: [subGalleryId], references: [id], onDelete: Cascade)
+  imageMediaId String                              @unique @db.Uuid
+  image        Media                               @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
+  order        Int                                 @default(0)
+
+  @@index([subGalleryId])
+  @@map("OrganisationEcardTemplateGalleryImage")
+}
+
+model OrganisationEcardTemplateBrochureComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  pdfMediaId String? @unique @db.Uuid
+  pdf        Media?  @relation(fields: [pdfMediaId], references: [id], onDelete: SetNull)
+
+  @@map("OrganisationEcardTemplateBrochureComponent")
+}
+
+model OrganisationEcardTemplateTeamComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  title String?
+
+  members OrganisationEcardTemplateTeamMember[]
+
+  @@map("OrganisationEcardTemplateTeamComponent")
+}
+
+model OrganisationEcardTemplateTeamMember {
+  id                   String                                 @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  teamComponentId      String                                 @db.Uuid
+  teamComponent        OrganisationEcardTemplateTeamComponent @relation(fields: [teamComponentId], references: [templateComponentId], onDelete: Cascade)
+  organisationMemberId String                                 @db.Uuid
+  organisationMember   OrganisationMember                     @relation(fields: [organisationMemberId], references: [id], onDelete: Cascade)
+  order                Int                                    @default(0)
+
+  @@unique([teamComponentId, organisationMemberId])
+  @@index([teamComponentId])
+  @@map("OrganisationEcardTemplateTeamMember")
+}

@@ -6,6 +6,7 @@ import type { EcardOgPreviewService } from './services/ecard-og-preview.service'
 import { ECardEventType } from '../../generated/prisma/client';
 import type { EcardAnalyticsService } from '../ecard-analytics/services/ecard-analytics.service';
 import type { LeadsService } from '../leads/services/leads.service';
+import type { OrganisationEcardTemplateService } from '../organisations/services/organisation-ecard-template.service';
 import type { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
 
 function makeAvailablePolicyResolver() {
@@ -16,6 +17,15 @@ function makeAvailablePolicyResolver() {
       components: {},
     }),
   } as unknown as PlanPolicyResolverService;
+}
+
+// organisationId is null in every fixture below, so the controller never
+// actually calls getByOrganisationId — this stub just satisfies the
+// constructor's required dependency.
+function makeOrganisationEcardTemplateService() {
+  return {
+    getByOrganisationId: jest.fn().mockResolvedValue(null),
+  } as unknown as OrganisationEcardTemplateService;
 }
 
 function makeResponse() {
@@ -42,6 +52,7 @@ describe('PublicEcardsController', () => {
       { recordEvent } as unknown as EcardAnalyticsService,
       {} as unknown as LeadsService,
       makeAvailablePolicyResolver(),
+      makeOrganisationEcardTemplateService(),
     );
 
     const result = await controller.get('my-card');
@@ -75,9 +86,83 @@ describe('PublicEcardsController', () => {
       {
         getEffectiveEcardPolicyForCard,
       } as unknown as PlanPolicyResolverService,
+      makeOrganisationEcardTemplateService(),
     );
 
     await expect(controller.get('my-card')).rejects.toThrow('E-card not found');
+  });
+
+  it('get merges the organisation e-card template onto a card linked to an organisation, before the plan-policy filter', async () => {
+    const card = {
+      id: 'card-1',
+      customerId: 'customer-1',
+      organisationId: 'org-1',
+      hero: {
+        name: 'Jane',
+        email: 'jane@acme.test',
+        companyName: null,
+        profilePhotoMediaId: null,
+        profilePhotoUrl: null,
+        phoneCountryDialCode: null,
+        phoneNumber: null,
+      },
+      components: [],
+    };
+    const getByEndpoint = jest.fn().mockResolvedValue(card);
+    const recordEvent = jest.fn().mockResolvedValue({ id: 'event-1' });
+    const getByOrganisationId = jest.fn().mockResolvedValue({
+      hero: {
+        name: null,
+        email: null,
+        companyName: 'Acme Corp',
+        profilePhotoMediaId: null,
+        profilePhotoUrl: null,
+        phoneCountryDialCode: null,
+        phoneNumber: null,
+      },
+      components: [],
+    });
+    const controller = new PublicEcardsController(
+      { getByEndpoint } as unknown as EcardsService,
+      {} as unknown as EcardVCardService,
+      {} as unknown as EcardOgPreviewService,
+      { recordEvent } as unknown as EcardAnalyticsService,
+      {} as unknown as LeadsService,
+      makeAvailablePolicyResolver(),
+      { getByOrganisationId } as unknown as OrganisationEcardTemplateService,
+    );
+
+    const result = await controller.get('my-card');
+
+    expect(getByOrganisationId).toHaveBeenCalledWith('org-1');
+    expect(result.card.hero.companyName).toBe('Acme Corp');
+    expect(result.card.hero.name).toBe('Jane');
+  });
+
+  it('get skips the organisation template lookup entirely for a card with no organisationId', async () => {
+    const card = {
+      id: 'card-1',
+      customerId: 'customer-1',
+      organisationId: null,
+      hero: { name: 'Jane' },
+      components: [],
+    };
+    const getByEndpoint = jest.fn().mockResolvedValue(card);
+    const recordEvent = jest.fn().mockResolvedValue({ id: 'event-1' });
+    const getByOrganisationId = jest.fn();
+    const controller = new PublicEcardsController(
+      { getByEndpoint } as unknown as EcardsService,
+      {} as unknown as EcardVCardService,
+      {} as unknown as EcardOgPreviewService,
+      { recordEvent } as unknown as EcardAnalyticsService,
+      {} as unknown as LeadsService,
+      makeAvailablePolicyResolver(),
+      { getByOrganisationId } as unknown as OrganisationEcardTemplateService,
+    );
+
+    await controller.get('my-card');
+
+    expect(getByOrganisationId).not.toHaveBeenCalled();
   });
 
   describe('recordViewDuration', () => {
@@ -91,6 +176,7 @@ describe('PublicEcardsController', () => {
         { recordViewDuration } as unknown as EcardAnalyticsService,
         {} as unknown as LeadsService,
         {} as unknown as PlanPolicyResolverService,
+        makeOrganisationEcardTemplateService(),
       );
 
       await controller.recordViewDuration('my-card', 'event-1', {
@@ -118,6 +204,7 @@ describe('PublicEcardsController', () => {
       { recordEvent } as unknown as EcardAnalyticsService,
       { createFromEcardExchangeContact } as unknown as LeadsService,
       {} as unknown as PlanPolicyResolverService,
+      makeOrganisationEcardTemplateService(),
     );
     const dto = { name: 'Jane', phoneNumber: '5551234567' } as never;
 
@@ -153,6 +240,7 @@ describe('PublicEcardsController', () => {
       { recordEvent } as unknown as EcardAnalyticsService,
       {} as unknown as LeadsService,
       {} as unknown as PlanPolicyResolverService,
+      makeOrganisationEcardTemplateService(),
     );
     const { res, setHeader, send } = makeResponse();
 
@@ -193,6 +281,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as EcardAnalyticsService,
       {} as unknown as LeadsService,
       {} as unknown as PlanPolicyResolverService,
+      makeOrganisationEcardTemplateService(),
     );
     const { res, setHeader, send } = makeResponse();
 

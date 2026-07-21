@@ -17,6 +17,8 @@ export const ROUTES = {
   adminCustomerOrganisations: "/admin/customers-organisations",
   adminOrganisationDetail:
     "/admin/customers-organisations/organisations/:organisationId",
+  adminOrganisationEcardTemplate:
+    "/admin/customers-organisations/organisations/:organisationId/ecard-template",
   adminPlans: "/admin/plans",
   adminBusinessEvents: "/admin/business-events",
   adminEventDetail: "/admin/business-events/:eventId",
@@ -61,6 +63,12 @@ export function ecardPublicPath(endpoint: string): string {
 
 export function adminOrganisationDetailPath(organisationId: string): string {
   return `/admin/customers-organisations/organisations/${organisationId}`;
+}
+
+export function adminOrganisationEcardTemplatePath(
+  organisationId: string,
+): string {
+  return `/admin/customers-organisations/organisations/${organisationId}/ecard-template`;
 }
 
 export function adminEventDetailPath(eventId: string): string {

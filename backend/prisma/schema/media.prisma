@@ -24,7 +24,10 @@ model Media {
   ecardGalleryImage ECardGalleryImage?
   ecardBrochure     ECardBrochureComponent?
 
-  organisation Organisation?
+  organisation                          Organisation?
+  organisationEcardTemplate             OrganisationEcardTemplate?
+  organisationEcardTemplateGalleryImage OrganisationEcardTemplateGalleryImage?
+  organisationEcardTemplateBrochure     OrganisationEcardTemplateBrochureComponent?
 
   productMedia ProductMedia?
 

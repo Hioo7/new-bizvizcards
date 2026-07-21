@@ -5,13 +5,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { MediaSlotResolverService } from '../../../common/media/media-slot-resolver.service';
 import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { ECardComponentType } from '../../../generated/prisma/client';
-import type {
-  CreateImageSlotDto,
-  UpdateImageSlotDto,
-} from '../../../common/validators/image-slot.dto';
 import { OrganisationMembersService } from '../../organisations/services/organisation-members.service';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
@@ -194,6 +191,7 @@ export class EcardsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mediaService: MediaService,
+    private readonly mediaSlotResolver: MediaSlotResolverService,
     private readonly organisationsService: OrganisationsService,
     private readonly organisationMembersService: OrganisationMembersService,
     private readonly planEnforcementService: PlanEnforcementService,
@@ -466,9 +464,9 @@ export class EcardsService {
       },
     });
     const keyPrefix = `${ECARD_STORAGE_KEY_PREFIX}/${card.id}`;
-    const fileMap = this.buildFileMap(files);
+    const fileMap = this.mediaSlotResolver.buildFileMap(files);
 
-    const heroMediaId = await this.resolveUploadSlot(
+    const heroMediaId = await this.mediaSlotResolver.resolveUploadSlot(
       dto.heroProfilePhoto,
       ECARD_HERO_PHOTO_FIELD,
       fileMap,
@@ -482,7 +480,7 @@ export class EcardsService {
     const brochureComponent = dto.components.find(
       (component) => component.type === 'BROCHURE',
     );
-    const brochureMediaId = await this.resolveUploadSlot(
+    const brochureMediaId = await this.mediaSlotResolver.resolveUploadSlot(
       brochureComponent?.pdf,
       ECARD_BROCHURE_FIELD,
       fileMap,
@@ -526,7 +524,7 @@ export class EcardsService {
   ) {
     const existingMediaIds = new Set(this.collectMediaIds(existing));
     const keyPrefix = `${ECARD_STORAGE_KEY_PREFIX}/${existing.id}`;
-    const fileMap = this.buildFileMap(files);
+    const fileMap = this.mediaSlotResolver.buildFileMap(files);
 
     if (dto.endpoint !== existing.endpoint) {
       await this.assertEndpointAvailable(dto.endpoint);
@@ -576,7 +574,7 @@ export class EcardsService {
         : undefined,
     );
 
-    const heroMediaId = await this.resolveUpdateSlot(
+    const heroMediaId = await this.mediaSlotResolver.resolveUpdateSlot(
       dto.heroProfilePhoto,
       ECARD_HERO_PHOTO_FIELD,
       fileMap,
@@ -592,7 +590,7 @@ export class EcardsService {
     const brochureComponent = dto.components.find(
       (component) => component.type === 'BROCHURE',
     );
-    const brochureMediaId = await this.resolveUpdateSlot(
+    const brochureMediaId = await this.mediaSlotResolver.resolveUpdateSlot(
       brochureComponent?.pdf,
       ECARD_BROCHURE_FIELD,
       fileMap,
@@ -791,7 +789,7 @@ export class EcardsService {
       galleryComponent.subGalleries.map((subGallery, g) =>
         Promise.all(
           subGallery.images.map((slot, j) =>
-            this.resolveUploadSlot(
+            this.mediaSlotResolver.resolveUploadSlot(
               slot,
               ecardGalleryImageField(g, j),
               fileMap,
@@ -819,7 +817,7 @@ export class EcardsService {
       galleryComponent.subGalleries.map((subGallery, g) =>
         Promise.all(
           subGallery.images.map((slot, j) =>
-            this.resolveUpdateSlot(
+            this.mediaSlotResolver.resolveUpdateSlot(
               slot,
               ecardGalleryImageField(g, j),
               fileMap,
@@ -830,69 +828,6 @@ export class EcardsService {
         ),
       ),
     );
-  }
-
-  private buildFileMap(
-    files: Express.Multer.File[],
-  ): Map<string, Express.Multer.File> {
-    const map = new Map<string, Express.Multer.File>();
-    for (const file of files) {
-      map.set(file.fieldname, file);
-    }
-    return map;
-  }
-
-  private async uploadFile(
-    fieldName: string,
-    fileMap: Map<string, Express.Multer.File>,
-    keyPrefix: string,
-  ): Promise<string> {
-    const file = fileMap.get(fieldName);
-    if (!file) {
-      throw new BadRequestException(
-        `Missing uploaded file for field "${fieldName}"`,
-      );
-    }
-    const media = await this.mediaService.upload({
-      buffer: file.buffer,
-      contentType: file.mimetype,
-      originalName: file.originalname,
-      extension: this.extensionFromFilename(file.originalname),
-      keyPrefix,
-    });
-    return media.id;
-  }
-
-  private extensionFromFilename(filename: string): string {
-    const parts = filename.split('.');
-    return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
-  }
-
-  private async resolveUploadSlot(
-    slot: CreateImageSlotDto | undefined,
-    fieldName: string,
-    fileMap: Map<string, Express.Multer.File>,
-    keyPrefix: string,
-  ): Promise<string | undefined> {
-    if (!slot) return undefined;
-    return this.uploadFile(fieldName, fileMap, keyPrefix);
-  }
-
-  private async resolveUpdateSlot(
-    slot: UpdateImageSlotDto | undefined,
-    fieldName: string,
-    fileMap: Map<string, Express.Multer.File>,
-    keyPrefix: string,
-    existingMediaIds: Set<string>,
-  ): Promise<string | undefined> {
-    if (!slot) return undefined;
-    if (slot.action === 'keep') {
-      if (!existingMediaIds.has(slot.mediaId)) {
-        throw new BadRequestException('mediaId does not belong to this e-card');
-      }
-      return slot.mediaId;
-    }
-    return this.uploadFile(fieldName, fileMap, keyPrefix);
   }
 
   // ── assertions ───────────────────────────────────────────────────────────

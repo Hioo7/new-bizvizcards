@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
+import { MediaSlotResolverService } from '../../../common/media/media-slot-resolver.service';
 import { MediaService } from '../../../common/media/media.service';
 import type { MediaStorageProviderRegistry } from '../../../common/media/storage/media-storage-provider-registry.provider';
 import type {
@@ -111,6 +112,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
     service = new EcardsService(
       prisma,
       mediaService,
+      new MediaSlotResolverService(mediaService),
       organisationsService,
       organisationMembersService,
       planEnforcementService,
@@ -1030,7 +1032,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           },
           [],
         ),
-      ).rejects.toThrow('mediaId does not belong to this e-card');
+      ).rejects.toThrow('mediaId does not belong to this resource');
     });
 
     it('throws when the id does not reference an existing e-card', async () => {

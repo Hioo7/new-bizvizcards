@@ -16,8 +16,10 @@ import type { RecordViewDurationDto } from '../ecard-analytics/dto/record-view-d
 import { exchangeContactSchema } from '../leads/dto/exchange-contact.dto';
 import type { ExchangeContactDto } from '../leads/dto/exchange-contact.dto';
 import { LeadsService } from '../leads/services/leads.service';
+import { OrganisationEcardTemplateService } from '../organisations/services/organisation-ecard-template.service';
 import { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
 import { filterEcardComponentsByPolicy } from './ecard-policy-filter.util';
+import { mergeOrganisationEcardTemplateOntoCard } from './organisation-ecard-template-merge.util';
 import { EcardVCardService } from './services/ecard-vcard.service';
 import { EcardsService } from './services/ecards.service';
 import { EcardOgPreviewService } from './services/ecard-og-preview.service';
@@ -31,6 +33,7 @@ export class PublicEcardsController {
     private readonly ecardAnalyticsService: EcardAnalyticsService,
     private readonly leadsService: LeadsService,
     private readonly planPolicyResolverService: PlanPolicyResolverService,
+    private readonly organisationEcardTemplateService: OrganisationEcardTemplateService,
   ) {}
 
   @Get(':endpoint')
@@ -45,12 +48,22 @@ export class PublicEcardsController {
       throw new NotFoundException('E-card not found');
     }
 
+    // Content assembly (org template, if this card is linked to one) runs
+    // before the plan-availability gate, so even org-injected components
+    // still respect what the plan actually allows.
+    const template = card.organisationId
+      ? await this.organisationEcardTemplateService.getByOrganisationId(
+          card.organisationId,
+        )
+      : null;
+    const mergedCard = mergeOrganisationEcardTemplateOntoCard(card, template);
+
     const event = await this.ecardAnalyticsService.recordEvent(
       card.id,
       ECardEventType.VIEW,
     );
     return {
-      card: filterEcardComponentsByPolicy(card, policy),
+      card: filterEcardComponentsByPolicy(mergedCard, policy),
       viewEventId: event.id,
       exchangeContactAllowed: policy.exchangeContactAccess,
     };

@@ -1,14 +1,17 @@
 import { EmployeeOrganisationsController } from './employee-organisations.controller';
+import type { OrganisationEcardTemplateService } from './services/organisation-ecard-template.service';
 import type { OrganisationMembersService } from './services/organisation-members.service';
 import type { OrganisationsService } from './services/organisations.service';
 
 function makeController(
   organisationsService: Partial<OrganisationsService> = {},
   organisationMembersService: Partial<OrganisationMembersService> = {},
+  organisationEcardTemplateService: Partial<OrganisationEcardTemplateService> = {},
 ) {
   return new EmployeeOrganisationsController(
     organisationsService as OrganisationsService,
     organisationMembersService as OrganisationMembersService,
+    organisationEcardTemplateService as OrganisationEcardTemplateService,
   );
 }
 
@@ -112,5 +115,50 @@ describe('EmployeeOrganisationsController', () => {
     await controller.remove('org-1');
 
     expect(removeForEmployee).toHaveBeenCalledWith('org-1');
+  });
+
+  it('getEcardTemplate forwards the organisationId', async () => {
+    const getByOrganisationId = jest.fn().mockResolvedValue(null);
+    const controller = makeController({}, {}, { getByOrganisationId });
+
+    const result = await controller.getEcardTemplate('org-1');
+
+    expect(getByOrganisationId).toHaveBeenCalledWith('org-1');
+    expect(result).toBeNull();
+  });
+
+  it('updateEcardTemplate parses the multipart data field and forwards it with the files', async () => {
+    const upsertForEmployee = jest.fn().mockResolvedValue({ id: 'template-1' });
+    const controller = makeController({}, {}, { upsertForEmployee });
+    const files = [
+      {
+        fieldname: 'heroProfilePhoto',
+        originalname: 'photo.png',
+        mimetype: 'image/png',
+        size: 100,
+      } as Express.Multer.File,
+    ];
+
+    const result = await controller.updateEcardTemplate(
+      'org-1',
+      files,
+      JSON.stringify({ heroCompanyName: 'Acme Corp', components: [] }),
+    );
+
+    expect(upsertForEmployee).toHaveBeenCalledWith(
+      'org-1',
+      { heroCompanyName: 'Acme Corp', components: [] },
+      files,
+    );
+    expect(result).toEqual({ id: 'template-1' });
+  });
+
+  it('deleteEcardTemplate delegates to deleteForEmployee', async () => {
+    const deleteForEmployee = jest.fn().mockResolvedValue(undefined);
+    const controller = makeController({}, {}, { deleteForEmployee });
+
+    await controller.deleteEcardTemplate('org-1');
+
+    expect(deleteForEmployee).toHaveBeenCalledWith('org-1');
   });
 });
