@@ -6,6 +6,7 @@ export interface Customer {
   banned: boolean | null;
   banReason: string | null;
   banExpires: string | null;
+  currentPlan: { id: string; name: string } | null;
 }
 
 export interface CustomerListResponse {

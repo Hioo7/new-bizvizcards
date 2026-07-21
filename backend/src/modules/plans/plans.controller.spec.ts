@@ -1,8 +1,22 @@
+import type { EmployeeAuthenticatedRequest } from '../../common/guards/employee-auth.guard';
 import { PlansController } from './plans.controller';
+import type { PlanAssignmentsService } from './services/plan-assignments.service';
 import type { PlansService } from './services/plans.service';
 
-function makeController(plansService: Partial<PlansService> = {}) {
-  return new PlansController(plansService as PlansService);
+function makeController(
+  plansService: Partial<PlansService> = {},
+  planAssignmentsService: Partial<PlanAssignmentsService> = {},
+) {
+  return new PlansController(
+    plansService as PlansService,
+    planAssignmentsService as PlanAssignmentsService,
+  );
+}
+
+function makeRequest(accountId = 'employee-account-1') {
+  return {
+    employeeSession: { user: { id: accountId } },
+  } as EmployeeAuthenticatedRequest;
 }
 
 describe('PlansController', () => {
@@ -54,6 +68,23 @@ describe('PlansController', () => {
     await controller.setFallback('plan-1');
 
     expect(setFallbackPlan).toHaveBeenCalledWith('plan-1');
+  });
+
+  it('bulkAssign forwards planId, customerIds, and the acting account id', async () => {
+    const bulkAssign = jest.fn().mockResolvedValue({ assignedCount: 2 });
+    const controller = makeController({}, { bulkAssign });
+
+    await controller.bulkAssign(
+      'plan-1',
+      { customerIds: ['customer-1', 'customer-2'] },
+      makeRequest(),
+    );
+
+    expect(bulkAssign).toHaveBeenCalledWith(
+      'plan-1',
+      ['customer-1', 'customer-2'],
+      'employee-account-1',
+    );
   });
 
   it('remove delegates to the service', async () => {

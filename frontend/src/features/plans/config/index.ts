@@ -2,6 +2,7 @@
 // frontend/backend constants aren't shared across the repo.
 export const PLAN_MGMT_LIST_PAGE_SIZE = 20;
 export const PLAN_MGMT_SEARCH_DEBOUNCE_MS = 350;
+export const PLAN_BULK_ASSIGN_MAX_CUSTOMERS_PER_REQUEST = 100;
 export const PLAN_NAME_MAX_LENGTH = 150;
 export const PLAN_PRICE_MAX = 1_000_000;
 export const PLAN_SUBSCRIPTION_DURATION_MIN_MONTHS = 1;

@@ -42,6 +42,7 @@ export interface CustomerListItem {
   banned: boolean | null;
   banReason: string | null;
   banExpires: Date | null;
+  currentPlan: { id: string; name: string } | null;
 }
 
 export interface CustomerListResult {
@@ -81,7 +82,11 @@ export class CustomersService {
     const [customers, total] = await Promise.all([
       this.prisma.customer.findMany({
         where,
-        include: { account: true, pfpMedia: true },
+        include: {
+          account: true,
+          pfpMedia: true,
+          currentPlan: { select: { id: true, name: true } },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -278,7 +283,11 @@ export class CustomersService {
   private async getSummaryById(customerId: string): Promise<CustomerListItem> {
     const customer = await this.prisma.customer.findUniqueOrThrow({
       where: { id: customerId },
-      include: { account: true, pfpMedia: true },
+      include: {
+        account: true,
+        pfpMedia: true,
+        currentPlan: { select: { id: true, name: true } },
+      },
     });
     return this.toListItem(customer);
   }
@@ -293,6 +302,7 @@ export class CustomersService {
         banExpires: Date | null;
       };
       pfpMedia: Parameters<MediaService['getPublicUrl']>[0] | null;
+      currentPlan: { id: string; name: string } | null;
     },
   ): CustomerListItem {
     return {
@@ -301,6 +311,9 @@ export class CustomersService {
       email: customer.account.email,
       pfpUrl: customer.pfpMedia
         ? this.mediaService.getPublicUrl(customer.pfpMedia)
+        : null,
+      currentPlan: customer.currentPlan
+        ? { id: customer.currentPlan.id, name: customer.currentPlan.name }
         : null,
       banned: customer.account.banned,
       banReason: customer.account.banReason,

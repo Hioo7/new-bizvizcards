@@ -1,4 +1,4 @@
-import { CreditCard, Pencil, Star, Trash2 } from "lucide-react";
+import { CreditCard, Pencil, Star, Trash2, UsersRound } from "lucide-react";
 import type { PlanSummary } from "@app-types/plan";
 
 interface PlanRowProps {
@@ -7,6 +7,7 @@ interface PlanRowProps {
   onEdit: () => void;
   onSetFallback: () => void;
   onDelete: () => void;
+  onBulkAssign: () => void;
 }
 
 export default function PlanRow({
@@ -15,6 +16,7 @@ export default function PlanRow({
   onEdit,
   onSetFallback,
   onDelete,
+  onBulkAssign,
 }: PlanRowProps) {
   return (
     <tr className="border-b border-base-300 last:border-b-0 hover:bg-base-200/50">
@@ -41,6 +43,14 @@ export default function PlanRow({
       </td>
       <td className="py-3 pl-3 pr-4">
         <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            aria-label="Bulk add customers to plan"
+            onClick={onBulkAssign}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-base-content/60 hover:bg-base-300 hover:text-base-content"
+          >
+            <UsersRound className="h-4 w-4" />
+          </button>
           <button
             type="button"
             aria-label="Edit plan"

@@ -13,6 +13,7 @@ interface PlanTableProps {
   onEdit: (plan: PlanSummary) => void;
   onSetFallback: (plan: PlanSummary) => void;
   onDelete: (plan: PlanSummary) => void;
+  onBulkAssign: (plan: PlanSummary) => void;
 }
 
 export default function PlanTable({
@@ -24,6 +25,7 @@ export default function PlanTable({
   onEdit,
   onSetFallback,
   onDelete,
+  onBulkAssign,
 }: PlanTableProps) {
   if (isLoading) {
     return (
@@ -60,6 +62,7 @@ export default function PlanTable({
               onEdit={() => onEdit(plan)}
               onSetFallback={() => onSetFallback(plan)}
               onDelete={() => onDelete(plan)}
+              onBulkAssign={() => onBulkAssign(plan)}
             />
           ))}
         </tbody>
@@ -74,6 +77,7 @@ export default function PlanTable({
             onEdit={() => onEdit(plan)}
             onSetFallback={() => onSetFallback(plan)}
             onDelete={() => onDelete(plan)}
+            onBulkAssign={() => onBulkAssign(plan)}
           />
         ))}
       </div>

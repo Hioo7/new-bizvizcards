@@ -226,6 +226,140 @@ describe('PlanAssignmentsService (integration, TEST_DATABASE_URL only)', () => {
     });
   });
 
+  describe('bulkAssign', () => {
+    it('assigns every customer and writes one history row each', async () => {
+      const employee = await seedEmployee();
+      const plan = await seedBarePlan();
+      const customerA = await seedCustomer();
+      const customerB = await seedCustomer();
+      const customerC = await seedCustomer();
+
+      const result = await service.bulkAssign(
+        plan.id,
+        [customerA.id, customerB.id, customerC.id],
+        employee.accountId,
+      );
+
+      expect(result).toEqual({ assignedCount: 3 });
+      for (const customer of [customerA, customerB, customerC]) {
+        const updated = await prisma.customer.findUniqueOrThrow({
+          where: { id: customer.id },
+        });
+        expect(updated.currentPlanId).toBe(plan.id);
+        const history = await prisma.planPurchaseHistory.findFirst({
+          where: { customerId: customer.id, planId: plan.id },
+        });
+        expect(history?.assignedByEmployeeId).toBe(employee.employeeId);
+      }
+    });
+
+    it('computes a future expiresAt for a SUBSCRIPTION plan for every assigned customer', async () => {
+      const employee = await seedEmployee();
+      const plan = await seedBarePlan({
+        businessModelType: PlanBusinessModelType.SUBSCRIPTION,
+        subscriptionDurationMonths: 6,
+      });
+      const customer = await seedCustomer();
+
+      await service.bulkAssign(plan.id, [customer.id], employee.accountId);
+
+      const history = await prisma.planPurchaseHistory.findFirst({
+        where: { customerId: customer.id, planId: plan.id },
+      });
+      expect(history?.expiresAt).not.toBeNull();
+      expect(history!.expiresAt!.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('overwrites a customer who already has a different active plan, with no conflict', async () => {
+      const employee = await seedEmployee();
+      const oldPlan = await seedBarePlan();
+      const newPlan = await seedBarePlan();
+      const customer = await seedCustomer();
+      await service.assign(customer.id, oldPlan.id, employee.accountId);
+
+      await expect(
+        service.bulkAssign(newPlan.id, [customer.id], employee.accountId),
+      ).resolves.toEqual({ assignedCount: 1 });
+
+      const updated = await prisma.customer.findUniqueOrThrow({
+        where: { id: customer.id },
+      });
+      expect(updated.currentPlanId).toBe(newPlan.id);
+    });
+
+    it('dedupes a customerId repeated in the input to a single assignment', async () => {
+      const employee = await seedEmployee();
+      const plan = await seedBarePlan();
+      const customer = await seedCustomer();
+
+      const result = await service.bulkAssign(
+        plan.id,
+        [customer.id, customer.id],
+        employee.accountId,
+      );
+
+      expect(result).toEqual({ assignedCount: 1 });
+      const historyCount = await prisma.planPurchaseHistory.count({
+        where: { customerId: customer.id, planId: plan.id },
+      });
+      expect(historyCount).toBe(1);
+    });
+
+    it('throws and applies nothing when one customerId does not exist', async () => {
+      const employee = await seedEmployee();
+      const plan = await seedBarePlan();
+      const customer = await seedCustomer();
+
+      await expect(
+        service.bulkAssign(
+          plan.id,
+          [customer.id, randomUUID()],
+          employee.accountId,
+        ),
+      ).rejects.toThrow(
+        'One or more customerIds do not reference an existing customer',
+      );
+
+      const updated = await prisma.customer.findUniqueOrThrow({
+        where: { id: customer.id },
+      });
+      expect(updated.currentPlanId).toBeNull();
+    });
+
+    it('throws and applies nothing when any customer in the batch already used this TRIAL plan', async () => {
+      const employee = await seedEmployee();
+      const trialPlan = await seedBarePlan({
+        businessModelType: PlanBusinessModelType.TRIAL,
+      });
+      const usedCustomer = await seedCustomer();
+      const freshCustomer = await seedCustomer();
+      await service.assign(usedCustomer.id, trialPlan.id, employee.accountId);
+      await service.cancel(usedCustomer.id);
+
+      await expect(
+        service.bulkAssign(
+          trialPlan.id,
+          [freshCustomer.id, usedCustomer.id],
+          employee.accountId,
+        ),
+      ).rejects.toThrow('This customer has already used this trial plan');
+
+      const updated = await prisma.customer.findUniqueOrThrow({
+        where: { id: freshCustomer.id },
+      });
+      expect(updated.currentPlanId).toBeNull();
+    });
+
+    it('throws when the plan does not exist', async () => {
+      const employee = await seedEmployee();
+      const customer = await seedCustomer();
+
+      await expect(
+        service.bulkAssign(randomUUID(), [customer.id], employee.accountId),
+      ).rejects.toThrow('Plan not found');
+    });
+  });
+
   describe('renew', () => {
     it('blocks renewing when the customer has no active plan', async () => {
       const customer = await seedCustomer();

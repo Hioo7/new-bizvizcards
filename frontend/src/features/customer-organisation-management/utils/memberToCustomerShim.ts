@@ -15,5 +15,6 @@ export function memberToCustomerShim(
     banned: null,
     banReason: null,
     banExpires: null,
+    currentPlan: null,
   };
 }

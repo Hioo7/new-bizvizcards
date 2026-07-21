@@ -246,20 +246,75 @@ describe('EcardMigrator', () => {
     );
   });
 
-  it('skips the WHATSAPP component when mob_country_code is unset, even if the whatsapp string looks numeric', async () => {
-    const { migrator, componentCreates, recordSuccess } = createMigrator({
-      findMany: () =>
-        Promise.resolve([
-          legacyEcard({ whatsapp: '+919876543210', mob_country_code: null }),
-        ]),
-    });
+  it('defaults to the India dial code and still splits correctly when mob_country_code is unset but the number embeds it', async () => {
+    const { migrator, componentCreates, whatsappComponentCreates } =
+      createMigrator({
+        findMany: () =>
+          Promise.resolve([
+            legacyEcard({ whatsapp: '+919876543210', mob_country_code: null }),
+          ]),
+      });
 
     await migrator.migrate('job-1');
 
-    expect(componentCreates.map((c) => c.type)).toEqual(['ABOUT']);
-    expect(recordSuccess).toHaveBeenCalledWith(
-      expect.objectContaining({ note: 'WHATSAPP_NUMBER_UNPARSEABLE' }),
-    );
+    expect(componentCreates.map((c) => c.type)).toEqual(['ABOUT', 'WHATSAPP']);
+    expect(whatsappComponentCreates).toEqual([
+      { phoneCountryDialCode: '+91', phoneNumber: '9876543210' },
+    ]);
+  });
+
+  it("creates a WHATSAPP component from a bare local number (no country-code prefix) paired with the row's own mob_country_code", async () => {
+    const { migrator, componentCreates, whatsappComponentCreates } =
+      createMigrator({
+        findMany: () =>
+          Promise.resolve([
+            legacyEcard({ whatsapp: '7204027743', mob_country_code: 91 }),
+          ]),
+      });
+
+    await migrator.migrate('job-1');
+
+    expect(componentCreates.map((c) => c.type)).toEqual(['ABOUT', 'WHATSAPP']);
+    expect(whatsappComponentCreates).toEqual([
+      { phoneCountryDialCode: '+91', phoneNumber: '7204027743' },
+    ]);
+  });
+
+  it('creates a WHATSAPP component from a bare local number defaulting to +91 when mob_country_code is unset', async () => {
+    const { migrator, componentCreates, whatsappComponentCreates } =
+      createMigrator({
+        findMany: () =>
+          Promise.resolve([
+            legacyEcard({ whatsapp: '8431434546', mob_country_code: null }),
+          ]),
+      });
+
+    await migrator.migrate('job-1');
+
+    expect(componentCreates.map((c) => c.type)).toEqual(['ABOUT', 'WHATSAPP']);
+    expect(whatsappComponentCreates).toEqual([
+      { phoneCountryDialCode: '+91', phoneNumber: '8431434546' },
+    ]);
+  });
+
+  it('creates a WHATSAPP component by extracting the digits from a ready-made wa.me link', async () => {
+    const { migrator, componentCreates, whatsappComponentCreates } =
+      createMigrator({
+        findMany: () =>
+          Promise.resolve([
+            legacyEcard({
+              whatsapp: 'https://wa.me/916363797685',
+              mob_country_code: 91,
+            }),
+          ]),
+      });
+
+    await migrator.migrate('job-1');
+
+    expect(componentCreates.map((c) => c.type)).toEqual(['ABOUT', 'WHATSAPP']);
+    expect(whatsappComponentCreates).toEqual([
+      { phoneCountryDialCode: '+91', phoneNumber: '6363797685' },
+    ]);
   });
 
   it('skips the WHATSAPP component when the whatsapp digits do not start with the known mob_country_code', async () => {

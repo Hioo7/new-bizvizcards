@@ -46,6 +46,19 @@
 
   --radius-box: 1rem;
   --radius-field: 0.75rem;
+  /* daisyUI component tokens (toggle/checkbox/radio sizing, border width,
+     shadow depth, noise texture) — normally shipped via daisyUI's built-in
+     theme :root block, which `themes: false` above deliberately excludes to
+     avoid bundling unused preset themes. Since no theme here defines these,
+     they must be set explicitly or every component that reads them (e.g.
+     `.toggle`'s width calc) silently breaks. Values match daisyUI's own
+     defaults (see node_modules/daisyui/theme/light.css). */
+  --radius-selector: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 }
 
 /* Restores the legacy eCard's dark visual identity (see
@@ -92,6 +105,13 @@
 
   --radius-box: 1rem;
   --radius-field: 0.75rem;
+  /* See the matching comment on the "bizviz" theme above. */
+  --radius-selector: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 }
 
 /* Legacy eCard "Intro Scroller" marquee (see cardone.template/template.tsx). */

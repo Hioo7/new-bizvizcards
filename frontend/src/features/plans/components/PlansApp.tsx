@@ -7,11 +7,13 @@ import Pagination from "@components/Pagination";
 import ConfirmActionModal from "@components/ConfirmActionModal";
 import { getPlan } from "@services/planService";
 import type { CreatePlanPayload, PlanDetail, PlanSummary } from "@app-types/plan";
+import type { BulkAssignPlanCustomersValues } from "@features/plans/schemas/bulkAssignPlanCustomersSchema";
 import { usePlanManagementList } from "@features/plans/hooks/usePlanManagementList";
 import { usePlanManagementMutations } from "@features/plans/hooks/usePlanManagementMutations";
 import PlanToolbar from "@features/plans/components/PlanToolbar";
 import PlanTable from "@features/plans/components/PlanTable";
 import PlanFormModal from "@features/plans/components/PlanFormModal";
+import BulkAssignCustomersToPlanModal from "@features/plans/components/BulkAssignCustomersToPlanModal";
 
 export default function PlansApp() {
   const { staffUser } = useStaffAuth();
@@ -32,6 +34,11 @@ export default function PlansApp() {
 
   const [deleteTarget, setDeleteTarget] = useState<PlanSummary | null>(null);
   const deleteAction = useAsyncAction();
+
+  const [bulkAssignTarget, setBulkAssignTarget] = useState<PlanSummary | null>(
+    null,
+  );
+  const bulkAssignAction = useAsyncAction();
 
   function handleCreateSubmit(draft: CreatePlanPayload) {
     void createAction.run(
@@ -80,6 +87,19 @@ export default function PlansApp() {
     );
   }
 
+  function handleBulkAssignSubmit(values: BulkAssignPlanCustomersValues) {
+    if (!bulkAssignTarget) return;
+    void bulkAssignAction.run(
+      async () => {
+        await mutations.bulkAssignCustomers(
+          bulkAssignTarget.id,
+          values.customerIds,
+        );
+      },
+      () => setBulkAssignTarget(null),
+    );
+  }
+
   if (!staffUser) return null;
   const canDelete = isAdminTier(staffUser.role);
 
@@ -121,6 +141,10 @@ export default function PlansApp() {
             deleteAction.reset();
             setDeleteTarget(plan);
           }}
+          onBulkAssign={(plan) => {
+            bulkAssignAction.reset();
+            setBulkAssignTarget(plan);
+          }}
         />
       </div>
 
@@ -148,6 +172,15 @@ export default function PlansApp() {
         error={editAction.error}
         onCancel={() => setIsEditOpen(false)}
         onSubmit={handleEditSubmit}
+      />
+
+      <BulkAssignCustomersToPlanModal
+        open={bulkAssignTarget !== null}
+        plan={bulkAssignTarget}
+        isSubmitting={bulkAssignAction.isSubmitting}
+        error={bulkAssignAction.error}
+        onCancel={() => setBulkAssignTarget(null)}
+        onSubmit={handleBulkAssignSubmit}
       />
 
       <ConfirmActionModal

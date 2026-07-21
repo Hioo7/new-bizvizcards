@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -7,11 +8,16 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PlanBusinessModelType } from '../../../generated/prisma/client';
 import {
   PLAN_ASSIGN_ALREADY_ACTIVE_MESSAGE,
+  PLAN_BULK_ASSIGN_INVALID_CUSTOMER_IDS_MESSAGE,
   PLAN_NOT_FOUND_MESSAGE,
   PLAN_RENEW_REQUIRES_ACTIVE_MESSAGE,
   PLAN_SWITCH_REQUIRES_ACTIVE_MESSAGE,
   PLAN_TRIAL_ALREADY_USED_MESSAGE,
 } from '../plans.constants';
+
+export interface BulkAssignResult {
+  assignedCount: number;
+}
 
 interface PlanForAssignment {
   id: string;
@@ -74,6 +80,66 @@ export class PlanAssignmentsService {
     await this.assertTrialNotAlreadyUsed(customerId, plan);
     const employee = await this.getEmployeeByAccountIdOrThrow(actorAccountId);
     await this.applyAssignment(customerId, plan, employee.id);
+  }
+
+  /**
+   * Links every given customer to `planId` in one atomic operation —
+   * either all of them are reassigned, or (on any validation failure) none
+   * are. Unlike `assign`/`switchPlan`, this has no active/no-active-plan
+   * precondition: it's meant for moving a batch of customers who may
+   * already be on some other plan (most commonly the system fallback plan
+   * every migrated customer starts on) onto the plan they actually belong
+   * to, so an unconditional overwrite is the whole point.
+   */
+  async bulkAssign(
+    planId: string,
+    customerIds: string[],
+    actorAccountId: string,
+  ): Promise<BulkAssignResult> {
+    const plan = await this.getPlanOrThrow(planId);
+    const uniqueCustomerIds = [...new Set(customerIds)];
+
+    const existingCount = await this.prisma.customer.count({
+      where: { id: { in: uniqueCustomerIds } },
+    });
+    if (existingCount !== uniqueCustomerIds.length) {
+      throw new BadRequestException(
+        PLAN_BULK_ASSIGN_INVALID_CUSTOMER_IDS_MESSAGE,
+      );
+    }
+
+    // Same once-per-customer trial rule as single assign/switch, checked
+    // against the whole batch up front so this stays all-or-nothing rather
+    // than partially applying before hitting a trial-reuse conflict.
+    if (plan.businessModelType === PlanBusinessModelType.TRIAL) {
+      const alreadyUsed = await this.prisma.planPurchaseHistory.findFirst({
+        where: { planId: plan.id, customerId: { in: uniqueCustomerIds } },
+      });
+      if (alreadyUsed) {
+        throw new ConflictException(PLAN_TRIAL_ALREADY_USED_MESSAGE);
+      }
+    }
+
+    const employee = await this.getEmployeeByAccountIdOrThrow(actorAccountId);
+    const expiresAt = this.computeExpiresAt(plan);
+
+    await this.prisma.$transaction([
+      this.prisma.customer.updateMany({
+        where: { id: { in: uniqueCustomerIds } },
+        data: { currentPlanId: plan.id },
+      }),
+      this.prisma.planPurchaseHistory.createMany({
+        data: uniqueCustomerIds.map((customerId) => ({
+          customerId,
+          planId: plan.id,
+          assignedByEmployeeId: employee.id,
+          expiresAt,
+          businessModelTypeAtPurchase: plan.businessModelType,
+        })),
+      }),
+    ]);
+
+    return { assignedCount: uniqueCustomerIds.length };
   }
 
   async renew(customerId: string, actorAccountId: string): Promise<void> {

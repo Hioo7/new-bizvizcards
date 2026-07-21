@@ -40,6 +40,13 @@ export const SMART_CARD_TEMPLATE_SLUG_MAP: Record<
   'interior.design.template2': SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE_2,
 };
 
+// India is the only dial code ever observed in the legacy ECard dataset —
+// confirmed against production data (see EcardMigrator.parseWhatsappNumber).
+export const ECARD_MIGRATION_DEFAULT_DIAL_CODE = '91';
+// Indian mobile numbers are always exactly 10 digits — used to distinguish
+// a bare local WhatsApp number from one that embeds a country-code prefix.
+export const ECARD_MIGRATION_LOCAL_NUMBER_LENGTH = 10;
+
 // Rejection/skip reasons — every MigrationRecord.reason value is one of
 // these named constants, never an inline string, so the admin UI's
 // drill-down report and this codebase both have one source of truth for

@@ -46,6 +46,12 @@ export const PLAN_SWITCH_REQUIRES_ACTIVE_MESSAGE =
   'This customer has no active plan to switch — use assign instead';
 export const PLAN_RENEW_REQUIRES_ACTIVE_MESSAGE =
   'This customer has no active plan to renew';
+export const PLAN_BULK_ASSIGN_INVALID_CUSTOMER_IDS_MESSAGE =
+  'One or more customerIds do not reference an existing customer';
+
+// Mirrors ORGANISATION_BULK_ADD_MEMBERS_MAX_PER_REQUEST — same batch-size
+// rationale, kept as its own constant since the two features are unrelated.
+export const PLAN_BULK_ASSIGN_MAX_CUSTOMERS_PER_REQUEST = 100;
 
 export const PLAN_ECARD_NOT_AVAILABLE_MESSAGE =
   "This customer's plan does not include e-cards";

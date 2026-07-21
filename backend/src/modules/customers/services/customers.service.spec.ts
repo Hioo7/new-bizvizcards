@@ -40,6 +40,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
   let service: CustomersService;
   let originalDatabaseUrl: string | undefined;
   const seededAccountIds: string[] = [];
+  const seededPlanIds: string[] = [];
 
   beforeAll(() => {
     originalDatabaseUrl = process.env.DATABASE_URL;
@@ -78,6 +79,10 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
       });
       seededAccountIds.length = 0;
     }
+    if (seededPlanIds.length > 0) {
+      await prisma.plan.deleteMany({ where: { id: { in: seededPlanIds } } });
+      seededPlanIds.length = 0;
+    }
   });
 
   async function seedCustomer(overrides?: { name?: string; email?: string }) {
@@ -91,6 +96,14 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     });
     seededAccountIds.push(account.id);
     return prisma.customer.create({ data: { accountId: account.id } });
+  }
+
+  async function seedPlan(name = `Test Plan ${randomUUID()}`) {
+    const plan = await prisma.plan.create({
+      data: { name, price: 0, businessModelType: 'ONE_TIME' },
+    });
+    seededPlanIds.push(plan.id);
+    return plan;
   }
 
   it('resolves a customer by accountId', async () => {
@@ -227,6 +240,39 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
 
       const found = result.customers.find((c) => c.id === customer.id);
       expect(found?.pfpUrl).toBeNull();
+    });
+
+    it('includes the current plan id and name when the customer has one', async () => {
+      const suffix = randomUUID();
+      const plan = await seedPlan(`Plan With Customer ${suffix}`);
+      const customer = await seedCustomer({ name: `HasPlan ${suffix}` });
+      await prisma.customer.update({
+        where: { id: customer.id },
+        data: { currentPlanId: plan.id },
+      });
+
+      const result = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: suffix,
+      });
+
+      const found = result.customers.find((c) => c.id === customer.id);
+      expect(found?.currentPlan).toEqual({ id: plan.id, name: plan.name });
+    });
+
+    it('returns a null currentPlan when the customer has no plan', async () => {
+      const suffix = randomUUID();
+      const customer = await seedCustomer({ name: `NoPlan ${suffix}` });
+
+      const result = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: suffix,
+      });
+
+      const found = result.customers.find((c) => c.id === customer.id);
+      expect(found?.currentPlan).toBeNull();
     });
   });
 

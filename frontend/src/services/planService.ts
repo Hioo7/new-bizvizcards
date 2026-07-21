@@ -5,6 +5,7 @@ import {
 } from "@config/api";
 import { apiRequest } from "@services/apiClient";
 import type {
+  BulkAssignCustomersToPlanResult,
   CreatePlanPayload,
   EffectivePolicy,
   ListPlansQuery,
@@ -60,6 +61,16 @@ export function deletePlan(id: string): Promise<void> {
   return apiRequest<void>(`${EMPLOYEE_PLANS_BASE_PATH}/${id}`, {
     method: "DELETE",
   });
+}
+
+export function bulkAssignCustomersToPlan(
+  planId: string,
+  customerIds: string[],
+): Promise<BulkAssignCustomersToPlanResult> {
+  return apiRequest<BulkAssignCustomersToPlanResult>(
+    `${EMPLOYEE_PLANS_BASE_PATH}/${planId}/bulk-assign`,
+    { method: "POST", body: JSON.stringify({ customerIds }) },
+  );
 }
 
 export function assignPlan(

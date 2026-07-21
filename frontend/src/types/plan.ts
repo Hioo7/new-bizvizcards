@@ -149,3 +149,11 @@ export interface PlanPurchaseHistoryEntry {
   businessModelTypeAtPurchase: PlanBusinessModelType;
   assignedByEmployeeId: string;
 }
+
+export interface BulkAssignCustomersToPlanPayload {
+  customerIds: string[];
+}
+
+export interface BulkAssignCustomersToPlanResult {
+  assignedCount: number;
+}

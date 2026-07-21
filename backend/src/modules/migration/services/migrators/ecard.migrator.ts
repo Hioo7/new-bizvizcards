@@ -13,6 +13,8 @@ import { LegacyIdMapperService } from '../legacy-id-mapper.service';
 import { LegacyMediaTransferService } from '../legacy-media-transfer.service';
 import { iterateLegacyRows } from '../iterate-legacy-rows.util';
 import {
+  ECARD_MIGRATION_DEFAULT_DIAL_CODE,
+  ECARD_MIGRATION_LOCAL_NUMBER_LENGTH,
   MIGRATION_REJECTION_REASON,
   MIGRATION_SOURCE_TABLE,
   MigrationRejectionReason,
@@ -267,39 +269,56 @@ export class EcardMigrator implements DomainMigrator {
   }
 
   // Legacy `whatsapp` is a single free-text field (unlike the structured
-  // mob_country_code/mobile_number columns) — only a clean E.164-ish
-  // "+<dial code><number>" string can be split into the new component's two
-  // required fields. Anything else is treated as unparseable rather than
-  // guessed at.
+  // mob_country_code/mobile_number columns). Confirmed against real
+  // production data: the overwhelming majority (93%) of legacy whatsapp
+  // values are a bare local number with no country-code prefix at all —
+  // only a small minority embed the dial code. India (91) is the only dial
+  // code ever observed in the dataset, so a row with no mob_country_code at
+  // all still gets a sensible default rather than being dropped. A rarer
+  // shape also occurs: legacy's own card template accepted a ready-made
+  // "https://wa.me/<digits>" link as the whatsapp value (see
+  // cardone.template/template.tsx's `isFullWaMe` handling) — the digits are
+  // extracted and parsed the same as any other number below, rather than
+  // treating the URL itself as unparseable.
+  //
   // A bare `\d{1,3}` dial-code regex is ambiguous by construction — e.g.
   // "+919876543210" greedily matches dial code "919" + number "876543210"
-  // just as validly as the intended "+91" + "9876543210", and there is no
-  // way to tell which is right from the digits alone (real-world dial codes
-  // are 1–3 digits with no simple pattern). Rather than guess and risk
-  // silently mis-splitting the number, this only trusts a split confirmed
-  // by the ECard's own separately-structured mob_country_code column — if
-  // the cleaned whatsapp digits don't start with that exact code, or the
-  // code is unset, the whole thing is treated as unparseable.
+  // just as validly as the intended "+91" + "9876543210". To resolve that,
+  // only a cleaned digit string longer than a bare Indian local number
+  // (ECARD_MIGRATION_LOCAL_NUMBER_LENGTH) is treated as possibly embedding a
+  // country code, and only if it actually starts with the known/default
+  // code — anything else at that length is an unrecognizable (e.g. foreign)
+  // format, not a safe guess, and is treated as unparseable.
   private parseWhatsappNumber(
     raw: string,
     knownCountryCode: number | null,
   ): { phoneCountryDialCode: string; phoneNumber: string } | null {
-    if (knownCountryCode == null) {
-      return null;
-    }
-    const cleaned = raw.replace(/[\s\-()]/g, '').replace(/^\+/, '');
+    const waMeMatch = /^https?:\/\/wa\.me\/?(\d+)/i.exec(raw.trim());
+    const source = waMeMatch ? waMeMatch[1] : raw;
+
+    const cleaned = source.replace(/[\s\-()]/g, '').replace(/^\+/, '');
     if (!/^\d{7,17}$/.test(cleaned)) {
       return null;
     }
-    const codeStr = String(knownCountryCode);
-    if (!cleaned.startsWith(codeStr)) {
-      return null;
+
+    const codeStr =
+      knownCountryCode != null
+        ? String(knownCountryCode)
+        : ECARD_MIGRATION_DEFAULT_DIAL_CODE;
+
+    if (cleaned.length > ECARD_MIGRATION_LOCAL_NUMBER_LENGTH) {
+      if (!cleaned.startsWith(codeStr)) {
+        return null;
+      }
+      const phoneNumber = cleaned.slice(codeStr.length);
+      if (phoneNumber.length < 6) {
+        return null;
+      }
+      return { phoneCountryDialCode: `+${codeStr}`, phoneNumber };
     }
-    const phoneNumber = cleaned.slice(codeStr.length);
-    if (phoneNumber.length < 6) {
-      return null;
-    }
-    return { phoneCountryDialCode: `+${codeStr}`, phoneNumber };
+
+    // The dominant real-world shape: a bare local number, no prefix at all.
+    return { phoneCountryDialCode: `+${codeStr}`, phoneNumber: cleaned };
   }
 
   private classifyError(error: unknown): MigrationRejectionReason {

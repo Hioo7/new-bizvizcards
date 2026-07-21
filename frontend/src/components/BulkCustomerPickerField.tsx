@@ -1,5 +1,6 @@
 import { Search, User } from "lucide-react";
 import { useBulkCustomerSearch } from "@hooks/useBulkCustomerSearch";
+import Pagination from "@components/Pagination";
 import type { Customer } from "@app-types/customer";
 
 interface BulkCustomerPickerFieldProps {
@@ -18,7 +19,16 @@ export default function BulkCustomerPickerField({
   excludeCustomerIds = [],
   error,
 }: BulkCustomerPickerFieldProps) {
-  const { search, setSearch, customers, isLoading } = useBulkCustomerSearch();
+  const {
+    search,
+    setSearch,
+    customers,
+    isLoading,
+    page,
+    pageSize,
+    total,
+    setPage,
+  } = useBulkCustomerSearch();
 
   const excludeSet = new Set(excludeCustomerIds);
   const results = customers.filter((c) => !excludeSet.has(c.id));
@@ -124,7 +134,7 @@ export default function BulkCustomerPickerField({
                   <User className="h-4 w-4" />
                 )}
               </span>
-              <span className="min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-base-content">
                   {customer.name}
                 </span>
@@ -132,9 +142,24 @@ export default function BulkCustomerPickerField({
                   {customer.email}
                 </span>
               </span>
+              {customer.currentPlan && (
+                <span className="shrink-0 truncate rounded-full bg-base-300 px-2 py-1 text-[10px] font-medium text-base-content/60">
+                  {customer.currentPlan.name}
+                </span>
+              )}
             </label>
           ))}
       </div>
+
+      <div className="mt-1">
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+        />
+      </div>
+
       {error && <p className="mt-1.5 text-xs text-error">{error}</p>}
     </div>
   );
