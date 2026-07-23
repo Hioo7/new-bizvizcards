@@ -3,6 +3,7 @@ import { useShop } from "@features/user-dashboard/hooks/useShop";
 import ShopProductCard from "./shop/ShopProductCard";
 import VariantPickerSheet from "./shop/VariantPickerSheet";
 import CartItemRow from "./shop/CartItemRow";
+import CheckoutSheet from "./shop/CheckoutSheet";
 import type { ShopProduct, ShopProductVariant } from "@features/user-dashboard/types";
 
 type ShopView = "shop" | "cart";
@@ -12,6 +13,7 @@ export default function CartSection() {
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] =
     useState<ShopProduct | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const {
     products,
@@ -221,8 +223,11 @@ export default function CartSection() {
               ${cart.totalAmount.toFixed(2)}
             </span>
           </div>
-          <button className="btn btn-primary w-full" disabled>
-            Checkout — coming soon
+          <button
+            className="btn btn-primary w-full"
+            onClick={() => setCheckoutOpen(true)}
+          >
+            Checkout
           </button>
         </div>
 
@@ -286,6 +291,19 @@ export default function CartSection() {
         onClose={() => setVariantPickerProduct(null)}
         adding={addingProductId !== null}
       />
+
+      {/* Checkout sheet */}
+      {cart && (
+        <CheckoutSheet
+          open={checkoutOpen}
+          cart={cart}
+          onClose={() => setCheckoutOpen(false)}
+          onOrderPlaced={() => {
+            void loadCart();
+            setView("shop");
+          }}
+        />
+      )}
     </section>
   );
 }

@@ -7,6 +7,7 @@ interface OrgDashboardCardProps {
   data: OrganisationWithMembership | null;
   loading: boolean;
   error: string | null;
+  isAvailable: boolean;
   onCreateOrg: () => void;
   onUpdateName: (name: string) => Promise<void>;
 }
@@ -15,6 +16,7 @@ export default function OrgDashboardCard({
   data,
   loading,
   error,
+  isAvailable,
   onCreateOrg,
   onUpdateName,
 }: OrgDashboardCardProps) {
@@ -47,6 +49,24 @@ export default function OrgDashboardCard({
     } finally {
       setSaving(false);
     }
+  }
+
+  /* ── Not available on plan ────────────────────────────────────────────── */
+  if (!isAvailable) {
+    return (
+      <div className="bg-base-100 rounded-2xl border border-base-300 shadow-sm p-4 flex flex-col items-center justify-center gap-3 py-8 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-base-200">
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-base-content/30" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
+            <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-base-content/60">Organisation not available on your plan</p>
+          <p className="mt-0.5 text-xs text-base-content/40">Upgrade your plan to access this feature</p>
+        </div>
+      </div>
+    );
   }
 
   /* ── Loading skeleton ─────────────────────────────────────────────────── */

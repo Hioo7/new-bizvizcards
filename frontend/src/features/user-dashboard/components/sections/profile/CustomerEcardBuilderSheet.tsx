@@ -54,6 +54,8 @@ export default function CustomerEcardBuilderSheet({
 }: CustomerEcardBuilderSheetProps) {
   const builder = useCustomerEcardBuilder(prefillName, prefillEmail, existingEcard);
   const [editing, setEditing] = useState<EditingTarget>(null);
+  // Reset editing state when we load a new card (e.g. switching from one ecard to another)
+  // Handled by the `key` prop on this component — state already resets on key change.
   const [isPickingType, setIsPickingType] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
@@ -110,7 +112,9 @@ export default function CustomerEcardBuilderSheet({
 
   return (
     <dialog className="modal modal-bottom sm:modal-middle" open>
-      <div className="modal-box p-0 overflow-hidden flex flex-col max-h-[96vh] sm:max-h-[92vh] sm:max-w-2xl rounded-t-3xl rounded-b-none sm:rounded-2xl">
+      <div className="modal-box p-0 overflow-hidden sm:max-w-2xl rounded-t-3xl rounded-b-none sm:rounded-2xl">
+        {/* Inner flex column owns height so modal-box overflow doesn't interfere */}
+        <div className="flex flex-col max-h-[96dvh] sm:max-h-[92dvh]">
         {/* Drag handle (mobile only) */}
         <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
           <div className="h-1 w-10 rounded-full bg-base-300" />
@@ -139,7 +143,23 @@ export default function CustomerEcardBuilderSheet({
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 flex flex-col gap-5">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 flex flex-col gap-5 pb-28">
+          {builder.isLoading && (
+            <div className="flex flex-col gap-4">
+              <div className="skeleton h-20 w-full rounded-2xl" />
+              <div className="skeleton h-32 w-full rounded-2xl" />
+              <div className="skeleton h-12 w-full rounded-2xl" />
+            </div>
+          )}
+
+          {!builder.isLoading && builder.loadError && (
+            <div className="rounded-2xl bg-error/10 px-4 py-3 text-sm text-error">
+              {builder.loadError}
+            </div>
+          )}
+
+          {!builder.isLoading && !builder.loadError && (
+            <>
           <HeroCard
             draft={builder.state.hero}
             onEdit={() => setEditing({ kind: "hero" })}
@@ -206,6 +226,9 @@ export default function CustomerEcardBuilderSheet({
             {savedAt && !builder.isSaving && <Check className="h-4 w-4" />}
             {savedAt && !builder.isSaving ? "Saved" : "Save card"}
           </button>
+            </>
+          )}
+        </div>
         </div>
       </div>
       <div className="modal-backdrop" onClick={onClose} />

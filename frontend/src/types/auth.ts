@@ -8,6 +8,15 @@ export interface AuthUser {
   updatedAt: string;
 }
 
+export interface CustomerProfile {
+  id: string;
+  name: string;
+  email: string;
+  pfpUrl: string | null;
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
+}
+
 export interface AuthSession {
   token: string;
   user: AuthUser;

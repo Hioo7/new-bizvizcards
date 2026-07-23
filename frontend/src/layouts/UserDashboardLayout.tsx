@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@hooks/useAuth";
+import { useMyEffectivePolicy } from "@hooks/useMyEffectivePolicy";
 import { ROUTES } from "@config/routes";
 import type { DashboardSection } from "@features/user-dashboard/types";
 import { useLeads } from "@features/user-dashboard/hooks/useLeads";
@@ -12,7 +13,8 @@ import SettingsSection from "@features/user-dashboard/components/sections/Settin
 import CartSection from "@features/user-dashboard/components/sections/CartSection";
 
 export default function UserDashboardLayout() {
-  const { user, isLoading, signOut } = useAuth();
+  const { user, isLoading: authLoading, signOut } = useAuth();
+  const { policy, isLoading: policyLoading } = useMyEffectivePolicy();
   const [activeSection, setActiveSection] =
     useState<DashboardSection>("profile");
 
@@ -32,13 +34,20 @@ export default function UserDashboardLayout() {
     setDefaultFolder,
   } = useLeads();
 
+  // Derive access flags — false until policy resolves (avoids loading locked data)
+  const leadsAccessible = !policyLoading && (policy?.leadsViewAccess ?? false);
+  const ecardAvailable = !policyLoading && (policy?.ecard.isAvailable ?? false);
+  const orgAvailable =
+    !policyLoading && (policy?.organisation.isAvailable ?? false);
+
+  // Only load leads data when the plan allows it
   useEffect(() => {
-    if (user) {
+    if (user && leadsAccessible) {
       void loadAll();
     }
-  }, [user, loadAll]);
+  }, [user, leadsAccessible, loadAll]);
 
-  if (isLoading) {
+  if (authLoading || (!!user && policyLoading)) {
     return (
       <div className="flex h-screen items-center justify-center bg-base-100">
         <span className="loading loading-spinner loading-lg text-primary" />
@@ -55,7 +64,13 @@ export default function UserDashboardLayout() {
 
     switch (activeSection) {
       case "profile":
-        return <ProfileSection user={user} />;
+        return (
+          <ProfileSection
+            user={user}
+            ecardAvailable={ecardAvailable}
+            orgAvailable={orgAvailable}
+          />
+        );
       case "leads":
         return (
           <LeadsSection
@@ -64,6 +79,7 @@ export default function UserDashboardLayout() {
             defaultFolderId={defaultFolderId}
             loading={leadsLoading}
             error={leadsError}
+            isAccessible={leadsAccessible}
             onCreateLead={createLead}
             onUpdateLead={updateLead}
             onDeleteLead={deleteLead}
@@ -79,6 +95,7 @@ export default function UserDashboardLayout() {
             leads={leads}
             loading={leadsLoading}
             error={leadsError}
+            isAccessible={leadsAccessible}
           />
         );
       case "cart":
@@ -86,7 +103,13 @@ export default function UserDashboardLayout() {
       case "settings":
         return <SettingsSection onSignOut={signOut} />;
       default:
-        return <ProfileSection user={user} />;
+        return (
+          <ProfileSection
+            user={user}
+            ecardAvailable={ecardAvailable}
+            orgAvailable={orgAvailable}
+          />
+        );
     }
   }
 

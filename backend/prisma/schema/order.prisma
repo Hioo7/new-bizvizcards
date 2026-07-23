@@ -44,6 +44,10 @@ model Order {
 
   totalAmount Decimal @db.Decimal(10, 2)
 
+  // Razorpay payment tracking — set during checkout payment flow
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String? @unique
+
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
 

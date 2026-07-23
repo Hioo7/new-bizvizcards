@@ -29,7 +29,7 @@ export default function ShopProductCard({
   const isVariant = product.productType === "VARIANT_BASED";
   const displayPrice = isVariant ? lowestVariantPrice(product) : product.price;
 
-  function handleTap() {
+  function handleAdd() {
     if (isVariant) {
       onSelectVariant(product);
     } else {
@@ -38,14 +38,9 @@ export default function ShopProductCard({
   }
 
   return (
-    <button
-      className="text-left w-full active:scale-95 transition-transform disabled:opacity-60 disabled:scale-100"
-      onClick={handleTap}
-      disabled={adding}
-      aria-label={`${product.name} — ${isVariant ? "choose variant" : "add to cart"}`}
-    >
-      {/* White image box */}
-      <div className="relative w-full aspect-square bg-base-100 rounded-2xl overflow-hidden flex items-center justify-center">
+    <div className="flex flex-col gap-2">
+      {/* Image area */}
+      <div className="relative w-full aspect-square bg-base-100 rounded-2xl overflow-hidden flex items-center justify-center border border-base-200">
         {previewUrl && !imgError ? (
           <img
             src={previewUrl}
@@ -70,7 +65,7 @@ export default function ShopProductCard({
           </svg>
         )}
 
-        {/* Loading spinner overlay */}
+        {/* Loading spinner overlay while adding */}
         {adding && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
             <span className="loading loading-spinner loading-md text-white" />
@@ -78,17 +73,35 @@ export default function ShopProductCard({
         )}
       </div>
 
-      {/* Name + price below the card */}
-      <div className="mt-2 px-0.5">
+      {/* Name + price */}
+      <div className="px-0.5">
         <p className="text-sm font-semibold text-base-content leading-snug line-clamp-2">
           {product.name}
         </p>
-        <p className="text-sm text-base-content/70 mt-0.5">
+        <p className="text-xs text-base-content/60 mt-0.5">
           {displayPrice !== null
-            ? `${isVariant ? "from " : ""}$${displayPrice.toFixed(2)}`
+            ? `${isVariant ? "from " : ""}₹${displayPrice.toFixed(2)}`
             : "Price varies"}
         </p>
       </div>
-    </button>
+
+      {/* Add to Cart button */}
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={adding}
+        aria-label={`${product.name} — ${isVariant ? "choose options" : "add to cart"}`}
+        className="flex min-h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-primary/10 text-xs font-semibold text-primary hover:bg-primary/20 active:bg-primary/30 disabled:opacity-50 transition-colors"
+      >
+        {adding ? (
+          <span className="loading loading-spinner loading-xs" />
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        )}
+        {isVariant ? "Choose options" : "Add to cart"}
+      </button>
+    </div>
   );
 }

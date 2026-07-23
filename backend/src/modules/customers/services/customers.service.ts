@@ -21,6 +21,7 @@ import type { CreateCustomerDto } from '../dto/create-customer.dto';
 import type { ListCustomersQueryDto } from '../dto/list-customers-query.dto';
 import type { SetCustomerPasswordDto } from '../dto/set-customer-password.dto';
 import type { UpdateCustomerDto } from '../dto/update-customer.dto';
+import type { UpdateCustomerPhoneDto } from '../dto/update-customer-phone.dto';
 
 export interface ProfilePictureUpload {
   buffer: Buffer;
@@ -32,6 +33,15 @@ export interface ProfilePictureUpload {
 export interface ProfilePictureReplaceResult {
   customer: CustomerModel;
   pfpUrl: string;
+}
+
+export interface CustomerProfile {
+  id: string;
+  name: string;
+  email: string;
+  pfpUrl: string | null;
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
 }
 
 export interface CustomerListItem {
@@ -62,6 +72,46 @@ export class CustomersService {
 
   getByAccountId(accountId: string): Promise<CustomerModel> {
     return this.prisma.customer.findUniqueOrThrow({ where: { accountId } });
+  }
+
+  async getMe(accountId: string): Promise<CustomerProfile> {
+    const customer = await this.prisma.customer.findUniqueOrThrow({
+      where: { accountId },
+      include: { account: true, pfpMedia: true },
+    });
+    return {
+      id: customer.id,
+      name: customer.account.name,
+      email: customer.account.email,
+      pfpUrl: customer.pfpMedia
+        ? this.mediaService.getPublicUrl(customer.pfpMedia)
+        : null,
+      phoneCountryDialCode: customer.phoneCountryDialCode,
+      phoneNumber: customer.phoneNumber,
+    };
+  }
+
+  async updatePhone(
+    accountId: string,
+    dto: UpdateCustomerPhoneDto,
+  ): Promise<CustomerProfile> {
+    const customer = await this.prisma.customer.findUniqueOrThrow({
+      where: { accountId },
+    });
+
+    await this.prisma.customer.update({
+      where: { id: customer.id },
+      data: {
+        phoneCountryDialCode:
+          dto.phoneCountryDialCode !== undefined
+            ? dto.phoneCountryDialCode
+            : undefined,
+        phoneNumber:
+          dto.phoneNumber !== undefined ? dto.phoneNumber : undefined,
+      },
+    });
+
+    return this.getMe(accountId);
   }
 
   async list(query: ListCustomersQueryDto): Promise<CustomerListResult> {

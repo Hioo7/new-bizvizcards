@@ -386,3 +386,80 @@ export interface AddToCartPayload {
 export interface UpdateCartItemPayload {
   quantity: number;
 }
+
+// ── Addresses ─────────────────────────────────────────────────────────────────
+
+export interface Address {
+  id: string;
+  label: string;
+  contactName: string;
+  contactPhoneCountryDialCode: string;
+  contactPhoneNumber: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  latitude: number | null;
+  longitude: number | null;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAddressPayload {
+  label: string;
+  contactName: string;
+  contactPhoneCountryDialCode: string;
+  contactPhoneNumber: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+}
+
+// ── Orders (Customer-facing) ───────────────────────────────────────────────────
+
+export interface CustomerOrderItem {
+  id: string;
+  productName: string;
+  variantName: string | null;
+  sku: string | null;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface CustomerOrder {
+  id: string;
+  status: string;
+  totalAmount: number;
+  items: CustomerOrderItem[];
+  placedAt: string;
+}
+
+export interface PlaceOrderPayload {
+  addressId: string;
+}
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+
+export interface InitiatePaymentResponse {
+  orderId: string;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  buyerName: string;
+  buyerEmail: string;
+}
+
+export interface VerifyPaymentPayload {
+  orderId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}

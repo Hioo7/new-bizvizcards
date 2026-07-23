@@ -6,7 +6,7 @@ interface ProfileBannerProps {
   phone?: string;
   countryCode?: string;
   onEditProfile: () => void;
-  onManageEcards: () => void;
+  onManageEcards?: () => void;
 }
 
 function getInitials(name: string): string {
@@ -83,18 +83,20 @@ export default function ProfileBanner({
             </svg>
           </button>
           {/* Manage E-Cards */}
-          <button
-            type="button"
-            onClick={onManageEcards}
-            aria-label="Manage e-cards"
-            className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-sm transition-all hover:bg-white/25 hover:border-white/50 active:scale-95"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-              <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
-              <path d="M2 10h20" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              <path d="M6 15h4M6 17h2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-          </button>
+          {onManageEcards && (
+            <button
+              type="button"
+              onClick={onManageEcards}
+              aria-label="Manage e-cards"
+              className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-sm transition-all hover:bg-white/25 hover:border-white/50 active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M2 10h20" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                <path d="M6 15h4M6 17h2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

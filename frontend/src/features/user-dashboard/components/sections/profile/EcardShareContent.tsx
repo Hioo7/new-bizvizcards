@@ -67,7 +67,7 @@ export default function EcardShareContent({ cardName, endpoint, url }: EcardShar
   }
 
   return (
-    <div className="flex flex-col gap-4 px-5 py-4">
+    <div className="flex flex-col gap-4 px-5 py-4 pb-28">
       {/* QR hero */}
       <div className="flex flex-col items-center gap-3 rounded-2xl bg-base-200/60 py-6">
         <div className="rounded-2xl bg-white p-3 shadow-md">

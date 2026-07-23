@@ -23,6 +23,7 @@ interface LeadsSectionProps {
   defaultFolderId: string | null;
   loading: boolean;
   error: string | null;
+  isAccessible: boolean;
   onCreateLead: (payload: CreateLeadPayload) => Promise<void>;
   onUpdateLead: (id: string, payload: UpdateLeadPayload) => Promise<void>;
   onDeleteLead: (id: string) => Promise<void>;
@@ -40,6 +41,7 @@ export default function LeadsSection({
   defaultFolderId,
   loading,
   error,
+  isAccessible,
   onCreateLead,
   onUpdateLead,
   onDeleteLead,
@@ -92,6 +94,32 @@ export default function LeadsSection({
   function handleClearFolderFilter() {
     setFolderFilterId(null);
     setShowFolderDropdown(false);
+  }
+
+  if (!isAccessible) {
+    return (
+      <div className="min-h-screen">
+        <div
+          className="sticky top-0 z-10 px-4 pb-5 pt-10"
+          style={{ backgroundColor: "var(--color-primary)" }}
+        >
+          <h1 className="text-xl font-bold text-white">Leads</h1>
+          <p className="text-sm text-white/70">Manage your leads</p>
+        </div>
+        <div className="flex flex-col items-center justify-center px-4 pt-16 text-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
+            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-base-content/30" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-base font-semibold text-base-content/60">Leads not available on your plan</p>
+            <p className="mt-1 text-sm text-base-content/40">Upgrade your plan to capture and manage leads</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

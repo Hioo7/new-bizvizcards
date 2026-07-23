@@ -153,6 +153,14 @@ export class AppConfigService {
     return this.env.APPLE_OAUTH_APP_BUNDLE_IDENTIFIER;
   }
 
+  get razorpayKeyId(): string | undefined {
+    return this.env.RAZORPAY_KEY_ID;
+  }
+
+  get razorpayKeySecret(): string | undefined {
+    return this.env.RAZORPAY_KEY_SECRET;
+  }
+
   get legacyDatabaseUrl(): string | undefined {
     return this.env.LEGACY_DATABASE_URL;
   }
