@@ -1,6 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AuthUser } from "@app-types/auth";
-import { updateUserName, updateUserImage, updateProfilePicture } from "@services/authService";
+import {
+  updateUserName,
+  updateUserImage,
+  updateProfilePicture,
+  getCustomerProfile,
+  updateCustomerPhone,
+} from "@services/authService";
 import { ApiError } from "@services/apiClient";
 
 interface EditProfileModalProps {
@@ -29,9 +35,30 @@ function FormInner({ user, onSave, onClose }: FormInnerProps) {
   const [name, setName] = useState(user.name);
   const [previewUrl, setPreviewUrl] = useState<string | null>(user.image);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [dialCode, setDialCode] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCustomerProfile()
+      .then((profile) => {
+        if (cancelled) return;
+        setDialCode(profile.phoneCountryDialCode ?? "");
+        setPhoneNumber(profile.phoneNumber ?? "");
+        setProfileLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -43,6 +70,21 @@ function FormInner({ user, onSave, onClose }: FormInnerProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const trimmedDialCode = dialCode.trim();
+    const trimmedPhone = phoneNumber.trim();
+
+    // Require both fields together: phone entered but no dial code → block
+    if (trimmedPhone && !trimmedDialCode) {
+      setPhoneError("Please enter a country code (e.g. +91)");
+      return;
+    }
+    // Dial code entered but no phone number → block
+    if (trimmedDialCode && !trimmedPhone) {
+      setPhoneError("Please enter a phone number");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -58,6 +100,15 @@ function FormInner({ user, onSave, onClose }: FormInnerProps) {
         await updateUserImage(res.pfpUrl);
         updatedUser = { ...updatedUser, image: res.pfpUrl };
       }
+
+      const phonePayload =
+        trimmedDialCode && trimmedPhone
+          ? {
+              phoneCountryDialCode: trimmedDialCode,
+              phoneNumber: trimmedPhone,
+            }
+          : { phoneCountryDialCode: null, phoneNumber: null };
+      await updateCustomerPhone(phonePayload);
 
       onSave(updatedUser);
     } catch (err) {
@@ -204,6 +255,50 @@ function FormInner({ user, onSave, onClose }: FormInnerProps) {
           </div>
         </div>
 
+        {/* Mobile number */}
+        <div className="rounded-2xl border border-base-300 bg-base-200/50 px-4 py-3">
+          <label
+            htmlFor="edit-profile-phone"
+            className="text-xs font-medium text-base-content/50"
+          >
+            Mobile number
+          </label>
+          {profileLoading ? (
+            <div className="mt-2 h-5 w-40 rounded bg-base-300 animate-pulse" />
+          ) : (
+            <div className="flex items-center gap-2 mt-1">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0 text-primary" aria-hidden="true">
+                <path
+                  d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <input
+                type="text"
+                value={dialCode}
+                onChange={(e) => { setDialCode(e.target.value); setPhoneError(null); }}
+                className="w-16 bg-transparent text-sm font-medium text-base-content outline-none placeholder:text-base-content/30 border-r border-base-300 pr-2"
+                placeholder="+91"
+                aria-label="Country dial code"
+              />
+              <input
+                id="edit-profile-phone"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => { setPhoneNumber(e.target.value); setPhoneError(null); }}
+                className="flex-1 bg-transparent text-sm font-medium text-base-content outline-none placeholder:text-base-content/30"
+                placeholder="Phone number"
+              />
+            </div>
+          )}
+          {phoneError && (
+            <p className="mt-1.5 text-xs text-error">{phoneError}</p>
+          )}
+        </div>
+
         {error && (
           <p className="text-sm text-error text-center">{error}</p>
         )}
@@ -213,7 +308,7 @@ function FormInner({ user, onSave, onClose }: FormInnerProps) {
       <div className="px-5 pb-6 pt-2">
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || profileLoading}
           className="w-full min-h-[52px] rounded-2xl bg-primary text-sm font-bold text-primary-content transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-60"
         >
           {saving ? (

@@ -47,3 +47,4 @@ export const DASHBOARD_APP_VERSION = "v1.0.0";
 
 export const SHOP_PAGE_SIZE = 20;
 export const CART_ITEM_MAX_QUANTITY = 99;
+export const ADDRESSES_MAX = 5;

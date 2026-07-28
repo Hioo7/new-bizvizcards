@@ -84,6 +84,11 @@ export const envSchema = z.object({
   // strategy) writes legacy media objects into — read via the app's own S3
   // client during Phase B, then re-uploaded through the normal MediaService
   // into the real MINIO_BUCKET.
+  // Not required — payment features are disabled until keys are provisioned.
+  // Get these from the Razorpay Dashboard → Settings → API Keys.
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+
   LEGACY_DATABASE_URL: z.string().url().optional(),
   // No .min(1) — matches the GOOGLE_WALLET_*-style optional vars below,
   // which are left as a blank string (not absent) in .env when unconfigured.

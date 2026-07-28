@@ -4,6 +4,7 @@ import { apiRequest } from "@services/apiClient";
 import type {
   AuthSession,
   AuthUser,
+  CustomerProfile,
   SessionResponse,
   SignInPayload,
   SignUpPayload,
@@ -65,6 +66,20 @@ export function updateUserImage(image: string): Promise<{ user: AuthUser }> {
   return apiRequest<{ user: AuthUser }>(AUTH_ENDPOINTS.updateUser, {
     method: "POST",
     body: JSON.stringify({ image }),
+  });
+}
+
+export function getCustomerProfile(): Promise<CustomerProfile> {
+  return apiRequest<CustomerProfile>(CUSTOMER_ENDPOINTS.me, { method: "GET" });
+}
+
+export function updateCustomerPhone(payload: {
+  phoneCountryDialCode: string | null;
+  phoneNumber: string | null;
+}): Promise<CustomerProfile> {
+  return apiRequest<CustomerProfile>(CUSTOMER_ENDPOINTS.updatePhone, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }
 

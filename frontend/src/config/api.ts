@@ -55,11 +55,16 @@ export const CUSTOMER_PRODUCTS_BASE_PATH = "/api/products";
 export const CART_BASE_PATH = "/api/cart";
 
 export const EMPLOYEE_ORDERS_BASE_PATH = "/api/employee/orders";
+export const ADDRESSES_BASE_PATH = "/api/addresses";
+export const CUSTOMER_ORDERS_BASE_PATH = "/api/orders";
+export const PAYMENTS_BASE_PATH = "/api/payments";
 
 export const MIGRATION_BASE_PATH = "/api/migration";
 
 export const CUSTOMER_ENDPOINTS = {
+  me: `${CUSTOMERS_BASE_PATH}/me`,
   updateProfilePicture: `${CUSTOMERS_BASE_PATH}/me/profile-picture`,
+  updatePhone: `${CUSTOMERS_BASE_PATH}/me/phone`,
 } as const;
 
 export const ECARDS_BASE_PATH = "/api/ecards";

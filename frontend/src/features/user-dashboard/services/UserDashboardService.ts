@@ -24,12 +24,24 @@ import type {
   OrgEcardListResponse,
   UpdateOrgEcardPayload,
 } from "@features/user-dashboard/types";
-import { CUSTOMER_PRODUCTS_BASE_PATH, CART_BASE_PATH } from "@config/api";
+import {
+  CUSTOMER_PRODUCTS_BASE_PATH,
+  CART_BASE_PATH,
+  ADDRESSES_BASE_PATH,
+  CUSTOMER_ORDERS_BASE_PATH,
+  PAYMENTS_BASE_PATH,
+} from "@config/api";
 import type {
   ShopProductListResponse,
   Cart,
   AddToCartPayload,
   UpdateCartItemPayload,
+  Address,
+  CreateAddressPayload,
+  CustomerOrder,
+  PlaceOrderPayload,
+  InitiatePaymentResponse,
+  VerifyPaymentPayload,
 } from "@features/user-dashboard/types";
 
 export class UserDashboardService {
@@ -309,6 +321,52 @@ export class UserDashboardService {
 
   async clearCart(): Promise<void> {
     await apiRequest<void>(CART_BASE_PATH, { method: "DELETE" });
+  }
+
+  // ── Addresses ──────────────────────────────────────────────────────────────
+
+  async listAddresses(): Promise<Address[]> {
+    return apiRequest<Address[]>(ADDRESSES_BASE_PATH);
+  }
+
+  async createAddress(payload: CreateAddressPayload): Promise<Address> {
+    return apiRequest<Address>(ADDRESSES_BASE_PATH, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteAddress(id: string): Promise<void> {
+    await apiRequest<void>(`${ADDRESSES_BASE_PATH}/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // ── Orders (Customer) ──────────────────────────────────────────────────────
+
+  async placeOrder(payload: PlaceOrderPayload): Promise<CustomerOrder> {
+    return apiRequest<CustomerOrder>(CUSTOMER_ORDERS_BASE_PATH, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // ── Payments ───────────────────────────────────────────────────────────────
+
+  async initiatePayment(orderId: string): Promise<InitiatePaymentResponse> {
+    return apiRequest<InitiatePaymentResponse>(`${PAYMENTS_BASE_PATH}/initiate`, {
+      method: "POST",
+      body: JSON.stringify({ orderId }),
+    });
+  }
+
+  async verifyPayment(
+    payload: VerifyPaymentPayload,
+  ): Promise<{ success: boolean; orderId: string }> {
+    return apiRequest<{ success: boolean; orderId: string }>(
+      `${PAYMENTS_BASE_PATH}/verify`,
+      { method: "POST", body: JSON.stringify(payload) },
+    );
   }
 }
 

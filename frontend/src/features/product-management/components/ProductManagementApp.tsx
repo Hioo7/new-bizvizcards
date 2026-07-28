@@ -31,6 +31,7 @@ export default function ProductManagementApp() {
           name: values.name,
           description: values.description || undefined,
           productType: values.productType,
+          price: values.price,
         });
         navigate(adminProductDetailPath(product.id));
       },

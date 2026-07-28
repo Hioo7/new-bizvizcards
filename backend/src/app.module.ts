@@ -20,6 +20,7 @@ import { ProductLinkingModule } from './modules/product-linking/product-linking.
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { CartModule } from './modules/cart/cart.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { MigrationModule } from './modules/migration/migration.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { MigrationModule } from './modules/migration/migration.module';
     AddressesModule,
     CartModule,
     OrdersModule,
+    PaymentsModule,
     MigrationModule,
   ],
   controllers: [AppController],

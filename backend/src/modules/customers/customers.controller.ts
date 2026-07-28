@@ -1,5 +1,6 @@
 import { extname } from 'path';
 import {
+  Body,
   Controller,
   Delete,
   FileTypeValidator,
@@ -28,7 +29,10 @@ import { lookupCustomerQuerySchema } from './dto/lookup-customer-query.dto';
 import type { LookupCustomerQueryDto } from './dto/lookup-customer-query.dto';
 import { listCustomersQuerySchema } from './dto/list-customers-query.dto';
 import type { ListCustomersQueryDto } from './dto/list-customers-query.dto';
+import { updateCustomerPhoneSchema } from './dto/update-customer-phone.dto';
+import type { UpdateCustomerPhoneDto } from './dto/update-customer-phone.dto';
 import { CustomersService } from './services/customers.service';
+import type { CustomerProfile } from './services/customers.service';
 
 @Controller('api/customers')
 @UseGuards(CustomerAuthGuard)
@@ -51,6 +55,25 @@ export class CustomersController {
     const result = await this.customersService.lookupByEmail(query.email);
     if (!result) throw new NotFoundException('Customer not found');
     return result;
+  }
+
+  @Get('me')
+  getMe(
+    @Req() request: CustomerAuthenticatedRequest,
+  ): Promise<CustomerProfile> {
+    return this.customersService.getMe(request.customerSession.user.id);
+  }
+
+  @Patch('me/phone')
+  updatePhone(
+    @Req() request: CustomerAuthenticatedRequest,
+    @Body(new ZodValidationPipe(updateCustomerPhoneSchema))
+    dto: UpdateCustomerPhoneDto,
+  ): Promise<CustomerProfile> {
+    return this.customersService.updatePhone(
+      request.customerSession.user.id,
+      dto,
+    );
   }
 
   @Patch('me/profile-picture')

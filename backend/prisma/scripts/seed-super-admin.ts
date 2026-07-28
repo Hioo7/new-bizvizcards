@@ -15,29 +15,33 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  const email = process.env.SUPER_ADMIN_EMAIL;
-  if (!email) {
-    throw new Error('SUPER_ADMIN_EMAIL must be set to seed a super_admin.');
+  const raw = process.env.SUPER_ADMIN_EMAILS ?? process.env.SUPER_ADMIN_EMAIL;
+  if (!raw) {
+    throw new Error('SUPER_ADMIN_EMAILS must be set to seed super_admin accounts.');
   }
 
-  const account = await prisma.employeeAccount.upsert({
-    where: { email },
-    update: { role: EMPLOYEE_ROLE.SUPER_ADMIN },
-    create: {
-      email,
-      name: 'Super Admin',
-      emailVerified: true,
-      role: EMPLOYEE_ROLE.SUPER_ADMIN,
-    },
-  });
+  const emails = raw.split(',').map((e) => e.trim()).filter(Boolean);
 
-  await prisma.employee.upsert({
-    where: { accountId: account.id },
-    create: { accountId: account.id },
-    update: {},
-  });
+  for (const email of emails) {
+    const account = await prisma.employeeAccount.upsert({
+      where: { email },
+      update: { role: EMPLOYEE_ROLE.SUPER_ADMIN },
+      create: {
+        email,
+        name: 'Super Admin',
+        emailVerified: true,
+        role: EMPLOYEE_ROLE.SUPER_ADMIN,
+      },
+    });
 
-  console.log(`Seeded super_admin EmployeeAccount for ${email}.`);
+    await prisma.employee.upsert({
+      where: { accountId: account.id },
+      create: { accountId: account.id },
+      update: {},
+    });
+
+    console.log(`Seeded super_admin EmployeeAccount for ${email}.`);
+  }
 }
 
 main()

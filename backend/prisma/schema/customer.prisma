@@ -7,6 +7,9 @@ model Customer {
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
 
+  phoneCountryDialCode String?
+  phoneNumber          String?
+
   smartCards SmartCard[]
   ecards     ECard[]
 
