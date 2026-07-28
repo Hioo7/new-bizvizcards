@@ -2,9 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { ZodFieldError } from '../../../common/validators/zod-error-formatter';
 import { MediaSlotResolverService } from '../../../common/media/media-slot-resolver.service';
 import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
@@ -884,7 +886,13 @@ export class EcardsService {
       where: { endpoint },
     });
     if (existing) {
-      throw new ConflictException('Endpoint already in use');
+      const message = 'Endpoint already in use';
+      throw new ConflictException({
+        statusCode: HttpStatus.CONFLICT,
+        error: 'Conflict',
+        message,
+        fieldErrors: [{ field: 'endpoint', message }] satisfies ZodFieldError[],
+      });
     }
   }
 

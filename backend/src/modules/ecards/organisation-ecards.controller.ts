@@ -29,7 +29,7 @@ import type { UpdateEcardDto } from './dto/update-ecard.dto';
 import { ECARD_MULTIPART_DATA_FIELD } from './ecards.constants';
 import { EcardsService } from './services/ecards.service';
 import { assertValidEcardFiles } from './utils/assert-valid-ecard-files';
-import { parseMultipartJson } from './utils/parse-multipart-json';
+import { parseMultipartJson } from '../../common/validators/parse-multipart-json';
 
 // Per-field mime/extension/size rules (image vs brochure PDF) are enforced
 // by assertValidEcardFiles below — a single blanket ParseFilePipe validator

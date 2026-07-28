@@ -12,11 +12,72 @@ import type {
   ImageSlotPayload,
 } from "@app-types/ecard";
 import type { ImageFieldValue } from "@app-types/media.types";
+import {
+  heroSheetSchema,
+  type HeroSheetValues,
+} from "@features/ecards/schemas/ecardComponentSchemas";
 import type {
   BuilderComponent,
   ComponentDraft,
   EcardBuilderState,
+  EcardHeroDraft,
 } from "@features/ecards/types/ecardBuilder.types";
+
+/** Maps the *server's* ecard-core field names (see backend's ecardCoreFields) to the
+ * Hero sheet's own form field names, so a validation error returned by the API can
+ * drive the exact same `setError`/highlight path as the sheet's own client-side
+ * validation. Also acts as an allowlist — any server field not listed here (e.g. a
+ * component- or customer-level error) is not a Hero-sheet concern and is dropped. */
+const HERO_SERVER_FIELD_TO_FORM_FIELD: Record<string, keyof HeroSheetValues> = {
+  endpoint: "endpoint",
+  heroName: "name",
+  heroEmail: "email",
+  heroCompanyName: "companyName",
+  phoneCountryDialCode: "phoneCountryDialCode",
+  phoneNumber: "phoneNumber",
+};
+
+/** Runs the same schema the Hero edit sheet validates against, against the builder's
+ * current hero draft — lets the outer "Save card" action catch a missing/invalid Hero
+ * field instantly, with no server round-trip. Returns a field->message map (keyed by
+ * the Hero sheet's own form field names) or null when the hero draft is valid. */
+export function getHeroValidationErrors(
+  hero: EcardHeroDraft,
+): Record<string, string> | null {
+  const result = heroSheetSchema.safeParse({
+    endpoint: hero.endpoint,
+    name: hero.name,
+    email: hero.email,
+    companyName: hero.companyName,
+    phoneCountryDialCode: hero.phoneCountryDialCode,
+    phoneNumber: hero.phoneNumber,
+  });
+  if (result.success) return null;
+
+  const fieldErrors: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const field = String(issue.path[0]);
+    // A field can fail more than one check (e.g. both too short and the wrong
+    // pattern) — keep the first, since it reads most naturally top-to-bottom.
+    if (!(field in fieldErrors)) fieldErrors[field] = issue.message;
+  }
+  return fieldErrors;
+}
+
+/** Translates a server-returned field-error map (backend field names) into the Hero
+ * sheet's own form field names, dropping anything outside the Hero sheet's fields.
+ * Returns null when none of the server errors are Hero-related. */
+export function mapServerFieldErrorsToHeroFields(
+  serverFieldErrors: Record<string, string>,
+): Record<string, string> | null {
+  const heroFieldErrors: Record<string, string> = {};
+  for (const [field, message] of Object.entries(serverFieldErrors)) {
+    const formField = HERO_SERVER_FIELD_TO_FORM_FIELD[field];
+    if (formField) heroFieldErrors[formField] = message;
+  }
+
+  return Object.keys(heroFieldErrors).length > 0 ? heroFieldErrors : null;
+}
 
 export function ecardToBuilderState(card: Ecard): EcardBuilderState {
   return {

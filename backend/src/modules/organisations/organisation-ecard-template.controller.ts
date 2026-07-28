@@ -15,7 +15,7 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { CustomerAuthGuard } from '../../common/guards/customer-auth.guard';
 import type { CustomerAuthenticatedRequest } from '../../common/guards/customer-auth.guard';
 import { CustomersService } from '../customers/services/customers.service';
-import { parseMultipartJson } from '../ecards/utils/parse-multipart-json';
+import { parseMultipartJson } from '../../common/validators/parse-multipart-json';
 import { organisationEcardTemplateSchema } from './dto/organisation-ecard-template.dto';
 import type { OrganisationEcardTemplateDto } from './dto/organisation-ecard-template.dto';
 import { ORGANISATION_ECARD_TEMPLATE_MULTIPART_DATA_FIELD } from './organisations.constants';

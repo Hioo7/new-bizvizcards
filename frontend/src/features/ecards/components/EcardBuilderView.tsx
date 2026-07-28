@@ -214,7 +214,11 @@ export default function EcardBuilderView() {
 
       {!builder.isLoading && (
         <>
-          <HeroCard draft={builder.state.hero} onEdit={() => setEditing({ kind: "hero" })} />
+          <HeroCard
+            draft={builder.state.hero}
+            onEdit={() => setEditing({ kind: "hero" })}
+            hasError={!!builder.heroFieldErrors}
+          />
 
           <EcardSettingsCard
             draft={builder.state.hero}
@@ -279,7 +283,8 @@ export default function EcardBuilderView() {
           customerId={customerId}
           draft={builder.state.hero}
           isSubmitting={false}
-          error={null}
+          error={builder.saveError}
+          fieldErrors={builder.heroFieldErrors}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state) => ({ ...state, hero }));

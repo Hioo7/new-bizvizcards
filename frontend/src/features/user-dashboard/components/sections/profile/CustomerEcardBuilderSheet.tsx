@@ -143,6 +143,7 @@ export default function CustomerEcardBuilderSheet({
           <HeroCard
             draft={builder.state.hero}
             onEdit={() => setEditing({ kind: "hero" })}
+            hasError={!!builder.heroFieldErrors}
           />
 
           <EcardSettingsCard
@@ -216,7 +217,8 @@ export default function CustomerEcardBuilderSheet({
           open
           draft={builder.state.hero}
           isSubmitting={false}
-          error={null}
+          error={builder.saveError}
+          fieldErrors={builder.heroFieldErrors}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state: EcardBuilderState) => ({ ...state, hero }));

@@ -8,6 +8,9 @@ interface FormTextFieldProps
   label: string;
   icon: LucideIcon;
   error?: string;
+  /** Brief attention-drawing pulse (e.g. right after a server validation error surfaces),
+   * independent of and in addition to the persistent `error` styling above. */
+  highlight?: boolean;
   registration: UseFormRegisterReturn;
 }
 
@@ -16,6 +19,7 @@ export default function FormTextField({
   label,
   icon: Icon,
   error,
+  highlight = false,
   registration,
   ...inputProps
 }: FormTextFieldProps) {
@@ -31,7 +35,7 @@ export default function FormTextField({
             error
               ? "border-error focus:border-error"
               : "border-base-300 focus:border-primary"
-          }`}
+          } ${highlight ? "ring-2 ring-error/60 animate-pulse" : ""}`}
         />
         <label
           htmlFor={id}

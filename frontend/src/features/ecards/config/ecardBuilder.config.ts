@@ -88,3 +88,8 @@ export const ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN =
 
 export const ECARD_BROCHURE_ALLOWED_MIME_TYPES = ["application/pdf"];
 export const ECARD_BROCHURE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+
+// Shown when the outer "Save card" action is blocked by a client-side pre-check of the
+// Hero section (e.g. the endpoint was never set) — see getHeroValidationErrors.
+export const ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE =
+  "Please complete the required Hero fields.";

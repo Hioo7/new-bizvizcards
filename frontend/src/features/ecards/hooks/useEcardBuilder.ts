@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { createEcard, getEcard, updateEcard } from "@services/ecardService";
 import type { Ecard } from "@app-types/ecard";
+import { getFieldErrorMap } from "@utils/apiFieldErrors";
 import {
   buildEcardSubmission,
   ecardToBuilderState,
+  getHeroValidationErrors,
+  mapServerFieldErrorsToHeroFields,
 } from "@features/ecards/utils/ecardFormMapping";
+import { ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE } from "@features/ecards/config/ecardBuilder.config";
 import {
   emptyEcardBuilderState,
   emptyHeroDraft,
@@ -24,6 +28,9 @@ export interface UseEcardBuilderResult {
   loadError: string | null;
   isSaving: boolean;
   saveError: string | null;
+  /** Hero-section field errors (client pre-check or server response), keyed by the
+   * Hero sheet's own field names — null when the Hero section is currently valid. */
+  heroFieldErrors: Record<string, string> | null;
   save: () => Promise<Ecard | null>;
 }
 
@@ -51,6 +58,9 @@ export function useEcardBuilder(
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [heroFieldErrors, setHeroFieldErrors] = useState<Record<string, string> | null>(
+    null,
+  );
 
   // Tracks which ecardId the current `state` was last reset for, so a prop
   // change back to create mode (e.g. navigating from editing card A straight
@@ -104,8 +114,16 @@ export function useEcardBuilder(
   );
 
   const save = useCallback(async (): Promise<Ecard | null> => {
-    setIsSaving(true);
     setSaveError(null);
+
+    const heroErrors = getHeroValidationErrors(state.hero);
+    if (heroErrors) {
+      setHeroFieldErrors(heroErrors);
+      setSaveError(ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE);
+      return null;
+    }
+
+    setIsSaving(true);
     try {
       const { payload, files } = buildEcardSubmission(state);
       const saved = ecardId
@@ -113,8 +131,14 @@ export function useEcardBuilder(
         : await createEcard({ ...payload, customerId }, files);
       setExistingCard(saved);
       setStateInternal(ecardToBuilderState(saved));
+      setHeroFieldErrors(null);
       return saved;
     } catch (err) {
+      const serverFieldErrors = getFieldErrorMap(err);
+      const heroServerErrors = serverFieldErrors
+        ? mapServerFieldErrorsToHeroFields(serverFieldErrors)
+        : null;
+      setHeroFieldErrors(heroServerErrors);
       setSaveError(
         err instanceof Error ? err.message : "Failed to save the e-card.",
       );
@@ -132,6 +156,7 @@ export function useEcardBuilder(
     loadError,
     isSaving,
     saveError,
+    heroFieldErrors,
     save,
   };
 }

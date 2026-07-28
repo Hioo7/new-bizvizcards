@@ -23,7 +23,7 @@ import { EmployeeAuthGuard } from '../../common/guards/employee-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { parseMultipartJson } from '../ecards/utils/parse-multipart-json';
+import { parseMultipartJson } from '../../common/validators/parse-multipart-json';
 import { addOrganisationMemberAsEmployeeSchema } from './dto/add-organisation-member-as-employee.dto';
 import type { AddOrganisationMemberAsEmployeeDto } from './dto/add-organisation-member-as-employee.dto';
 import { createOrganisationAsEmployeeSchema } from './dto/create-organisation-as-employee.dto';

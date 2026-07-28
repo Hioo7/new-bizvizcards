@@ -1,6 +1,5 @@
 import { extname } from 'path';
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -19,12 +18,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import type { ZodType } from 'zod';
 import { EmployeeAuthGuard } from '../../common/guards/employee-auth.guard';
 import type { EmployeeAuthenticatedRequest } from '../../common/guards/employee-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { parseMultipartJson } from '../../common/validators/parse-multipart-json';
 import {
   SMART_CARD_IMAGE_ALLOWED_EXTENSIONS,
   SMART_CARD_IMAGE_ALLOWED_MIME_TYPE_PATTERN,
@@ -107,7 +106,7 @@ export class SmartCardsController {
     @Body('data') rawData: string,
   ) {
     assertValidExtensions(files);
-    const dto = this.parseData<CreateSmartCardDto>(
+    const dto = parseMultipartJson<CreateSmartCardDto>(
       smartCardCreateSchemaRegistry[templateKey],
       rawData,
     );
@@ -133,7 +132,7 @@ export class SmartCardsController {
     @Body('data') rawData: string,
   ) {
     assertValidExtensions(files);
-    const dto = this.parseData<UpdateSmartCardDto>(
+    const dto = parseMultipartJson<UpdateSmartCardDto>(
       smartCardUpdateSchemaRegistry[templateKey],
       rawData,
     );
@@ -151,19 +150,5 @@ export class SmartCardsController {
     @Param('id') id: string,
   ) {
     return this.smartCardsService.remove(templateKey, id);
-  }
-
-  private parseData<T>(schema: ZodType<T>, rawData: string): T {
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(rawData) as unknown;
-    } catch {
-      throw new BadRequestException('Invalid JSON in "data" field');
-    }
-    const result = schema.safeParse(parsedJson);
-    if (!result.success) {
-      throw new BadRequestException(result.error.issues);
-    }
-    return result.data;
   }
 }

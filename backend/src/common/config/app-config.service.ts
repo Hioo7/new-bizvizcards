@@ -42,7 +42,9 @@ export class AppConfigService {
   }
 
   get corsAllowedOrigins(): string[] {
-    return this.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
+    return this.env.CORS_ALLOWED_ORIGINS.split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
   }
 
   get smtpHost(): string {

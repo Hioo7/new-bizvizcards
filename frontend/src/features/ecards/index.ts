@@ -32,6 +32,8 @@ export {
 export {
   componentToDraft,
   buildImageSlot,
+  getHeroValidationErrors,
+  mapServerFieldErrorsToHeroFields,
 } from "@features/ecards/utils/ecardFormMapping";
 
 // Schemas
@@ -52,4 +54,5 @@ export {
   ECARD_PHONE_NUMBER_MAX_DIGITS,
   ECARD_PHONE_NUMBER_DIGITS_REGEX,
   ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN,
+  ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE,
 } from "@features/ecards/config/ecardBuilder.config";

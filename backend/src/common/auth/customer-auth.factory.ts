@@ -129,7 +129,10 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
       },
     },
     socialProviders: buildSocialProviders(deps),
-    trustedOrigins: [APPLE_SIGN_IN_TRUSTED_ORIGIN, ...deps.trustedFrontendOrigins],
+    trustedOrigins: [
+      APPLE_SIGN_IN_TRUSTED_ORIGIN,
+      ...deps.trustedFrontendOrigins,
+    ],
   });
 }
 

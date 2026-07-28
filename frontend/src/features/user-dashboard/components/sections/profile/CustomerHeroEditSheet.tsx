@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link2, Mail, Phone, Sparkles, User } from "lucide-react";
@@ -11,12 +11,16 @@ import {
 } from "@features/ecards";
 import type { EcardHeroDraft } from "@features/ecards/types/ecardBuilder.types";
 import type { ImageFieldValue } from "@app-types/media.types";
+import { useFieldHighlight } from "@hooks/useFieldHighlight";
 
 interface CustomerHeroEditSheetProps {
   open: boolean;
   draft: EcardHeroDraft;
   isSubmitting: boolean;
   error: string | null;
+  /** Field-level errors surfaced from outside the sheet (failed client-side pre-check
+   * or a server validation/conflict response) — keyed by this sheet's own field names. */
+  fieldErrors?: Record<string, string> | null;
   onClose: () => void;
   onSave: (draft: EcardHeroDraft) => void;
 }
@@ -26,12 +30,14 @@ export default function CustomerHeroEditSheet({
   draft,
   isSubmitting,
   error,
+  fieldErrors,
   onClose,
   onSave,
 }: CustomerHeroEditSheetProps) {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<HeroSheetValues>({
     resolver: zodResolver(heroSheetSchema),
@@ -45,6 +51,16 @@ export default function CustomerHeroEditSheet({
     },
   });
   const [photo, setPhoto] = useState<ImageFieldValue>(draft.photo);
+  const { highlightedField, triggerHighlight } = useFieldHighlight();
+
+  useEffect(() => {
+    if (!open || !fieldErrors) return;
+    const fields = Object.keys(fieldErrors) as (keyof HeroSheetValues)[];
+    fields.forEach((field) => {
+      setError(field, { type: "server", message: fieldErrors[field] });
+    });
+    if (fields.length > 0) triggerHighlight(fields[0]);
+  }, [open, fieldErrors, setError, triggerHighlight]);
 
   function submit(values: HeroSheetValues) {
     onSave({
@@ -79,6 +95,7 @@ export default function CustomerHeroEditSheet({
         icon={Link2}
         registration={register("endpoint")}
         error={errors.endpoint?.message}
+        highlight={highlightedField === "endpoint"}
       />
       <FormTextField
         id="name"
@@ -86,6 +103,7 @@ export default function CustomerHeroEditSheet({
         icon={User}
         registration={register("name")}
         error={errors.name?.message}
+        highlight={highlightedField === "name"}
       />
       <FormTextField
         id="email"
@@ -94,6 +112,7 @@ export default function CustomerHeroEditSheet({
         icon={Mail}
         registration={register("email")}
         error={errors.email?.message}
+        highlight={highlightedField === "email"}
       />
       <FormTextField
         id="companyName"
@@ -101,6 +120,7 @@ export default function CustomerHeroEditSheet({
         icon={Sparkles}
         registration={register("companyName")}
         error={errors.companyName?.message}
+        highlight={highlightedField === "companyName"}
       />
       <div className="flex gap-3">
         <div className="w-24">
@@ -110,6 +130,7 @@ export default function CustomerHeroEditSheet({
             icon={Phone}
             registration={register("phoneCountryDialCode")}
             error={errors.phoneCountryDialCode?.message}
+            highlight={highlightedField === "phoneCountryDialCode"}
           />
         </div>
         <div className="flex-1">
@@ -119,6 +140,7 @@ export default function CustomerHeroEditSheet({
             icon={Phone}
             registration={register("phoneNumber")}
             error={errors.phoneNumber?.message}
+            highlight={highlightedField === "phoneNumber"}
           />
         </div>
       </div>

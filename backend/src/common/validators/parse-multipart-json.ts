@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import type { ZodType } from 'zod';
+import { formatZodError } from './zod-error-formatter';
 
 export function parseMultipartJson<T>(schema: ZodType<T>, rawData: string): T {
   let parsedJson: unknown;
@@ -10,7 +11,7 @@ export function parseMultipartJson<T>(schema: ZodType<T>, rawData: string): T {
   }
   const result = schema.safeParse(parsedJson);
   if (!result.success) {
-    throw new BadRequestException(result.error.issues);
+    throw new BadRequestException(formatZodError(result.error));
   }
   return result.data;
 }

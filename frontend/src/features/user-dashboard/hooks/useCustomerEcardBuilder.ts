@@ -4,10 +4,14 @@ import {
   createCustomerEcard,
   updateCustomerEcard,
 } from "@services/customerEcardService";
+import { getFieldErrorMap } from "@utils/apiFieldErrors";
 import {
   buildEcardSubmission,
   ecardToBuilderState,
+  getHeroValidationErrors,
+  mapServerFieldErrorsToHeroFields,
 } from "@features/ecards/utils/ecardFormMapping";
+import { ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE } from "@features/ecards/config/ecardBuilder.config";
 import {
   emptyEcardBuilderState,
   emptyHeroDraft,
@@ -20,6 +24,9 @@ export interface UseCustomerEcardBuilderResult {
   savedCard: Ecard | null;
   isSaving: boolean;
   saveError: string | null;
+  /** Hero-section field errors (client pre-check or server response), keyed by the
+   * Hero sheet's own field names — null when the Hero section is currently valid. */
+  heroFieldErrors: Record<string, string> | null;
   save: () => Promise<Ecard | null>;
 }
 
@@ -39,6 +46,9 @@ export function useCustomerEcardBuilder(
   const [savedCard, setSavedCard] = useState<Ecard | null>(existingEcard);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [heroFieldErrors, setHeroFieldErrors] = useState<Record<string, string> | null>(
+    null,
+  );
 
   const setState = useCallback(
     (updater: (state: EcardBuilderState) => EcardBuilderState) => {
@@ -48,8 +58,16 @@ export function useCustomerEcardBuilder(
   );
 
   const save = useCallback(async (): Promise<Ecard | null> => {
-    setIsSaving(true);
     setSaveError(null);
+
+    const heroErrors = getHeroValidationErrors(state.hero);
+    if (heroErrors) {
+      setHeroFieldErrors(heroErrors);
+      setSaveError(ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE);
+      return null;
+    }
+
+    setIsSaving(true);
     try {
       const { payload, files } = buildEcardSubmission(state);
       const saved = savedCard
@@ -57,8 +75,14 @@ export function useCustomerEcardBuilder(
         : await createCustomerEcard(payload, files);
       setSavedCard(saved);
       setStateInternal(ecardToBuilderState(saved));
+      setHeroFieldErrors(null);
       return saved;
     } catch (err) {
+      const serverFieldErrors = getFieldErrorMap(err);
+      const heroServerErrors = serverFieldErrors
+        ? mapServerFieldErrorsToHeroFields(serverFieldErrors)
+        : null;
+      setHeroFieldErrors(heroServerErrors);
       setSaveError(
         err instanceof Error ? err.message : "Failed to save e-card.",
       );
@@ -68,5 +92,5 @@ export function useCustomerEcardBuilder(
     }
   }, [savedCard, state]);
 
-  return { state, setState, savedCard, isSaving, saveError, save };
+  return { state, setState, savedCard, isSaving, saveError, heroFieldErrors, save };
 }

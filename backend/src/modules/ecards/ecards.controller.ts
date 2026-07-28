@@ -34,7 +34,7 @@ import { EcardsService } from './services/ecards.service';
 import { EcardGoogleWalletService } from './services/ecard-google-wallet.service';
 import { EcardAppleWalletService } from './services/ecard-apple-wallet.service';
 import { assertValidEcardFiles } from './utils/assert-valid-ecard-files';
-import { parseMultipartJson } from './utils/parse-multipart-json';
+import { parseMultipartJson } from '../../common/validators/parse-multipart-json';
 
 // Per-field mime/extension/size rules (image vs brochure PDF) are enforced
 // by assertValidEcardFiles below — a single blanket ParseFilePipe validator
