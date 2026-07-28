@@ -180,6 +180,11 @@ jobs:
         run: |
           npx prisma generate
           npx prisma generate --config prisma/legacy.config.ts
+        env:
+          # Falls back to a throwaway placeholder until a real
+          # LEGACY_DATABASE_URL secret is added — prisma generate only needs
+          # a syntactically valid URL, it never connects to the database.
+          LEGACY_DATABASE_URL: ${{ secrets.LEGACY_DATABASE_URL || 'postgresql://ci_user:ci_password@localhost:5432/ci_db?schema=public' }}
 
       - name: Push schema to test database
         run: npx prisma db push --accept-data-loss

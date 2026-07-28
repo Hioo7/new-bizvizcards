@@ -97,7 +97,9 @@ export class PaymentsService {
     });
     if (!order) throw new NotFoundException('Order not found');
     if (!order.razorpayOrderId) {
-      throw new BadRequestException('Payment has not been initiated for this order');
+      throw new BadRequestException(
+        'Payment has not been initiated for this order',
+      );
     }
 
     // Razorpay signature = HMAC-SHA256(key_secret, razorpay_order_id + "|" + razorpay_payment_id)
@@ -106,7 +108,9 @@ export class PaymentsService {
       .digest('hex');
 
     if (expected !== dto.razorpaySignature) {
-      throw new BadRequestException('Payment verification failed: invalid signature');
+      throw new BadRequestException(
+        'Payment verification failed: invalid signature',
+      );
     }
 
     // Store payment ID and transition order to CONFIRMED
