@@ -5,6 +5,14 @@ export const PRODUCT_PRICE_MAX = 1_000_000;
 export const PRODUCT_VARIANT_NAME_MAX_LENGTH = 150;
 export const PRODUCT_VARIANT_SKU_MAX_LENGTH = 64;
 
+export const PRODUCT_VARIANT_SKU_PREFIX = 'SKU-';
+export const PRODUCT_VARIANT_SKU_RANDOM_LENGTH = 8;
+// Uppercase alphanumeric, excluding visually-ambiguous characters (I, O, 0, 1, L)
+// — standard practice for codes a human may read/type off a label.
+export const PRODUCT_VARIANT_SKU_RANDOM_ALPHABET =
+  'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export const PRODUCT_VARIANT_SKU_GENERATION_MAX_ATTEMPTS = 5;
+
 export const PRODUCT_LIST_DEFAULT_PAGE = 1;
 export const PRODUCT_LIST_DEFAULT_PAGE_SIZE = 20;
 export const PRODUCT_LIST_MAX_PAGE_SIZE = 100;

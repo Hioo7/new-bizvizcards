@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IndianRupee, Layers, Tag } from "lucide-react";
+import { IndianRupee, Layers, Tag, Wand2 } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
+import { generateVariantSku } from "@services/productService";
 import type { ProductVariant } from "@app-types/product.types";
 import {
   productVariantSchema,
@@ -27,15 +28,33 @@ export default function EditVariantModal({
   onSubmit,
 }: EditVariantModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [isGeneratingSku, setIsGeneratingSku] = useState(false);
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    setError,
     formState: { errors },
   } = useForm<ProductVariantValues>({
     resolver: zodResolver(productVariantSchema),
     defaultValues: { name: "", sku: "", price: 0 },
   });
+
+  async function handleGenerateSku() {
+    setIsGeneratingSku(true);
+    try {
+      const { sku } = await generateVariantSku();
+      setValue("sku", sku, { shouldValidate: true, shouldDirty: true });
+    } catch {
+      setError("sku", {
+        type: "server",
+        message: "Couldn't generate a SKU — try again.",
+      });
+    } finally {
+      setIsGeneratingSku(false);
+    }
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -71,6 +90,12 @@ export default function EditVariantModal({
             icon={Tag}
             registration={register("sku")}
             error={errors.sku?.message}
+            trailingAction={{
+              icon: Wand2,
+              label: "Generate SKU",
+              isLoading: isGeneratingSku,
+              onClick: () => void handleGenerateSku(),
+            }}
           />
           <FormTextField
             id="edit-variant-price"

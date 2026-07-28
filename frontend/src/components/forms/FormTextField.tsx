@@ -2,6 +2,13 @@ import type { InputHTMLAttributes } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import type { LucideIcon } from "lucide-react";
 
+interface FormTextFieldTrailingAction {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  isLoading?: boolean;
+}
+
 interface FormTextFieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "id"> {
   id: string;
@@ -11,6 +18,8 @@ interface FormTextFieldProps
   /** Brief attention-drawing pulse (e.g. right after a server validation error surfaces),
    * independent of and in addition to the persistent `error` styling above. */
   highlight?: boolean;
+  /** Optional icon button on the trailing edge of the field (e.g. "generate a value"). */
+  trailingAction?: FormTextFieldTrailingAction;
   registration: UseFormRegisterReturn;
 }
 
@@ -20,6 +29,7 @@ export default function FormTextField({
   icon: Icon,
   error,
   highlight = false,
+  trailingAction,
   registration,
   ...inputProps
 }: FormTextFieldProps) {
@@ -31,7 +41,9 @@ export default function FormTextField({
           placeholder=" "
           {...registration}
           {...inputProps}
-          className={`peer w-full rounded-field border bg-base-200 pt-5 pb-2.5 pl-10 pr-4 text-sm text-base-content transition focus:bg-base-100 focus:outline-none ${
+          className={`peer w-full rounded-field border bg-base-200 pt-5 pb-2.5 pl-10 ${
+            trailingAction ? "pr-12" : "pr-4"
+          } text-sm text-base-content transition focus:bg-base-100 focus:outline-none ${
             error
               ? "border-error focus:border-error"
               : "border-base-300 focus:border-primary"
@@ -44,6 +56,22 @@ export default function FormTextField({
           {label}
         </label>
         <Icon className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-base-content/40" />
+        {trailingAction && (
+          <button
+            type="button"
+            onClick={trailingAction.onClick}
+            disabled={trailingAction.isLoading}
+            aria-label={trailingAction.label}
+            title={trailingAction.label}
+            className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-field text-base-content/50 hover:bg-base-300 hover:text-primary disabled:opacity-50"
+          >
+            {trailingAction.isLoading ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <trailingAction.icon className="h-4 w-4" />
+            )}
+          </button>
+        )}
       </div>
       {error && <p className="mt-1.5 text-xs text-error">{error}</p>}
     </div>

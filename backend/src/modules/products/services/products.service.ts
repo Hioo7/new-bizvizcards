@@ -7,9 +7,11 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { extname } from 'path';
+import { PRISMA_ERROR_CODES } from '../../../common/constants/prisma-error-codes.constants';
 import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
+  Prisma,
   ProductMediaPurpose,
   ProductType,
 } from '../../../generated/prisma/client';
@@ -19,6 +21,7 @@ import type { CreateProductVariantDto } from '../dto/create-product-variant.dto'
 import type { UpdateProductVariantDto } from '../dto/update-product-variant.dto';
 import type { AddProductMediaDto } from '../dto/add-product-media.dto';
 import type { ListProductsQueryDto } from '../dto/list-products-query.dto';
+import { generateVariantSkuCandidate } from '../utils/generate-variant-sku.util';
 import {
   PRODUCT_LIST_DEFAULT_PAGE,
   PRODUCT_LIST_DEFAULT_PAGE_SIZE,
@@ -27,7 +30,15 @@ import {
   PRODUCT_MEDIA_GALLERY_MAX_PER_SCOPE,
   PRODUCT_MEDIA_MAX_SIZE_BYTES,
   PRODUCT_STORAGE_KEY_PREFIX,
+  PRODUCT_VARIANT_SKU_GENERATION_MAX_ATTEMPTS,
 } from '../products.constants';
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION
+  );
+}
 
 const PRODUCT_INCLUDE = {
   variants: {
@@ -127,9 +138,16 @@ export class ProductsService {
     this.assertVariantBased(product);
     await this.assertSkuAvailable(dto.sku);
 
-    await this.prisma.productVariant.create({
-      data: { productId, name: dto.name, sku: dto.sku, price: dto.price },
-    });
+    try {
+      await this.prisma.productVariant.create({
+        data: { productId, name: dto.name, sku: dto.sku, price: dto.price },
+      });
+    } catch (error) {
+      if (isUniqueConstraintViolation(error)) {
+        throw new ConflictException('SKU already in use');
+      }
+      throw error;
+    }
     return this.getById(productId);
   }
 
@@ -138,11 +156,37 @@ export class ProductsService {
     if (dto.sku && dto.sku !== variant.sku) {
       await this.assertSkuAvailable(dto.sku);
     }
-    await this.prisma.productVariant.update({
-      where: { id: variantId },
-      data: dto,
-    });
+    try {
+      await this.prisma.productVariant.update({
+        where: { id: variantId },
+        data: dto,
+      });
+    } catch (error) {
+      if (isUniqueConstraintViolation(error)) {
+        throw new ConflictException('SKU already in use');
+      }
+      throw error;
+    }
     return this.getById(variant.productId);
+  }
+
+  /** Generates a random, DB-verified-unique SKU for a new variant — retries against
+   * collisions (astronomically unlikely given the alphabet/length) before giving up.
+   * `candidateFactory` is overridable only for tests; callers always use the default. */
+  async generateUniqueVariantSku(
+    candidateFactory: () => string = generateVariantSkuCandidate,
+  ): Promise<string> {
+    for (
+      let attempt = 0;
+      attempt < PRODUCT_VARIANT_SKU_GENERATION_MAX_ATTEMPTS;
+      attempt++
+    ) {
+      const candidate = candidateFactory();
+      if (!(await this.isSkuTaken(candidate))) return candidate;
+    }
+    throw new ConflictException(
+      'Could not generate a unique SKU, please try again',
+    );
   }
 
   async removeVariant(variantId: string) {
@@ -287,12 +331,16 @@ export class ProductsService {
   }
 
   private async assertSkuAvailable(sku: string): Promise<void> {
+    if (await this.isSkuTaken(sku)) {
+      throw new ConflictException('SKU already in use');
+    }
+  }
+
+  private async isSkuTaken(sku: string): Promise<boolean> {
     const existing = await this.prisma.productVariant.findUnique({
       where: { sku },
     });
-    if (existing) {
-      throw new ConflictException('SKU already in use');
-    }
+    return existing !== null;
   }
 
   private async assertNoProvisionedUnits(

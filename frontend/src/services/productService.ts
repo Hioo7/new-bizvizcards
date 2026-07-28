@@ -65,6 +65,13 @@ export function deleteProduct(id: string): Promise<void> {
   });
 }
 
+export function generateVariantSku(): Promise<{ sku: string }> {
+  return apiRequest<{ sku: string }>(
+    `${ADMIN_PRODUCTS_BASE_PATH}/variants/generate-sku`,
+    { method: "GET" },
+  );
+}
+
 export function createProductVariant(
   productId: string,
   payload: CreateProductVariantPayload,

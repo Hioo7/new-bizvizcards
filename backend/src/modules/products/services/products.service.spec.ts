@@ -22,6 +22,10 @@ import {
 import {
   PRODUCT_MEDIA_GALLERY_MAX_PER_SCOPE,
   PRODUCT_MEDIA_MAX_SIZE_BYTES,
+  PRODUCT_VARIANT_SKU_GENERATION_MAX_ATTEMPTS,
+  PRODUCT_VARIANT_SKU_PREFIX,
+  PRODUCT_VARIANT_SKU_RANDOM_ALPHABET,
+  PRODUCT_VARIANT_SKU_RANDOM_LENGTH,
 } from '../products.constants';
 import { ProductsService } from './products.service';
 
@@ -241,6 +245,104 @@ describe('ProductsService (integration, TEST_DATABASE_URL only)', () => {
       await expect(
         service.createVariant(product.id, { name: 'B', sku, price: 10 }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('throws ConflictException (not a raw DB error) when two concurrent requests race on the same SKU', async () => {
+      const productA = await createProduct(ProductType.VARIANT_BASED);
+      const productB = await createProduct(ProductType.VARIANT_BASED);
+      const sku = `sku-${randomUUID()}`;
+
+      // Both pass the pre-check (neither sees the other's row yet) and race
+      // on the actual insert — exactly the TOCTOU window the P2002 catch
+      // in createVariant guards against.
+      const results = await Promise.allSettled([
+        service.createVariant(productA.id, { name: 'A', sku, price: 10 }),
+        service.createVariant(productB.id, { name: 'B', sku, price: 10 }),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      expect(rejected[0].reason).toBeInstanceOf(ConflictException);
+    });
+  });
+
+  describe('updateVariant', () => {
+    it('throws ConflictException (not a raw DB error) when two concurrent updates race on the same SKU', async () => {
+      const product = await createProduct(ProductType.VARIANT_BASED);
+      const withVariants = await service.createVariant(product.id, {
+        name: 'A',
+        sku: `sku-${randomUUID()}`,
+        price: 10,
+      });
+      const secondProductState = await service.createVariant(product.id, {
+        name: 'B',
+        sku: `sku-${randomUUID()}`,
+        price: 10,
+      });
+      const variantAId = withVariants.variants[0].id;
+      const variantBId = secondProductState.variants[1].id;
+      const sku = `sku-${randomUUID()}`;
+
+      const results = await Promise.allSettled([
+        service.updateVariant(variantAId, { sku }),
+        service.updateVariant(variantBId, { sku }),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      expect(rejected[0].reason).toBeInstanceOf(ConflictException);
+    });
+  });
+
+  describe('generateUniqueVariantSku', () => {
+    it('generates a SKU matching the standard prefix/length/alphabet format', async () => {
+      const sku = await service.generateUniqueVariantSku();
+      const alphabetPattern = `[${PRODUCT_VARIANT_SKU_RANDOM_ALPHABET}]{${PRODUCT_VARIANT_SKU_RANDOM_LENGTH}}`;
+      expect(sku).toMatch(
+        new RegExp(`^${PRODUCT_VARIANT_SKU_PREFIX}${alphabetPattern}$`),
+      );
+    });
+
+    it('retries when the first candidate is already taken', async () => {
+      const product = await createProduct(ProductType.VARIANT_BASED);
+      const takenSku = `sku-${randomUUID()}`;
+      await service.createVariant(product.id, {
+        name: 'A',
+        sku: takenSku,
+        price: 10,
+      });
+      const freeSku = `sku-${randomUUID()}`;
+      const candidateFactory = jest
+        .fn<string, []>()
+        .mockReturnValueOnce(takenSku)
+        .mockReturnValueOnce(freeSku);
+
+      const result = await service.generateUniqueVariantSku(candidateFactory);
+
+      expect(result).toBe(freeSku);
+      expect(candidateFactory).toHaveBeenCalledTimes(2);
+    });
+
+    it('throws after exhausting all attempts when every candidate is taken', async () => {
+      const product = await createProduct(ProductType.VARIANT_BASED);
+      const takenSku = `sku-${randomUUID()}`;
+      await service.createVariant(product.id, {
+        name: 'A',
+        sku: takenSku,
+        price: 10,
+      });
+      const candidateFactory = jest.fn<string, []>().mockReturnValue(takenSku);
+
+      await expect(
+        service.generateUniqueVariantSku(candidateFactory),
+      ).rejects.toThrow(ConflictException);
+      expect(candidateFactory).toHaveBeenCalledTimes(
+        PRODUCT_VARIANT_SKU_GENERATION_MAX_ATTEMPTS,
+      );
     });
   });
 

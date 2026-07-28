@@ -80,6 +80,13 @@ export class ProductsController {
     await this.productsService.remove(id);
   }
 
+  @Get('variants/generate-sku')
+  @RequirePermissions({ product: ['update'] })
+  async generateVariantSku(): Promise<{ sku: string }> {
+    const sku = await this.productsService.generateUniqueVariantSku();
+    return { sku };
+  }
+
   @Post(':id/variants')
   @RequirePermissions({ product: ['update'] })
   createVariant(
