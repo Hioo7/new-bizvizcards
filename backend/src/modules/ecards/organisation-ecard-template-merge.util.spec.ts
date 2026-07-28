@@ -30,6 +30,12 @@ function makeCard(overrides?: {
       phoneNumber: null,
       isExchangeContactEnabled: true,
       autoDownloadContact: false,
+      layout: 'DEFAULT',
+      bannerMediaId: null,
+      bannerUrl: null,
+      bannerFallbackColor: null,
+      badgeFallbackColor: null,
+      organisationLogoUrl: null,
       ...overrides?.hero,
     },
     components: overrides?.components ?? [],
@@ -53,6 +59,11 @@ function makeTemplate(overrides?: {
       profilePhotoUrl: null,
       phoneCountryDialCode: null,
       phoneNumber: null,
+      layout: null,
+      bannerMediaId: null,
+      bannerUrl: null,
+      bannerFallbackColor: null,
+      badgeFallbackColor: null,
       ...overrides?.hero,
     },
     components: overrides?.components ?? [],
@@ -92,6 +103,45 @@ describe('mergeOrganisationEcardTemplateOntoCard', () => {
 
       expect(merged.hero.isExchangeContactEnabled).toBe(false);
       expect(merged.hero.autoDownloadContact).toBe(true);
+    });
+
+    it("overrides the card's layout and banner fields when the template sets them", () => {
+      const card = makeCard({
+        hero: { layout: 'DEFAULT', bannerUrl: null, bannerFallbackColor: null },
+      });
+      const template = makeTemplate({
+        hero: {
+          layout: 'BANNER',
+          bannerMediaId: 'org-banner-media',
+          bannerUrl: '/org-banner.png',
+          bannerFallbackColor: '#112233',
+        },
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+
+      expect(merged.hero.layout).toBe('BANNER');
+      expect(merged.hero.bannerUrl).toBe('/org-banner.png');
+      expect(merged.hero.bannerFallbackColor).toBe('#112233');
+    });
+
+    it("falls through to the card's own layout and banner fields when the template leaves them unset", () => {
+      const card = makeCard({
+        hero: {
+          layout: 'BANNER_PROFILE',
+          bannerUrl: '/card-banner.png',
+          bannerFallbackColor: '#aabbcc',
+          badgeFallbackColor: '#ffffff',
+        },
+      });
+      const template = makeTemplate();
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+
+      expect(merged.hero.layout).toBe('BANNER_PROFILE');
+      expect(merged.hero.bannerUrl).toBe('/card-banner.png');
+      expect(merged.hero.bannerFallbackColor).toBe('#aabbcc');
+      expect(merged.hero.badgeFallbackColor).toBe('#ffffff');
     });
   });
 

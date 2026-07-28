@@ -10,6 +10,20 @@ enum ECardComponentType {
   @@map("ECardComponentType")
 }
 
+enum ECardHeroLayout {
+  // Photo + name/company, no banner — the only layout never gated by a plan.
+  DEFAULT
+  // Wide banner image at the top, hero details below, no photo overlap.
+  BANNER
+  // Same banner, with the circular profile photo overlapping its bottom edge.
+  BANNER_PROFILE
+  // Default layout plus a small badge (the linked Organisation's logo)
+  // overlapping the profile photo — requires organisationId to be set.
+  ORG_BADGE
+
+  @@map("ECardHeroLayout")
+}
+
 model ECard {
   id                  String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
   customerId          String    @db.Uuid
@@ -33,7 +47,20 @@ model ECard {
   heroEmail               String
   heroCompanyName         String?
   heroProfilePhotoMediaId String? @unique @db.Uuid
-  heroProfilePhoto        Media?  @relation(fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
+  heroProfilePhoto        Media?  @relation("ECardHeroProfilePhoto", fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
+
+  // Layout-specific fields below persist independently of which layout is
+  // currently active, so switching layouts back and forth never loses data
+  // (e.g. a previously-uploaded banner survives a temporary switch to
+  // DEFAULT). heroProfilePhoto above is shared by DEFAULT/BANNER_PROFILE/
+  // ORG_BADGE — BANNER simply doesn't render it.
+  heroLayout              ECardHeroLayout @default(DEFAULT)
+  heroBannerMediaId       String?         @unique @db.Uuid
+  heroBanner              Media?          @relation("ECardHeroBanner", fields: [heroBannerMediaId], references: [id], onDelete: SetNull)
+  // Fill color for whatever the banner image doesn't cover — hex, e.g. "#RRGGBB".
+  heroBannerFallbackColor String?
+  // Fill color around the org-logo badge when the logo has no background of its own.
+  heroBadgeFallbackColor  String?
 
   phoneCountryDialCode     String?
   phoneNumber              String?

@@ -9,7 +9,12 @@ import { ecardSocialLinksComponentSchema } from './components/social-links.dto';
 import { ecardTeamComponentSchema } from './components/team-member-pick.dto';
 import { ecardVideoComponentSchema } from './components/video.dto';
 import { ecardWhatsAppComponentSchema } from './components/whatsapp.dto';
-import { ecardCoreFields, hasUniqueComponentTypes } from './ecard-core.dto';
+import {
+  assertHeroLayoutFieldsConsistent,
+  assertHeroOrgBadgeRequiresOrganisation,
+  ecardCoreFields,
+  hasUniqueComponentTypes,
+} from './ecard-core.dto';
 
 const createEcardComponentSchema = z.discriminatedUnion('type', [
   ecardAboutComponentSchema,
@@ -24,6 +29,7 @@ const createEcardComponentSchema = z.discriminatedUnion('type', [
 export const createEcardShape = {
   ...ecardCoreFields,
   heroProfilePhoto: createImageSlotSchema.optional(),
+  heroBanner: createImageSlotSchema.optional(),
   components: z
     .array(createEcardComponentSchema)
     .max(ECARD_MAX_COMPONENTS)
@@ -40,7 +46,9 @@ export const createEcardSchema = z
   .refine((v) => hasUniqueComponentTypes(v.components), {
     message: 'Each component type may appear at most once',
     path: ['components'],
-  });
+  })
+  .superRefine(assertHeroLayoutFieldsConsistent)
+  .superRefine(assertHeroOrgBadgeRequiresOrganisation);
 
 export const createEcardAsEmployeeSchema = z
   .object({ ...createEcardShape, customerId: z.uuid() })
@@ -52,7 +60,9 @@ export const createEcardAsEmployeeSchema = z
   .refine((v) => hasUniqueComponentTypes(v.components), {
     message: 'Each component type may appear at most once',
     path: ['components'],
-  });
+  })
+  .superRefine(assertHeroLayoutFieldsConsistent)
+  .superRefine(assertHeroOrgBadgeRequiresOrganisation);
 
 export type CreateEcardDto = z.infer<typeof createEcardSchema>;
 export type CreateEcardAsEmployeeDto = z.infer<

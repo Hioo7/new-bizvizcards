@@ -9,8 +9,8 @@ import {
   ECARD_PHONE_NUMBER_MIN_DIGITS,
   ECARD_TEXT_LONG_MAX_LENGTH,
   ECARD_TEXT_SHORT_MAX_LENGTH,
-  ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN,
 } from "@features/ecards/config/ecardBuilder.config";
+import { normalizeEcardVideoUrl } from "@features/ecards/utils/normalizeVideoUrl";
 
 export const heroSheetSchema = z
   .object({
@@ -19,7 +19,7 @@ export const heroSheetSchema = z
       .trim()
       .min(ECARD_ENDPOINT_MIN_LENGTH, "Too short")
       .max(ECARD_ENDPOINT_MAX_LENGTH, "Too long")
-      .regex(ECARD_ENDPOINT_REGEX, "Lowercase letters, numbers, and hyphens only"),
+      .regex(ECARD_ENDPOINT_REGEX, "Letters, numbers, and hyphens only"),
     name: z.string().trim().min(1, "Required").max(ECARD_TEXT_SHORT_MAX_LENGTH),
     email: z.string().trim().min(1, "Required").email("Enter a valid email"),
     companyName: z.string().trim().max(ECARD_TEXT_SHORT_MAX_LENGTH),
@@ -67,7 +67,17 @@ export const videoSheetSchema = z.object({
   videoUrl: z
     .string()
     .trim()
-    .regex(ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN, "Must be a YouTube or Vimeo embed URL"),
+    .transform((value, ctx) => {
+      const normalized = normalizeEcardVideoUrl(value);
+      if (!normalized) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter a valid YouTube or Vimeo link",
+        });
+        return z.NEVER;
+      }
+      return normalized;
+    }),
 });
 
 // Both fields required (unlike Hero's optional phone) — this component's

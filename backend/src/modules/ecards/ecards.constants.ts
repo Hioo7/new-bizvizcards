@@ -1,3 +1,5 @@
+import { ECardHeroLayout } from '../../generated/prisma/client';
+
 export const ECARD_TEXT_SHORT_MAX_LENGTH = 150;
 export const ECARD_TEXT_MEDIUM_MAX_LENGTH = 500;
 export const ECARD_TEXT_LONG_MAX_LENGTH = 5000;
@@ -16,11 +18,6 @@ export const ECARD_MAX_GALLERY_IMAGES = 30;
 export const ECARD_MAX_TEAM_MEMBERS = 50;
 
 export const ECARD_VIDEO_URL_MAX_LENGTH = 2048;
-// Only known-safe embed hosts are accepted — the stored value is used
-// directly as an <iframe src>, never raw iframe HTML, so an open host
-// allowlist here is the XSS guard.
-export const ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN =
-  /^https:\/\/(www\.)?(youtube\.com\/embed\/|youtube-nocookie\.com\/embed\/|player\.vimeo\.com\/video\/)/;
 
 export const ECARD_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 export const ECARD_IMAGE_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -32,8 +29,30 @@ export const ECARD_BROCHURE_ALLOWED_MIME_TYPE_PATTERN = /^application\/pdf$/;
 
 export const ECARD_MULTIPART_DATA_FIELD = 'data';
 export const ECARD_HERO_PHOTO_FIELD = 'heroProfilePhoto';
+export const ECARD_HERO_BANNER_FIELD = 'heroBanner';
 export const ECARD_GALLERY_IMAGE_FIELD_PREFIX = 'galleryImage_';
 export const ECARD_BROCHURE_FIELD = 'brochurePdf';
+
+// The only ECardHeroLayout values a plan can ever restrict — DEFAULT is
+// hard-coded as always-available in PlanPolicyResolverService and never
+// given a row in EcardHeroLayoutAvailability. Single source of truth for the
+// admin toggle-grid UI, the policy DTO's completeness check, and the
+// resolver's default-false seeding.
+export const ECARD_GATED_HERO_LAYOUTS = [
+  ECardHeroLayout.BANNER,
+  ECardHeroLayout.BANNER_PROFILE,
+  ECardHeroLayout.ORG_BADGE,
+] as const;
+
+export type GatedHeroLayout = (typeof ECARD_GATED_HERO_LAYOUTS)[number];
+
+export function isGatedHeroLayout(
+  layout: ECardHeroLayout,
+): layout is GatedHeroLayout {
+  return (ECARD_GATED_HERO_LAYOUTS as readonly ECardHeroLayout[]).includes(
+    layout,
+  );
+}
 
 export function ecardGalleryImageField(
   subGalleryIndex: number,

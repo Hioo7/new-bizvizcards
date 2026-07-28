@@ -10,7 +10,10 @@ import type { ZodFieldError } from '../../../common/validators/zod-error-formatt
 import { MediaSlotResolverService } from '../../../common/media/media-slot-resolver.service';
 import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { ECardComponentType } from '../../../generated/prisma/client';
+import {
+  ECardComponentType,
+  ECardHeroLayout,
+} from '../../../generated/prisma/client';
 import { OrganisationMembersService } from '../../organisations/services/organisation-members.service';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
@@ -27,6 +30,7 @@ import type {
 } from '../dto/update-ecard.dto';
 import {
   ECARD_BROCHURE_FIELD,
+  ECARD_HERO_BANNER_FIELD,
   ECARD_HERO_PHOTO_FIELD,
   ECARD_LIST_DEFAULT_PAGE,
   ECARD_LIST_DEFAULT_PAGE_SIZE,
@@ -42,6 +46,8 @@ const FULL_INCLUDE = {
     },
   },
   heroProfilePhoto: true,
+  heroBanner: true,
+  organisation: { include: { logo: true } },
   components: {
     orderBy: { order: 'asc' as const },
     include: {
@@ -428,6 +434,10 @@ export class EcardsService {
         dto.organisationId,
       );
     }
+    await this.planEnforcementService.assertHeroLayoutAllowedForCard(
+      { customerId, organisationId: dto.organisationId ?? null },
+      dto.heroLayout ?? ECardHeroLayout.DEFAULT,
+    );
 
     const teamComponent = dto.components.find(
       (component) => component.type === 'TEAM',
@@ -463,6 +473,9 @@ export class EcardsService {
         phoneNumber: dto.phoneNumber,
         isExchangeContactEnabled: dto.isExchangeContactEnabled,
         autoDownloadContact: dto.autoDownloadContact,
+        heroLayout: dto.heroLayout,
+        heroBannerFallbackColor: dto.heroBannerFallbackColor,
+        heroBadgeFallbackColor: dto.heroBadgeFallbackColor,
       },
     });
     const keyPrefix = `${ECARD_STORAGE_KEY_PREFIX}/${card.id}`;
@@ -473,6 +486,12 @@ export class EcardsService {
       ECARD_HERO_PHOTO_FIELD,
       fileMap,
       `${keyPrefix}/hero`,
+    );
+    const bannerMediaId = await this.mediaSlotResolver.resolveUploadSlot(
+      dto.heroBanner,
+      ECARD_HERO_BANNER_FIELD,
+      fileMap,
+      `${keyPrefix}/banner`,
     );
     const galleryMediaIds = await this.resolveCreateGalleryUploads(
       dto.components,
@@ -490,10 +509,13 @@ export class EcardsService {
     );
 
     await this.prisma.$transaction(async (tx) => {
-      if (heroMediaId) {
+      if (heroMediaId || bannerMediaId) {
         await tx.eCard.update({
           where: { id: card.id },
-          data: { heroProfilePhotoMediaId: heroMediaId },
+          data: {
+            ...(heroMediaId && { heroProfilePhotoMediaId: heroMediaId }),
+            ...(bannerMediaId && { heroBannerMediaId: bannerMediaId }),
+          },
         });
       }
 
@@ -542,6 +564,13 @@ export class EcardsService {
         dto.organisationId,
       );
     }
+    await this.planEnforcementService.assertHeroLayoutAllowedForCard(
+      {
+        customerId: existing.customerId,
+        organisationId: dto.organisationId ?? existing.organisationId,
+      },
+      dto.heroLayout ?? ECardHeroLayout.DEFAULT,
+    );
 
     const teamComponent = dto.components.find(
       (component) => component.type === 'TEAM',
@@ -583,6 +612,13 @@ export class EcardsService {
       `${keyPrefix}/hero`,
       existingMediaIds,
     );
+    const bannerMediaId = await this.mediaSlotResolver.resolveUpdateSlot(
+      dto.heroBanner,
+      ECARD_HERO_BANNER_FIELD,
+      fileMap,
+      `${keyPrefix}/banner`,
+      existingMediaIds,
+    );
     const galleryMediaIds = await this.resolveUpdateGalleryUploads(
       dto.components,
       fileMap,
@@ -601,9 +637,12 @@ export class EcardsService {
     );
 
     const newMediaIds = new Set(
-      [heroMediaId, brochureMediaId, ...galleryMediaIds.flat()].filter(
-        (mediaId): mediaId is string => Boolean(mediaId),
-      ),
+      [
+        heroMediaId,
+        bannerMediaId,
+        brochureMediaId,
+        ...galleryMediaIds.flat(),
+      ].filter((mediaId): mediaId is string => Boolean(mediaId)),
     );
     const orphanedMediaIds = [...existingMediaIds].filter(
       (mediaId) => !newMediaIds.has(mediaId),
@@ -623,6 +662,10 @@ export class EcardsService {
           isExchangeContactEnabled: dto.isExchangeContactEnabled,
           autoDownloadContact: dto.autoDownloadContact,
           heroProfilePhotoMediaId: heroMediaId ?? null,
+          heroLayout: dto.heroLayout,
+          heroBannerMediaId: bannerMediaId ?? null,
+          heroBannerFallbackColor: dto.heroBannerFallbackColor ?? null,
+          heroBadgeFallbackColor: dto.heroBadgeFallbackColor ?? null,
         },
       });
 
@@ -952,6 +995,7 @@ export class EcardsService {
   private collectMediaIds(card: FullEcard): string[] {
     const ids: (string | null | undefined)[] = [
       card.heroProfilePhotoMediaId,
+      card.heroBannerMediaId,
       ...card.components.flatMap(
         (component) =>
           component.gallery?.subGalleries.flatMap((subGallery) =>
@@ -985,6 +1029,16 @@ export class EcardsService {
         phoneNumber: card.phoneNumber,
         isExchangeContactEnabled: card.isExchangeContactEnabled,
         autoDownloadContact: card.autoDownloadContact,
+        layout: card.heroLayout,
+        bannerMediaId: card.heroBannerMediaId,
+        bannerUrl: card.heroBanner
+          ? this.mediaService.getPublicUrl(card.heroBanner)
+          : null,
+        bannerFallbackColor: card.heroBannerFallbackColor,
+        badgeFallbackColor: card.heroBadgeFallbackColor,
+        organisationLogoUrl: card.organisation?.logo
+          ? this.mediaService.getPublicUrl(card.organisation.logo)
+          : null,
       },
       components: card.components.map((component) =>
         this.componentToResponse(component, ownerOrganisationId),

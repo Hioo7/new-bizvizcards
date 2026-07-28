@@ -1,8 +1,10 @@
 import {
   ECARD_BROCHURE_FIELD,
+  ECARD_HERO_BANNER_FIELD,
   ECARD_HERO_PHOTO_FIELD,
   ecardGalleryImageField,
 } from "@config/ecardFields";
+import { ECARD_HERO_DEFAULT_FALLBACK_COLOR } from "@features/ecards/config/ecardBuilder.config";
 import type {
   OrganisationEcardTemplate,
   OrganisationEcardTemplateComponentPayload,
@@ -39,6 +41,18 @@ export function organisationEcardTemplateToBuilderState(
         : { file: null },
       phoneCountryDialCode: template.hero.phoneCountryDialCode ?? "",
       phoneNumber: template.hero.phoneNumber ?? "",
+      layout: template.hero.layout,
+      banner: template.hero.bannerMediaId
+        ? {
+            file: null,
+            existingMediaId: template.hero.bannerMediaId,
+            existingUrl: template.hero.bannerUrl ?? undefined,
+          }
+        : { file: null },
+      bannerFallbackColor:
+        template.hero.bannerFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
+      badgeFallbackColor:
+        template.hero.badgeFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
     },
     components: template.components
       .slice()
@@ -127,6 +141,11 @@ export function buildOrganisationEcardTemplateSubmission(
     ECARD_HERO_PHOTO_FIELD,
     files,
   );
+  const isBannerLayout =
+    state.hero.layout === "BANNER" || state.hero.layout === "BANNER_PROFILE";
+  const heroBanner = isBannerLayout
+    ? buildImageSlot(state.hero.banner, ECARD_HERO_BANNER_FIELD, files)
+    : undefined;
   const components = state.components.map((component) =>
     componentDraftToTemplatePayload(component.draft, files),
   );
@@ -138,6 +157,15 @@ export function buildOrganisationEcardTemplateSubmission(
     phoneCountryDialCode: state.hero.phoneCountryDialCode.trim() || undefined,
     phoneNumber: state.hero.phoneNumber.trim() || undefined,
     heroProfilePhoto,
+    heroLayout: state.hero.layout ?? undefined,
+    heroBanner,
+    heroBannerFallbackColor: isBannerLayout
+      ? state.hero.bannerFallbackColor
+      : undefined,
+    heroBadgeFallbackColor:
+      state.hero.layout === "ORG_BADGE"
+        ? state.hero.badgeFallbackColor
+        : undefined,
     components,
   };
 

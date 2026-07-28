@@ -1,3 +1,9 @@
+export type ECardHeroLayout =
+  | "DEFAULT"
+  | "BANNER"
+  | "BANNER_PROFILE"
+  | "ORG_BADGE";
+
 export interface EcardHero {
   name: string;
   email: string;
@@ -8,6 +14,12 @@ export interface EcardHero {
   phoneNumber: string | null;
   isExchangeContactEnabled: boolean;
   autoDownloadContact: boolean;
+  layout: ECardHeroLayout;
+  bannerMediaId: string | null;
+  bannerUrl: string | null;
+  bannerFallbackColor: string | null;
+  badgeFallbackColor: string | null;
+  organisationLogoUrl: string | null;
 }
 
 interface EcardComponentBase {
@@ -225,6 +237,10 @@ export interface EcardPayload {
   isExchangeContactEnabled: boolean;
   autoDownloadContact: boolean;
   heroProfilePhoto?: ImageSlotPayload;
+  heroLayout: ECardHeroLayout;
+  heroBanner?: ImageSlotPayload;
+  heroBannerFallbackColor?: string;
+  heroBadgeFallbackColor?: string;
   components: EcardComponentPayload[];
 }
 

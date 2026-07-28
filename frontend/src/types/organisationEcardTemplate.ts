@@ -1,4 +1,5 @@
 import type {
+  ECardHeroLayout,
   EcardAboutComponentPayload,
   EcardComponent,
   EcardGalleryComponentPayload,
@@ -16,6 +17,11 @@ export interface OrganisationEcardTemplateHero {
   profilePhotoUrl: string | null;
   phoneCountryDialCode: string | null;
   phoneNumber: string | null;
+  layout: ECardHeroLayout | null;
+  bannerMediaId: string | null;
+  bannerUrl: string | null;
+  bannerFallbackColor: string | null;
+  badgeFallbackColor: string | null;
 }
 
 /** The response's `components` are the exact same shape as an e-card's own
@@ -66,6 +72,10 @@ export interface OrganisationEcardTemplatePayload {
   phoneCountryDialCode?: string;
   phoneNumber?: string;
   heroProfilePhoto?: ImageSlotPayload;
+  heroLayout?: ECardHeroLayout;
+  heroBanner?: ImageSlotPayload;
+  heroBannerFallbackColor?: string;
+  heroBadgeFallbackColor?: string;
   components: OrganisationEcardTemplateComponentPayload[];
 }
 

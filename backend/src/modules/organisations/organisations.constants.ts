@@ -38,6 +38,7 @@ export const ORGANISATION_BULK_ADD_MEMBERS_MAX_PER_REQUEST = 100;
 // conventions mirroring ecards.constants.ts's own ECARD_* equivalents.
 export const ORGANISATION_ECARD_TEMPLATE_MULTIPART_DATA_FIELD = 'data';
 export const ORGANISATION_ECARD_TEMPLATE_HERO_PHOTO_FIELD = 'heroProfilePhoto';
+export const ORGANISATION_ECARD_TEMPLATE_HERO_BANNER_FIELD = 'heroBanner';
 export const ORGANISATION_ECARD_TEMPLATE_GALLERY_IMAGE_FIELD_PREFIX =
   'galleryImage_';
 export const ORGANISATION_ECARD_TEMPLATE_BROCHURE_FIELD = 'brochurePdf';

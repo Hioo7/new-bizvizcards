@@ -5,7 +5,11 @@ import type {
   OrganisationPolicy,
   SmartCardPolicy,
 } from "@app-types/plan";
-import { DEFAULT_GALLERY_LIMITS, ECARD_COMPONENT_TYPES } from "@features/plans/config";
+import {
+  DEFAULT_GALLERY_LIMITS,
+  ECARD_COMPONENT_TYPES,
+  ECARD_GATED_HERO_LAYOUTS,
+} from "@features/plans/config";
 
 export function createDefaultEcardPolicy(): EcardPolicy {
   return {
@@ -16,6 +20,10 @@ export function createDefaultEcardPolicy(): EcardPolicy {
       type,
       isAvailable: true,
       ...(type === "GALLERY" && { galleryLimits: DEFAULT_GALLERY_LIMITS }),
+    })),
+    heroLayoutAvailabilities: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
+      layout,
+      isAvailable: false,
     })),
   };
 }

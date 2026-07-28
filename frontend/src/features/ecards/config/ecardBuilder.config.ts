@@ -8,7 +8,7 @@ import {
   Video,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { EcardComponentType } from "@app-types/ecard";
+import type { ECardHeroLayout, EcardComponentType } from "@app-types/ecard";
 
 export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "ABOUT",
@@ -76,15 +76,15 @@ export const ECARD_MAX_TEAM_MEMBERS = 50;
 
 export const ECARD_ENDPOINT_MIN_LENGTH = 3;
 export const ECARD_ENDPOINT_MAX_LENGTH = 80;
-export const ECARD_ENDPOINT_REGEX = /^[a-z0-9-]+$/;
+// Case-insensitive: pre-existing e-card endpoints from a dry-run migration
+// contain uppercase characters — kept in sync with the backend's
+// URL_SLUG_REGEX so editing those legacy cards doesn't get blocked here.
+export const ECARD_ENDPOINT_REGEX = /^[a-zA-Z0-9-]+$/;
 
 export const ECARD_PHONE_DIAL_CODE_MAX_LENGTH = 5;
 export const ECARD_PHONE_NUMBER_MIN_DIGITS = 7;
 export const ECARD_PHONE_NUMBER_MAX_DIGITS = 15;
 export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
-
-export const ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN =
-  /^https:\/\/(www\.)?(youtube\.com\/embed\/|youtube-nocookie\.com\/embed\/|player\.vimeo\.com\/video\/)/;
 
 export const ECARD_BROCHURE_ALLOWED_MIME_TYPES = ["application/pdf"];
 export const ECARD_BROCHURE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
@@ -93,3 +93,41 @@ export const ECARD_BROCHURE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 // Hero section (e.g. the endpoint was never set) — see getHeroValidationErrors.
 export const ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE =
   "Please complete the required Hero fields.";
+
+export const ECARD_HERO_LAYOUTS: ECardHeroLayout[] = [
+  "DEFAULT",
+  "BANNER",
+  "BANNER_PROFILE",
+  "ORG_BADGE",
+];
+
+interface EcardHeroLayoutMeta {
+  label: string;
+  description: string;
+}
+
+export const ECARD_HERO_LAYOUT_META: Record<ECardHeroLayout, EcardHeroLayoutMeta> = {
+  DEFAULT: {
+    label: "Default",
+    description: "Profile photo with name and company.",
+  },
+  BANNER: {
+    label: "Banner",
+    description: "A wide banner image up top, details below.",
+  },
+  BANNER_PROFILE: {
+    label: "Banner + Profile",
+    description: "Banner image with the profile photo overlapping it.",
+  },
+  ORG_BADGE: {
+    label: "Org Badge",
+    description: "Default layout plus your organisation's logo badge.",
+  },
+};
+
+export const ECARD_HERO_BANNER_ASPECT = 21 / 9;
+// Tailwind's JIT scanner needs a literal class string in source (a computed
+// template string won't be picked up) — kept in sync with the ratio above.
+export const ECARD_HERO_BANNER_ASPECT_CLASS = "aspect-[21/9]";
+
+export const ECARD_HERO_DEFAULT_FALLBACK_COLOR = "#e5e7eb";

@@ -76,7 +76,8 @@ model EcardPolicy {
   maxEcards             Int     @default(0)
   exchangeContactAccess Boolean @default(false)
 
-  componentAvailabilities EcardComponentAvailability[]
+  componentAvailabilities  EcardComponentAvailability[]
+  heroLayoutAvailabilities EcardHeroLayoutAvailability[]
 
   planPolicy                PlanPolicy?
   ownedByOrganisationPolicy OrganisationPolicy? @relation("OrganisationPolicyOrgEcardPolicy")
@@ -99,6 +100,21 @@ model EcardComponentAvailability {
 
   @@unique([ecardPolicyId, type])
   @@map("EcardComponentAvailability")
+}
+
+// Same explicit-join-with-enum-column pattern as EcardComponentAvailability
+// above. DEFAULT is deliberately never given a row here — it's hard-coded as
+// always-available in PlanPolicyResolverService, never a configurable toggle
+// (see ECARD_GATED_HERO_LAYOUTS in ecards.constants.ts).
+model EcardHeroLayoutAvailability {
+  id            String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardPolicyId String          @db.Uuid
+  ecardPolicy   EcardPolicy     @relation(fields: [ecardPolicyId], references: [id], onDelete: Cascade)
+  layout        ECardHeroLayout
+  isAvailable   Boolean         @default(true)
+
+  @@unique([ecardPolicyId, layout])
+  @@map("EcardHeroLayoutAvailability")
 }
 
 model GalleryComponentLimits {

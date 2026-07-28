@@ -1,8 +1,10 @@
 import {
   ECARD_BROCHURE_FIELD,
+  ECARD_HERO_BANNER_FIELD,
   ECARD_HERO_PHOTO_FIELD,
   ecardGalleryImageField,
 } from "@config/ecardFields";
+import { HEX_COLOR_REGEX } from "@config/color.config";
 import type {
   Ecard,
   EcardComponent,
@@ -16,6 +18,7 @@ import {
   heroSheetSchema,
   type HeroSheetValues,
 } from "@features/ecards/schemas/ecardComponentSchemas";
+import { ECARD_HERO_DEFAULT_FALLBACK_COLOR } from "@features/ecards/config/ecardBuilder.config";
 import type {
   BuilderComponent,
   ComponentDraft,
@@ -37,6 +40,47 @@ const HERO_SERVER_FIELD_TO_FORM_FIELD: Record<string, keyof HeroSheetValues> = {
   phoneNumber: "phoneNumber",
 };
 
+// Layout-related fields aren't react-hook-form-registered (banner is an image
+// slot, organisationId lives outside the form) — mapped separately so a
+// server rejection still lands on the right field key in the generic
+// fieldErrors map the Hero sheets already consume for both RHF and non-RHF fields.
+const HERO_SERVER_FIELD_TO_LAYOUT_FIELD: Record<string, string> = {
+  heroBanner: "banner",
+  heroBannerFallbackColor: "bannerFallbackColor",
+  heroBadgeFallbackColor: "badgeFallbackColor",
+  organisationId: "layout",
+};
+
+/** Mirrors the backend's assertHeroLayoutFieldsConsistent/
+ * assertHeroOrgBadgeRequiresOrganisation superRefine checks (ecard-core.dto.ts)
+ * for the layout-specific fields that live outside heroSheetSchema's plain-string
+ * fields (banner is an image slot, organisationId is managed outside react-hook-form). */
+export function getHeroLayoutValidationErrors(
+  hero: EcardHeroDraft,
+): Record<string, string> | null {
+  const fieldErrors: Record<string, string> = {};
+
+  if (hero.layout === "BANNER" || hero.layout === "BANNER_PROFILE") {
+    if (!hero.banner.file && !hero.banner.existingMediaId) {
+      fieldErrors.banner = "A banner image is required for this layout";
+    }
+    if (!HEX_COLOR_REGEX.test(hero.bannerFallbackColor)) {
+      fieldErrors.bannerFallbackColor = "Enter a valid fallback color";
+    }
+  }
+
+  if (hero.layout === "ORG_BADGE") {
+    if (!hero.organisationId) {
+      fieldErrors.layout = "Link an organisation to use the Org Badge layout";
+    }
+    if (!HEX_COLOR_REGEX.test(hero.badgeFallbackColor)) {
+      fieldErrors.badgeFallbackColor = "Enter a valid fallback color";
+    }
+  }
+
+  return Object.keys(fieldErrors).length > 0 ? fieldErrors : null;
+}
+
 /** Runs the same schema the Hero edit sheet validates against, against the builder's
  * current hero draft — lets the outer "Save card" action catch a missing/invalid Hero
  * field instantly, with no server round-trip. Returns a field->message map (keyed by
@@ -52,16 +96,21 @@ export function getHeroValidationErrors(
     phoneCountryDialCode: hero.phoneCountryDialCode,
     phoneNumber: hero.phoneNumber,
   });
-  if (result.success) return null;
 
   const fieldErrors: Record<string, string> = {};
-  for (const issue of result.error.issues) {
-    const field = String(issue.path[0]);
-    // A field can fail more than one check (e.g. both too short and the wrong
-    // pattern) — keep the first, since it reads most naturally top-to-bottom.
-    if (!(field in fieldErrors)) fieldErrors[field] = issue.message;
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const field = String(issue.path[0]);
+      // A field can fail more than one check (e.g. both too short and the wrong
+      // pattern) — keep the first, since it reads most naturally top-to-bottom.
+      if (!(field in fieldErrors)) fieldErrors[field] = issue.message;
+    }
   }
-  return fieldErrors;
+
+  const layoutErrors = getHeroLayoutValidationErrors(hero);
+  Object.assign(fieldErrors, layoutErrors);
+
+  return Object.keys(fieldErrors).length > 0 ? fieldErrors : null;
 }
 
 /** Translates a server-returned field-error map (backend field names) into the Hero
@@ -72,7 +121,9 @@ export function mapServerFieldErrorsToHeroFields(
 ): Record<string, string> | null {
   const heroFieldErrors: Record<string, string> = {};
   for (const [field, message] of Object.entries(serverFieldErrors)) {
-    const formField = HERO_SERVER_FIELD_TO_FORM_FIELD[field];
+    const formField =
+      HERO_SERVER_FIELD_TO_FORM_FIELD[field] ??
+      HERO_SERVER_FIELD_TO_LAYOUT_FIELD[field];
     if (formField) heroFieldErrors[formField] = message;
   }
 
@@ -85,6 +136,7 @@ export function ecardToBuilderState(card: Ecard): EcardBuilderState {
       name: card.hero.name,
       email: card.hero.email,
       organisationId: card.organisationId,
+      organisationLogoUrl: card.hero.organisationLogoUrl,
       companyName: card.hero.companyName ?? "",
       photo: card.hero.profilePhotoMediaId
         ? {
@@ -98,6 +150,18 @@ export function ecardToBuilderState(card: Ecard): EcardBuilderState {
       isExchangeContactEnabled: card.hero.isExchangeContactEnabled,
       autoDownloadContact: card.hero.autoDownloadContact,
       endpoint: card.endpoint,
+      layout: card.hero.layout,
+      banner: card.hero.bannerMediaId
+        ? {
+            file: null,
+            existingMediaId: card.hero.bannerMediaId,
+            existingUrl: card.hero.bannerUrl ?? undefined,
+          }
+        : { file: null },
+      bannerFallbackColor:
+        card.hero.bannerFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
+      badgeFallbackColor:
+        card.hero.badgeFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
     },
     components: card.components
       .slice()
@@ -272,6 +336,11 @@ export function buildEcardSubmission(state: EcardBuilderState): EcardSubmission 
     ECARD_HERO_PHOTO_FIELD,
     files,
   );
+  const isBannerLayout =
+    state.hero.layout === "BANNER" || state.hero.layout === "BANNER_PROFILE";
+  const heroBanner = isBannerLayout
+    ? buildImageSlot(state.hero.banner, ECARD_HERO_BANNER_FIELD, files)
+    : undefined;
   const components = state.components.map((component: BuilderComponent, index) =>
     componentDraftToPayload(component.draft, index, files),
   );
@@ -287,6 +356,15 @@ export function buildEcardSubmission(state: EcardBuilderState): EcardSubmission 
     isExchangeContactEnabled: state.hero.isExchangeContactEnabled,
     autoDownloadContact: state.hero.autoDownloadContact,
     heroProfilePhoto,
+    heroLayout: state.hero.layout,
+    heroBanner,
+    heroBannerFallbackColor: isBannerLayout
+      ? state.hero.bannerFallbackColor
+      : undefined,
+    heroBadgeFallbackColor:
+      state.hero.layout === "ORG_BADGE"
+        ? state.hero.badgeFallbackColor
+        : undefined,
     components,
   };
 

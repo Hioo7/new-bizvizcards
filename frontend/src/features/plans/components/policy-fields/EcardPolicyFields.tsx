@@ -1,5 +1,6 @@
 import type { EcardPolicy } from "@app-types/plan";
 import EcardComponentAvailabilityFields from "@features/plans/components/policy-fields/EcardComponentAvailabilityFields";
+import HeroLayoutAvailabilityFields from "@features/plans/components/policy-fields/HeroLayoutAvailabilityFields";
 
 interface EcardPolicyFieldsProps {
   value: EcardPolicy;
@@ -68,6 +69,18 @@ export default function EcardPolicyFields({
               value={value.componentAvailabilities}
               onChange={(componentAvailabilities) =>
                 onChange({ ...value, componentAvailabilities })
+              }
+            />
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+              Hero layouts
+            </p>
+            <HeroLayoutAvailabilityFields
+              value={value.heroLayoutAvailabilities}
+              onChange={(heroLayoutAvailabilities) =>
+                onChange({ ...value, heroLayoutAvailabilities })
               }
             />
           </div>

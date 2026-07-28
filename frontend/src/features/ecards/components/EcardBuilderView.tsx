@@ -79,6 +79,7 @@ export default function EcardBuilderView() {
   const planUnavailableTypes = policy
     ? ECARD_COMPONENT_TYPES.filter((type) => !policy.ecard.components[type])
     : [];
+  const availableHeroLayouts = policy?.ecard.heroLayouts ?? null;
   const [editing, setEditing] = useState<EditingTarget>(null);
   const [isPickingType, setIsPickingType] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -285,6 +286,7 @@ export default function EcardBuilderView() {
           isSubmitting={false}
           error={builder.saveError}
           fieldErrors={builder.heroFieldErrors}
+          availableHeroLayouts={availableHeroLayouts}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state) => ({ ...state, hero }));

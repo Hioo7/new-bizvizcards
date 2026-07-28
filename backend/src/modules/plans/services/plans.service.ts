@@ -5,6 +5,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { Prisma } from '../../../generated/prisma/client';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  isGatedHeroLayout,
+  type GatedHeroLayout,
+} from '../../ecards/ecards.constants';
 import type { CreatePlanDto } from '../dto/create-plan.dto';
 import type { EcardPolicyDto } from '../dto/ecard-policy.dto';
 import type { EventPolicyDto } from '../dto/event-policy.dto';
@@ -311,6 +316,12 @@ export class PlansService {
           }),
         })),
       },
+      heroLayoutAvailabilities: {
+        create: dto.heroLayoutAvailabilities.map((heroLayout) => ({
+          layout: heroLayout.layout,
+          isAvailable: heroLayout.isAvailable,
+        })),
+      },
     };
   }
 
@@ -356,6 +367,18 @@ export class PlansService {
           ...(component.galleryLimits && {
             galleryLimits: { create: component.galleryLimits },
           }),
+        },
+      });
+    }
+    await tx.ecardHeroLayoutAvailability.deleteMany({
+      where: { ecardPolicyId },
+    });
+    for (const heroLayout of dto.heroLayoutAvailabilities) {
+      await tx.ecardHeroLayoutAvailability.create({
+        data: {
+          ecardPolicyId,
+          layout: heroLayout.layout,
+          isAvailable: heroLayout.isAvailable,
         },
       });
     }
@@ -407,6 +430,20 @@ export class PlansService {
           }),
         }),
       ),
+      // Backfilled here (not just seeded going forward) so a plan created
+      // before this feature shipped — with zero stored rows — still returns
+      // one complete, editable entry per gated layout instead of an empty
+      // array the admin form's toggle can never populate.
+      heroLayoutAvailabilities: ECARD_GATED_HERO_LAYOUTS.map((layout) => {
+        const stored = ecardPolicy.heroLayoutAvailabilities.find(
+          (
+            heroLayout,
+          ): heroLayout is typeof heroLayout & { layout: GatedHeroLayout } =>
+            isGatedHeroLayout(heroLayout.layout) &&
+            heroLayout.layout === layout,
+        );
+        return { layout, isAvailable: stored?.isAvailable ?? false };
+      }),
     };
   }
 

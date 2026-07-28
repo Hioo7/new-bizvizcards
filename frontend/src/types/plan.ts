@@ -1,5 +1,14 @@
-import type { EcardComponentType } from "./ecard";
+import type { ECardHeroLayout, EcardComponentType } from "./ecard";
 import type { SmartCardTemplateKey } from "./smartCard";
+
+// Only the plan-restrictable layouts — DEFAULT is never included here, it's
+// hard-coded as always-available on the backend.
+export type GatedHeroLayout = Exclude<ECardHeroLayout, "DEFAULT">;
+
+export interface EcardHeroLayoutAvailability {
+  layout: GatedHeroLayout;
+  isAvailable: boolean;
+}
 
 export type PlanBusinessModelType = "ONE_TIME" | "SUBSCRIPTION" | "TRIAL";
 
@@ -21,6 +30,7 @@ export interface EcardPolicy {
   maxEcards: number;
   exchangeContactAccess: boolean;
   componentAvailabilities: EcardComponentAvailability[];
+  heroLayoutAvailabilities: EcardHeroLayoutAvailability[];
 }
 
 export interface SmartCardPolicy {
@@ -107,6 +117,7 @@ export interface EffectiveEcardPolicy {
   exchangeContactAccess: boolean;
   components: Record<EcardComponentType, boolean>;
   galleryLimits: GalleryComponentLimits;
+  heroLayouts: Record<ECardHeroLayout, boolean>;
 }
 
 export interface EffectiveSmartCardPolicy {

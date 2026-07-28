@@ -1,5 +1,7 @@
 import { emptyImageField } from "@app-types/media.types";
 import type { ImageFieldValue } from "@app-types/media.types";
+import type { ECardHeroLayout } from "@app-types/ecard";
+import { ECARD_HERO_DEFAULT_FALLBACK_COLOR } from "@features/ecards/config/ecardBuilder.config";
 
 export interface EcardHeroDraft {
   name: string;
@@ -12,6 +14,11 @@ export interface EcardHeroDraft {
   autoDownloadContact: boolean;
   endpoint: string;
   organisationId: string | null;
+  organisationLogoUrl: string | null;
+  layout: ECardHeroLayout;
+  banner: ImageFieldValue;
+  bannerFallbackColor: string;
+  badgeFallbackColor: string;
 }
 
 export function emptyHeroDraft(): EcardHeroDraft {
@@ -26,6 +33,11 @@ export function emptyHeroDraft(): EcardHeroDraft {
     autoDownloadContact: false,
     endpoint: "",
     organisationId: null,
+    organisationLogoUrl: null,
+    layout: "DEFAULT",
+    banner: emptyImageField(),
+    bannerFallbackColor: ECARD_HERO_DEFAULT_FALLBACK_COLOR,
+    badgeFallbackColor: ECARD_HERO_DEFAULT_FALLBACK_COLOR,
   };
 }
 

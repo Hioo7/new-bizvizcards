@@ -20,6 +20,7 @@ import {
   PlanBusinessModelType,
   PrismaClient,
 } from '../../src/generated/prisma/client';
+import { ECARD_GATED_HERO_LAYOUTS } from '../../src/modules/ecards/ecards.constants';
 
 const GENEROUS_LIMIT = 1000;
 const GENEROUS_GALLERY_SIZE_BYTES = 100 * 1024 * 1024;
@@ -46,6 +47,15 @@ function permissiveEcardPolicyCreateData() {
             },
           },
         }),
+      })),
+    },
+    // Generous like everything else here — tests specifically about
+    // hero-layout restriction assign their own dedicated plan instead of
+    // relying on this fixture, same convention as gallery-limit tests.
+    heroLayoutAvailabilities: {
+      create: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
+        layout,
+        isAvailable: true,
       })),
     },
   };

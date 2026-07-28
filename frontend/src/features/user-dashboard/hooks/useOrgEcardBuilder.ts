@@ -25,6 +25,15 @@ function orgEcardToBuilderState(orgEcard: OrgEcard): EcardBuilderState {
       phoneNumber: orgEcard.hero.phoneNumber,
       isExchangeContactEnabled: orgEcard.hero.isExchangeContactEnabled,
       autoDownloadContact: orgEcard.hero.autoDownloadContact,
+      // This SPOC-facing member-ecard editor doesn't expose layout editing —
+      // it only edits identity/component fields (see draftToOrgComponent
+      // below); layout is left at its always-free default here.
+      layout: "DEFAULT",
+      bannerMediaId: null,
+      bannerUrl: null,
+      bannerFallbackColor: null,
+      badgeFallbackColor: null,
+      organisationLogoUrl: null,
     },
     components: orgEcard.components as EcardComponent[],
   });

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
+  ECardHeroLayout,
   EventMemberRole,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
@@ -16,6 +17,7 @@ import {
   PLAN_EVENT_NOT_AVAILABLE_MESSAGE,
   PLAN_EXCHANGE_CONTACT_NOT_ALLOWED_MESSAGE,
   PLAN_GALLERY_LIMIT_REACHED_MESSAGE,
+  PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE,
   PLAN_ORGANISATION_CREATE_LIMIT_MESSAGE,
   PLAN_ORGANISATION_JOIN_LIMIT_MESSAGE,
   PLAN_ORGANISATION_NOT_AVAILABLE_MESSAGE,
@@ -124,6 +126,49 @@ export class PlanEnforcementService {
       });
     if (fileSizeBytes > galleryLimits.maxGallerySizeBytes) {
       throw new ConflictException(PLAN_GALLERY_LIMIT_REACHED_MESSAGE);
+    }
+  }
+
+  async assertHeroLayoutAllowedForCard(
+    card: { customerId: string; organisationId: string | null },
+    layout: ECardHeroLayout,
+  ): Promise<void> {
+    if (layout === ECardHeroLayout.DEFAULT) {
+      return;
+    }
+    const policy =
+      await this.policyResolver.getEffectiveEcardPolicyForCard(card);
+    if (!policy.heroLayouts[layout]) {
+      throw new ForbiddenException(PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE);
+    }
+  }
+
+  // The org template belongs to the organisation itself, not to any one
+  // customer — so this checks the org's own orgEcardPolicy directly (via its
+  // creator's plan), never merged with a personal policy the way a linked
+  // card's boost is. Fails closed (unlike getEffectiveEcardPolicyForCard's
+  // "degrade to no-op" precedent for an unresolvable creator) since this is
+  // the template's own hard gate, not a permissive boost on top of something
+  // else.
+  async assertHeroLayoutAllowedForOrganisationTemplate(
+    organisationId: string,
+    layout: ECardHeroLayout,
+  ): Promise<void> {
+    if (layout === ECardHeroLayout.DEFAULT) {
+      return;
+    }
+    const organisation = await this.prisma.organisation.findUnique({
+      where: { id: organisationId },
+      select: { createdByCustomerId: true },
+    });
+    if (!organisation?.createdByCustomerId) {
+      throw new ForbiddenException(PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE);
+    }
+    const policy = await this.policyResolver.getEffectivePolicyForCustomer(
+      organisation.createdByCustomerId,
+    );
+    if (!policy.organisation.orgEcardPolicy.heroLayouts[layout]) {
+      throw new ForbiddenException(PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE);
     }
   }
 

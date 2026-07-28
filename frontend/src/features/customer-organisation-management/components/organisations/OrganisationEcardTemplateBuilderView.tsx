@@ -17,7 +17,7 @@ import EmptyStepState from "@components/EmptyStepState";
 import { getOrganisation } from "@services/organisationService";
 import { getCustomerEffectivePolicy } from "@services/planService";
 import { adminOrganisationDetailPath } from "@config/routes";
-import type { EcardComponentType } from "@app-types/ecard";
+import type { ECardHeroLayout, EcardComponentType } from "@app-types/ecard";
 import type { OrganisationSummary } from "@app-types/organisation";
 import {
   AboutEditSheet,
@@ -54,6 +54,10 @@ export default function OrganisationEcardTemplateBuilderView() {
   const [planUnavailableTypes, setPlanUnavailableTypes] = useState<
     EcardComponentType[]
   >([]);
+  const [availableHeroLayouts, setAvailableHeroLayouts] = useState<Record<
+    ECardHeroLayout,
+    boolean
+  > | null>(null);
 
   useEffect(() => {
     if (!organisationId) return;
@@ -65,9 +69,9 @@ export default function OrganisationEcardTemplateBuilderView() {
       setOrganisation(org);
 
       if (!org.createdByCustomerId) return;
-      // The "guiding hand" requirement: only component types the org's own
-      // plan boost allows are offered here — the same effective policy
-      // already resolved for individual e-cards, just reused read-only.
+      // The "guiding hand" requirement: only component types/layouts the
+      // org's own plan boost allows are offered here — the same effective
+      // policy already resolved for individual e-cards, just reused read-only.
       const policy = await getCustomerEffectivePolicy(org.createdByCustomerId);
       if (cancelled) return;
       setPlanUnavailableTypes(
@@ -75,6 +79,7 @@ export default function OrganisationEcardTemplateBuilderView() {
           (type) => !policy.organisation.orgEcardPolicy.components[type],
         ),
       );
+      setAvailableHeroLayouts(policy.organisation.orgEcardPolicy.heroLayouts);
     }
 
     void loadOrgAndPolicy();
@@ -262,6 +267,7 @@ export default function OrganisationEcardTemplateBuilderView() {
           draft={builder.state.hero}
           isSubmitting={false}
           error={null}
+          availableHeroLayouts={availableHeroLayouts}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state) => ({ ...state, hero }));

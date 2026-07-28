@@ -12,7 +12,16 @@ model OrganisationEcardTemplate {
   heroEmail               String?
   heroCompanyName         String?
   heroProfilePhotoMediaId String? @unique @db.Uuid
-  heroProfilePhoto        Media?  @relation(fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
+  heroProfilePhoto        Media?  @relation("OrganisationEcardTemplateHeroProfilePhoto", fields: [heroProfilePhotoMediaId], references: [id], onDelete: SetNull)
+
+  // Left unset (heroLayout null), the member's own e-card layout applies
+  // unchanged. When set, it's merged the same read-time way as every other
+  // template field — see organisation-ecard-template-merge.util.ts.
+  heroLayout              ECardHeroLayout?
+  heroBannerMediaId       String?          @unique @db.Uuid
+  heroBanner              Media?           @relation("OrganisationEcardTemplateHeroBanner", fields: [heroBannerMediaId], references: [id], onDelete: SetNull)
+  heroBannerFallbackColor String?
+  heroBadgeFallbackColor  String?
 
   phoneCountryDialCode String?
   phoneNumber          String?

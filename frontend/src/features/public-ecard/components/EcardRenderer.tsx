@@ -5,6 +5,9 @@ import { ecardVCardUrl, submitEcardExchangeContact } from "@services/publicEcard
 import { useAutoDownloadContact } from "@features/public-ecard/hooks/useAutoDownloadContact";
 import { buildEcardWhatsAppLink } from "@features/public-ecard/utils/buildEcardWhatsAppLink";
 import { HeroSection } from "@features/public-ecard/components/sections/HeroSection";
+import { BannerHeroSection } from "@features/public-ecard/components/sections/BannerHeroSection";
+import { BannerProfileHeroSection } from "@features/public-ecard/components/sections/BannerProfileHeroSection";
+import { OrgBadgeHeroSection } from "@features/public-ecard/components/sections/OrgBadgeHeroSection";
 import { AboutSection } from "@features/public-ecard/components/sections/AboutSection";
 import { SocialLinksSection } from "@features/public-ecard/components/sections/SocialLinksSection";
 import { GallerySection } from "@features/public-ecard/components/sections/GallerySection";
@@ -13,6 +16,26 @@ import { TeamSection } from "@features/public-ecard/components/sections/TeamSect
 import { WhatsAppSection } from "@features/public-ecard/components/sections/WhatsAppSection";
 import { BrochureSection } from "@features/public-ecard/components/sections/BrochureSection";
 import type { Ecard, EcardComponent } from "@app-types/ecard";
+
+interface HeroProps {
+  hero: Ecard["hero"];
+  endpoint: string;
+  canExchangeContact: boolean;
+  onExchangeContact: () => void;
+}
+
+function renderHero(props: HeroProps) {
+  switch (props.hero.layout) {
+    case "BANNER":
+      return <BannerHeroSection {...props} />;
+    case "BANNER_PROFILE":
+      return <BannerProfileHeroSection {...props} />;
+    case "ORG_BADGE":
+      return <OrgBadgeHeroSection {...props} />;
+    case "DEFAULT":
+      return <HeroSection {...props} />;
+  }
+}
 
 function renderComponent(component: EcardComponent, heroName: string) {
   switch (component.type) {
@@ -106,12 +129,12 @@ export function EcardRenderer({ card, exchangeContactAllowed }: EcardRendererPro
       className="min-h-screen bg-gradient-to-r from-neutral via-secondary to-neutral text-base-content"
     >
       <div className="px-4 md:px-48 pt-6 md:pt-20">
-        <HeroSection
-          hero={card.hero}
-          endpoint={card.endpoint}
-          canExchangeContact={canExchangeContact}
-          onExchangeContact={() => setIsExchangeOpen(true)}
-        />
+        {renderHero({
+          hero: card.hero,
+          endpoint: card.endpoint,
+          canExchangeContact,
+          onExchangeContact: () => setIsExchangeOpen(true),
+        })}
         <div className="mt-6 space-y-2">
           {card.components.map((component) => renderComponent(component, card.hero.name))}
         </div>

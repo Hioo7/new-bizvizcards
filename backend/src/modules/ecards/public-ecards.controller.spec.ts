@@ -15,6 +15,12 @@ function makeAvailablePolicyResolver() {
       isAvailable: true,
       exchangeContactAccess: true,
       components: {},
+      heroLayouts: {
+        DEFAULT: true,
+        BANNER: true,
+        BANNER_PROFILE: true,
+        ORG_BADGE: true,
+      },
     }),
   } as unknown as PlanPolicyResolverService;
 }
@@ -41,6 +47,7 @@ describe('PublicEcardsController', () => {
       id: 'card-1',
       customerId: 'customer-1',
       organisationId: null,
+      hero: { layout: 'DEFAULT' },
       components: [],
     };
     const getByEndpoint = jest.fn().mockResolvedValue(card);
@@ -105,6 +112,7 @@ describe('PublicEcardsController', () => {
         profilePhotoUrl: null,
         phoneCountryDialCode: null,
         phoneNumber: null,
+        layout: 'DEFAULT',
       },
       components: [],
     };
@@ -119,6 +127,7 @@ describe('PublicEcardsController', () => {
         profilePhotoUrl: null,
         phoneCountryDialCode: null,
         phoneNumber: null,
+        layout: null,
       },
       components: [],
     });
@@ -144,7 +153,7 @@ describe('PublicEcardsController', () => {
       id: 'card-1',
       customerId: 'customer-1',
       organisationId: null,
-      hero: { name: 'Jane' },
+      hero: { name: 'Jane', layout: 'DEFAULT' },
       components: [],
     };
     const getByEndpoint = jest.fn().mockResolvedValue(card);

@@ -5,6 +5,7 @@ import {
   ECardComponentType,
   PlanBusinessModelType,
 } from '../../../generated/prisma/client';
+import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
 import type { CreatePlanDto } from '../dto/create-plan.dto';
 import type { EcardPolicyDto } from '../dto/ecard-policy.dto';
 import type { EventPolicyDto } from '../dto/event-policy.dto';
@@ -74,6 +75,10 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
           }),
         }),
       ),
+      heroLayoutAvailabilities: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
+        layout,
+        isAvailable: true,
+      })),
       ...overrides,
     };
   }
@@ -174,6 +179,24 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
         maxImagesPerGallery: 5,
         maxGallerySizeBytes: 1024,
       });
+    });
+
+    it('backfills every gated hero layout as unavailable for a plan whose EcardPolicy predates this feature (zero stored rows)', async () => {
+      const plan = await createPlan();
+      await prisma.ecardHeroLayoutAvailability.deleteMany({
+        where: { ecardPolicy: { planPolicy: { planId: plan.id } } },
+      });
+
+      const refreshed = await service.getByIdOrThrow(plan.id);
+
+      expect(refreshed.ecardPolicy.heroLayoutAvailabilities).toHaveLength(
+        ECARD_GATED_HERO_LAYOUTS.length,
+      );
+      expect(
+        refreshed.ecardPolicy.heroLayoutAvailabilities.every(
+          (h) => h.isAvailable === false,
+        ),
+      ).toBe(true);
     });
 
     it('requires subscriptionDurationMonths to round-trip for SUBSCRIPTION plans', async () => {

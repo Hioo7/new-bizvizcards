@@ -54,6 +54,18 @@ export function mergeOrganisationEcardTemplateOntoCard(
       phoneCountryDialCode:
         template.hero.phoneCountryDialCode ?? card.hero.phoneCountryDialCode,
       phoneNumber: template.hero.phoneNumber ?? card.hero.phoneNumber,
+      // Same independent-field-by-field merge as every hero field above. A
+      // template that sets BANNER/BANNER_PROFILE without its own banner
+      // falls through to the card's own banner (possibly null) — the public
+      // renderer degrades gracefully to the fallback color fill rather than
+      // this util trying to enforce "companion data" completeness read-time.
+      layout: template.hero.layout ?? card.hero.layout,
+      bannerMediaId: template.hero.bannerMediaId ?? card.hero.bannerMediaId,
+      bannerUrl: template.hero.bannerUrl ?? card.hero.bannerUrl,
+      bannerFallbackColor:
+        template.hero.bannerFallbackColor ?? card.hero.bannerFallbackColor,
+      badgeFallbackColor:
+        template.hero.badgeFallbackColor ?? card.hero.badgeFallbackColor,
     },
     components: mergeComponents(card.components, template.components),
   };

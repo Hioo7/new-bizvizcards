@@ -1,5 +1,5 @@
 import type { CreatePlanPayload } from "@app-types/plan";
-import { ECARD_COMPONENT_LABELS } from "@features/plans/config";
+import { ECARD_COMPONENT_LABELS, ECARD_HERO_LAYOUT_LABELS } from "@features/plans/config";
 
 interface PlanReviewStepProps {
   value: CreatePlanPayload;
@@ -18,6 +18,9 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
   const availableComponents = value.ecardPolicy.componentAvailabilities
     .filter((component) => component.isAvailable)
     .map((component) => ECARD_COMPONENT_LABELS[component.type]);
+  const availableHeroLayouts = value.ecardPolicy.heroLayoutAvailabilities
+    .filter((layout) => layout.isAvailable)
+    .map((layout) => ECARD_HERO_LAYOUT_LABELS[layout.layout]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -54,6 +57,10 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
             <SummaryRow
               label="Components"
               value={availableComponents.length > 0 ? availableComponents.join(", ") : "None"}
+            />
+            <SummaryRow
+              label="Extra hero layouts"
+              value={availableHeroLayouts.length > 0 ? availableHeroLayouts.join(", ") : "None"}
             />
           </>
         )}

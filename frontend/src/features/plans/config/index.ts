@@ -31,6 +31,23 @@ export const ECARD_COMPONENT_LABELS: Record<
   BROCHURE: "Brochure",
 };
 
+// DEFAULT is never included — it's always available and never a toggle in
+// this grid, mirroring the backend's ECARD_GATED_HERO_LAYOUTS.
+export const ECARD_GATED_HERO_LAYOUTS = [
+  "BANNER",
+  "BANNER_PROFILE",
+  "ORG_BADGE",
+] as const;
+
+export const ECARD_HERO_LAYOUT_LABELS: Record<
+  (typeof ECARD_GATED_HERO_LAYOUTS)[number],
+  string
+> = {
+  BANNER: "Banner",
+  BANNER_PROFILE: "Banner + Profile",
+  ORG_BADGE: "Org Badge",
+};
+
 // Sensible starting point for a new component's gallery limits — an admin
 // building a new plan can adjust these before saving.
 export const DEFAULT_GALLERY_LIMITS = {

@@ -20,14 +20,16 @@ model Media {
   smartCardService      SmartCardService?
   smartCardGalleryImage SmartCardGalleryImage?
 
-  ecard             ECard?
-  ecardGalleryImage ECardGalleryImage?
-  ecardBrochure     ECardBrochureComponent?
+  ecardHeroProfilePhoto ECard?                  @relation("ECardHeroProfilePhoto")
+  ecardHeroBanner       ECard?                  @relation("ECardHeroBanner")
+  ecardGalleryImage     ECardGalleryImage?
+  ecardBrochure         ECardBrochureComponent?
 
-  organisation                          Organisation?
-  organisationEcardTemplate             OrganisationEcardTemplate?
-  organisationEcardTemplateGalleryImage OrganisationEcardTemplateGalleryImage?
-  organisationEcardTemplateBrochure     OrganisationEcardTemplateBrochureComponent?
+  organisation                              Organisation?
+  organisationEcardTemplateHeroProfilePhoto OrganisationEcardTemplate?                  @relation("OrganisationEcardTemplateHeroProfilePhoto")
+  organisationEcardTemplateHeroBanner       OrganisationEcardTemplate?                  @relation("OrganisationEcardTemplateHeroBanner")
+  organisationEcardTemplateGalleryImage     OrganisationEcardTemplateGalleryImage?
+  organisationEcardTemplateBrochure         OrganisationEcardTemplateBrochureComponent?
 
   productMedia ProductMedia?
 

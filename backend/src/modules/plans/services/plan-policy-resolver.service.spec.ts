@@ -3,8 +3,10 @@ import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   ECardComponentType,
+  ECardHeroLayout,
   PlanBusinessModelType,
 } from '../../../generated/prisma/client';
+import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
 import { PlanPolicyResolverService } from './plan-policy-resolver.service';
 
 interface PlanOverrides {
@@ -17,6 +19,7 @@ interface PlanOverrides {
     maxGallerySizeBytes: number;
   };
   componentAvailability?: Partial<Record<ECardComponentType, boolean>>;
+  heroLayoutAvailability?: Partial<Record<ECardHeroLayout, boolean>>;
   maxSmartCards?: number;
   smartCardExchangeContactAccess?: boolean;
   orgIsAvailable?: boolean;
@@ -24,6 +27,7 @@ interface PlanOverrides {
   maxOrgsCanCreate?: number;
   orgEcardExchangeContactAccess?: boolean;
   orgEcardComponentAvailability?: Partial<Record<ECardComponentType, boolean>>;
+  orgHeroLayoutAvailability?: Partial<Record<ECardHeroLayout, boolean>>;
   orgGalleryLimits?: {
     maxGalleries: number;
     maxImagesPerGallery: number;
@@ -113,6 +117,10 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
           maxGallerySizeBytes: 1024,
         });
 
+    const heroLayoutOverrides = isOrgBundle
+      ? overrides.orgHeroLayoutAvailability
+      : overrides.heroLayoutAvailability;
+
     return {
       isAvailable: true,
       maxEcards: overrides.maxEcards ?? 3,
@@ -126,6 +134,12 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
           ...(type === ECardComponentType.GALLERY && {
             galleryLimits: { create: limits },
           }),
+        })),
+      },
+      heroLayoutAvailabilities: {
+        create: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
+          layout,
+          isAvailable: heroLayoutOverrides?.[layout] ?? false,
         })),
       },
     };
@@ -482,6 +496,66 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
       });
 
       expect(effective.exchangeContactAccess).toBe(false);
+    });
+  });
+
+  describe('heroLayouts resolution', () => {
+    it('DEFAULT is always true, gated layouts default false with no stored rows', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan();
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.ecard.heroLayouts).toEqual({
+        [ECardHeroLayout.DEFAULT]: true,
+        [ECardHeroLayout.BANNER]: false,
+        [ECardHeroLayout.BANNER_PROFILE]: false,
+        [ECardHeroLayout.ORG_BADGE]: false,
+      });
+    });
+
+    it('reflects an explicitly-granted gated layout', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        heroLayoutAvailability: { [ECardHeroLayout.BANNER]: true },
+      });
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.ecard.heroLayouts[ECardHeroLayout.BANNER]).toBe(true);
+      expect(effective.ecard.heroLayouts[ECardHeroLayout.BANNER_PROFILE]).toBe(
+        false,
+      );
+    });
+
+    it("ORs a layout granted only via the organisation's boost", async () => {
+      const owner = await seedCustomer();
+      const ownerPlan = await seedPlan();
+      await assignPlan(owner.id, ownerPlan.id);
+
+      const creator = await seedCustomer('Org Creator');
+      const creatorPlan = await seedPlan({
+        orgHeroLayoutAvailability: { [ECardHeroLayout.ORG_BADGE]: true },
+      });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme Inc', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const effective = await service.getEffectiveEcardPolicyForCard({
+        customerId: owner.id,
+        organisationId: organisation.id,
+      });
+
+      expect(effective.heroLayouts[ECardHeroLayout.ORG_BADGE]).toBe(true);
+      expect(effective.heroLayouts[ECardHeroLayout.BANNER]).toBe(false);
     });
   });
 

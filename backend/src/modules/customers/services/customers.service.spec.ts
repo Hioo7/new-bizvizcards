@@ -51,7 +51,7 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     customerAuth = createCustomerAuth({
       secret: appConfig.betterAuthCustomerSecret,
       baseUrl: appConfig.betterAuthUrl,
-      frontendOrigin: appConfig.publicAppBaseUrl,
+      trustedFrontendOrigins: appConfig.corsAllowedOrigins,
       prisma,
     });
   });

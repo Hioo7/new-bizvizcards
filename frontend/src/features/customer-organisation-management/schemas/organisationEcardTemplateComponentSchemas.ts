@@ -5,7 +5,7 @@ import {
   ECARD_PHONE_NUMBER_MAX_DIGITS,
   ECARD_PHONE_NUMBER_MIN_DIGITS,
   ECARD_TEXT_SHORT_MAX_LENGTH,
-  ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN,
+  normalizeEcardVideoUrl,
   type VideoSheetValues,
   type WhatsAppSheetValues,
 } from "@features/ecards";
@@ -41,8 +41,16 @@ export const organisationEcardTemplateVideoSheetSchema: z.ZodType<
   videoUrl: z
     .string()
     .trim()
-    .refine(
-      (value) => value === "" || ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN.test(value),
-      "Must be a YouTube or Vimeo embed URL",
-    ),
+    .transform((value, ctx) => {
+      if (value === "") return value;
+      const normalized = normalizeEcardVideoUrl(value);
+      if (!normalized) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter a valid YouTube or Vimeo link",
+        });
+        return z.NEVER;
+      }
+      return normalized;
+    }),
 });

@@ -65,9 +65,9 @@ export default function VideoEditSheet({
       />
       <FormTextField
         id="videoUrl"
-        label="YouTube or Vimeo embed URL"
+        label="YouTube or Vimeo link"
         icon={Link2}
-        placeholder="https://www.youtube.com/embed/..."
+        placeholder="https://youtube.com/watch?v=... or vimeo.com/..."
         registration={register("videoUrl")}
         error={errors.videoUrl?.message}
       />

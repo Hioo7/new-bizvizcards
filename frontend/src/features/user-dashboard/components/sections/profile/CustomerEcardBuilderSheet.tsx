@@ -25,12 +25,14 @@ import {
   TeamEditSheet,
   WhatsAppEditSheet,
   BrochureEditSheet,
+  ECARD_COMPONENT_TYPES,
   ECARD_MAX_COMPONENTS,
   emptyDraftForType,
   type EcardBuilderState,
 } from "@features/ecards";
 import type { EcardComponentType } from "@app-types/ecard";
 import { useCustomerEcardBuilder } from "@features/user-dashboard/hooks/useCustomerEcardBuilder";
+import { useMyEffectivePolicy } from "@hooks/useMyEffectivePolicy";
 import CustomerHeroEditSheet from "./CustomerHeroEditSheet";
 
 type EditingTarget = { kind: "hero" } | { kind: "component"; key: string } | null;
@@ -53,6 +55,11 @@ export default function CustomerEcardBuilderSheet({
   onSaved,
 }: CustomerEcardBuilderSheetProps) {
   const builder = useCustomerEcardBuilder(prefillName, prefillEmail, existingEcard);
+  const { policy } = useMyEffectivePolicy();
+  const planUnavailableTypes = policy
+    ? ECARD_COMPONENT_TYPES.filter((type) => !policy.ecard.components[type])
+    : [];
+  const availableHeroLayouts = policy?.ecard.heroLayouts ?? null;
   const [editing, setEditing] = useState<EditingTarget>(null);
   // Reset editing state when we load a new card (e.g. switching from one ecard to another)
   // Handled by the `key` prop on this component — state already resets on key change.
@@ -242,6 +249,7 @@ export default function CustomerEcardBuilderSheet({
           isSubmitting={false}
           error={builder.saveError}
           fieldErrors={builder.heroFieldErrors}
+          availableHeroLayouts={availableHeroLayouts}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state: EcardBuilderState) => ({ ...state, hero }));
@@ -390,6 +398,7 @@ export default function CustomerEcardBuilderSheet({
         open={isPickingType}
         addedTypes={addedTypes}
         isTeamDisabled={builder.state.hero.organisationId === null}
+        planUnavailableTypes={planUnavailableTypes}
         onClose={() => setIsPickingType(false)}
         onPick={handlePickType}
       />

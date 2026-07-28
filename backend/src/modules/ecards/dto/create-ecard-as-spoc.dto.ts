@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
 import { createEcardShape } from './create-ecard.dto';
-import { hasUniqueComponentTypes } from './ecard-core.dto';
+import {
+  assertHeroLayoutFieldsConsistent,
+  hasUniqueComponentTypes,
+} from './ecard-core.dto';
 
 // organisationId is intentionally omitted here: for a SPOC-initiated create,
 // the organisation is always the :organisationId route param (verified via
@@ -26,6 +29,7 @@ export const createEcardAsSpocSchema = z
   .refine((v) => hasUniqueComponentTypes(v.components), {
     message: 'Each component type may appear at most once',
     path: ['components'],
-  });
+  })
+  .superRefine(assertHeroLayoutFieldsConsistent);
 
 export type CreateEcardAsSpocDto = z.infer<typeof createEcardAsSpocSchema>;

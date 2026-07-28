@@ -79,3 +79,7 @@ export const PLAN_EVENT_LIMIT_REACHED_MESSAGE =
   "This customer's plan has reached its event limit";
 export const PLAN_EVENT_GUEST_LIMIT_REACHED_MESSAGE =
   "This event's host plan has reached its guest limit for this event";
+// Generic enough for both the customer's own plan (card save) and an
+// organisation's boosted policy (template save) call sites.
+export const PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE =
+  'This plan does not include this Hero layout';

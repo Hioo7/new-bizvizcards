@@ -4,14 +4,35 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link2, Mail, Phone, Sparkles, User } from "lucide-react";
 import FormTextField from "@components/forms/FormTextField";
 import ImageSlotField from "@components/media/ImageSlotField";
-import EditSheetShell from "@components/EditSheetShell";
+import EditWizardShell from "@components/EditWizardShell";
+import type { FormStepDefinition } from "@components/forms/FormStepShell";
 import {
+  BannerFieldsGroup,
+  HeroLayoutPickerStep,
+  OrgBadgeFieldsGroup,
+  getHeroLayoutValidationErrors,
   heroSheetSchema,
   type HeroSheetValues,
 } from "@features/ecards";
 import type { EcardHeroDraft } from "@features/ecards/types/ecardBuilder.types";
 import type { ImageFieldValue } from "@app-types/media.types";
+import type { ECardHeroLayout } from "@app-types/ecard";
 import { useFieldHighlight } from "@hooks/useFieldHighlight";
+
+const HERO_WIZARD_STEPS: FormStepDefinition[] = [
+  { id: "identity", label: "Identity" },
+  { id: "layout", label: "Layout" },
+  { id: "details", label: "Details" },
+];
+
+const HERO_RHF_FIELD_NAMES = [
+  "endpoint",
+  "name",
+  "email",
+  "companyName",
+  "phoneCountryDialCode",
+  "phoneNumber",
+] as const;
 
 interface CustomerHeroEditSheetProps {
   open: boolean;
@@ -21,6 +42,8 @@ interface CustomerHeroEditSheetProps {
   /** Field-level errors surfaced from outside the sheet (failed client-side pre-check
    * or a server validation/conflict response) — keyed by this sheet's own field names. */
   fieldErrors?: Record<string, string> | null;
+  /** Which layouts the customer's own plan allows — null while still loading. */
+  availableHeroLayouts?: Record<ECardHeroLayout, boolean> | null;
   onClose: () => void;
   onSave: (draft: EcardHeroDraft) => void;
 }
@@ -31,12 +54,14 @@ export default function CustomerHeroEditSheet({
   isSubmitting,
   error,
   fieldErrors,
+  availableHeroLayouts = null,
   onClose,
   onSave,
 }: CustomerHeroEditSheetProps) {
   const {
     register,
-    handleSubmit,
+    trigger,
+    getValues,
     setError,
     formState: { errors },
   } = useForm<HeroSheetValues>({
@@ -50,100 +75,198 @@ export default function CustomerHeroEditSheet({
       phoneNumber: draft.phoneNumber,
     },
   });
+  // Jump straight to whichever step a server rejection points at, computed once
+  // at mount (this sheet always remounts fresh when reopened) rather than via
+  // an effect that would call setState reactively after the initial render.
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (!fieldErrors) return 0;
+    if (
+      fieldErrors.banner ||
+      fieldErrors.bannerFallbackColor ||
+      fieldErrors.badgeFallbackColor
+    ) {
+      return 2;
+    }
+    if (fieldErrors.layout) return 1;
+    return 0;
+  });
+  const [stepError, setStepError] = useState<string | null>(null);
   const [photo, setPhoto] = useState<ImageFieldValue>(draft.photo);
+  const [layout, setLayout] = useState<ECardHeroLayout>(draft.layout);
+  const [banner, setBanner] = useState<ImageFieldValue>(draft.banner);
+  const [bannerFallbackColor, setBannerFallbackColor] = useState(
+    draft.bannerFallbackColor,
+  );
+  const [badgeFallbackColor, setBadgeFallbackColor] = useState(
+    draft.badgeFallbackColor,
+  );
   const { highlightedField, triggerHighlight } = useFieldHighlight();
 
   useEffect(() => {
     if (!open || !fieldErrors) return;
-    const fields = Object.keys(fieldErrors) as (keyof HeroSheetValues)[];
-    fields.forEach((field) => {
+    const rhfFields = HERO_RHF_FIELD_NAMES.filter((field) => fieldErrors[field]);
+    rhfFields.forEach((field) => {
       setError(field, { type: "server", message: fieldErrors[field] });
     });
-    if (fields.length > 0) triggerHighlight(fields[0]);
+    if (rhfFields.length > 0) triggerHighlight(rhfFields[0]);
   }, [open, fieldErrors, setError, triggerHighlight]);
 
-  function submit(values: HeroSheetValues) {
-    onSave({
+  const stepId = HERO_WIZARD_STEPS[currentIndex].id;
+
+  function handleBack() {
+    setStepError(null);
+    setCurrentIndex((index) => Math.max(0, index - 1));
+  }
+
+  async function handleNext() {
+    setStepError(null);
+
+    if (stepId === "identity") {
+      const isValid = await trigger(HERO_RHF_FIELD_NAMES);
+      if (!isValid) return;
+      setCurrentIndex(1);
+      return;
+    }
+
+    if (stepId === "layout") {
+      setCurrentIndex(2);
+      return;
+    }
+
+    const values = getValues();
+    const heroDraft: EcardHeroDraft = {
       ...values,
       photo,
       organisationId: draft.organisationId,
+      organisationLogoUrl: draft.organisationLogoUrl,
+      layout,
+      banner,
+      bannerFallbackColor,
+      badgeFallbackColor,
       autoDownloadContact: draft.autoDownloadContact,
       isExchangeContactEnabled: draft.isExchangeContactEnabled,
-    });
+    };
+    const layoutErrors = getHeroLayoutValidationErrors(heroDraft);
+    if (layoutErrors) {
+      setStepError(Object.values(layoutErrors)[0]);
+      return;
+    }
+    onSave(heroDraft);
   }
 
   return (
-    <EditSheetShell
+    <EditWizardShell
       open={open}
       icon={Sparkles}
       title="Hero"
-      onClose={onClose}
-      onSave={() => void handleSubmit(submit)()}
+      steps={HERO_WIZARD_STEPS}
+      currentIndex={currentIndex}
       isSubmitting={isSubmitting}
-      error={error}
+      error={stepError ?? error}
+      onClose={onClose}
+      onBack={handleBack}
+      onNext={() => void handleNext()}
     >
-      <ImageSlotField
-        label="Profile photo"
-        value={photo}
-        onChange={setPhoto}
-        cropShape="round"
-        aspect={1}
-      />
-      <FormTextField
-        id="endpoint"
-        label="Card URL (e.g. jane-doe)"
-        icon={Link2}
-        registration={register("endpoint")}
-        error={errors.endpoint?.message}
-        highlight={highlightedField === "endpoint"}
-      />
-      <FormTextField
-        id="name"
-        label="Name"
-        icon={User}
-        registration={register("name")}
-        error={errors.name?.message}
-        highlight={highlightedField === "name"}
-      />
-      <FormTextField
-        id="email"
-        label="Email"
-        type="email"
-        icon={Mail}
-        registration={register("email")}
-        error={errors.email?.message}
-        highlight={highlightedField === "email"}
-      />
-      <FormTextField
-        id="companyName"
-        label="Company"
-        icon={Sparkles}
-        registration={register("companyName")}
-        error={errors.companyName?.message}
-        highlight={highlightedField === "companyName"}
-      />
-      <div className="flex gap-3">
-        <div className="w-24">
-          <FormTextField
-            id="phoneCountryDialCode"
-            label="Dial code"
-            icon={Phone}
-            registration={register("phoneCountryDialCode")}
-            error={errors.phoneCountryDialCode?.message}
-            highlight={highlightedField === "phoneCountryDialCode"}
+      {stepId === "identity" && (
+        <div className="flex flex-col gap-4">
+          <ImageSlotField
+            label="Profile photo"
+            value={photo}
+            onChange={setPhoto}
+            cropShape="round"
+            aspect={1}
           />
-        </div>
-        <div className="flex-1">
           <FormTextField
-            id="phoneNumber"
-            label="Phone number"
-            icon={Phone}
-            registration={register("phoneNumber")}
-            error={errors.phoneNumber?.message}
-            highlight={highlightedField === "phoneNumber"}
+            id="endpoint"
+            label="Card URL (e.g. jane-doe)"
+            icon={Link2}
+            registration={register("endpoint")}
+            error={errors.endpoint?.message}
+            highlight={highlightedField === "endpoint"}
           />
+          <FormTextField
+            id="name"
+            label="Name"
+            icon={User}
+            registration={register("name")}
+            error={errors.name?.message}
+            highlight={highlightedField === "name"}
+          />
+          <FormTextField
+            id="email"
+            label="Email"
+            type="email"
+            icon={Mail}
+            registration={register("email")}
+            error={errors.email?.message}
+            highlight={highlightedField === "email"}
+          />
+          <FormTextField
+            id="companyName"
+            label="Company"
+            icon={Sparkles}
+            registration={register("companyName")}
+            error={errors.companyName?.message}
+            highlight={highlightedField === "companyName"}
+          />
+          <div className="flex gap-3">
+            <div className="w-24">
+              <FormTextField
+                id="phoneCountryDialCode"
+                label="Dial code"
+                icon={Phone}
+                registration={register("phoneCountryDialCode")}
+                error={errors.phoneCountryDialCode?.message}
+                highlight={highlightedField === "phoneCountryDialCode"}
+              />
+            </div>
+            <div className="flex-1">
+              <FormTextField
+                id="phoneNumber"
+                label="Phone number"
+                icon={Phone}
+                registration={register("phoneNumber")}
+                error={errors.phoneNumber?.message}
+                highlight={highlightedField === "phoneNumber"}
+              />
+            </div>
+          </div>
         </div>
-      </div>
-    </EditSheetShell>
+      )}
+
+      {stepId === "layout" && (
+        <HeroLayoutPickerStep
+          value={layout}
+          onChange={setLayout}
+          availableLayouts={availableHeroLayouts}
+          hasOrganisationLinked={draft.organisationId !== null}
+        />
+      )}
+
+      {stepId === "details" && (
+        <>
+          {layout === "DEFAULT" && (
+            <p className="text-sm text-base-content/60">
+              The Default layout needs no extra details.
+            </p>
+          )}
+          {(layout === "BANNER" || layout === "BANNER_PROFILE") && (
+            <BannerFieldsGroup
+              banner={banner}
+              onBannerChange={setBanner}
+              fallbackColor={bannerFallbackColor}
+              onFallbackColorChange={setBannerFallbackColor}
+            />
+          )}
+          {layout === "ORG_BADGE" && (
+            <OrgBadgeFieldsGroup
+              organisationLogoUrl={draft.organisationLogoUrl}
+              fallbackColor={badgeFallbackColor}
+              onFallbackColorChange={setBadgeFallbackColor}
+            />
+          )}
+        </>
+      )}
+    </EditWizardShell>
   );
 }

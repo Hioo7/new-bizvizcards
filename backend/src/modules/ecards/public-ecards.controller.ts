@@ -19,6 +19,7 @@ import { LeadsService } from '../leads/services/leads.service';
 import { OrganisationEcardTemplateService } from '../organisations/services/organisation-ecard-template.service';
 import { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
 import { filterEcardComponentsByPolicy } from './ecard-policy-filter.util';
+import { resolveEffectiveHeroLayout } from './hero-layout-fallback.util';
 import { mergeOrganisationEcardTemplateOntoCard } from './organisation-ecard-template-merge.util';
 import { EcardVCardService } from './services/ecard-vcard.service';
 import { EcardsService } from './services/ecards.service';
@@ -57,13 +58,14 @@ export class PublicEcardsController {
         )
       : null;
     const mergedCard = mergeOrganisationEcardTemplateOntoCard(card, template);
+    const layoutResolvedCard = resolveEffectiveHeroLayout(mergedCard, policy);
 
     const event = await this.ecardAnalyticsService.recordEvent(
       card.id,
       ECardEventType.VIEW,
     );
     return {
-      card: filterEcardComponentsByPolicy(mergedCard, policy),
+      card: filterEcardComponentsByPolicy(layoutResolvedCard, policy),
       viewEventId: event.id,
       exchangeContactAllowed: policy.exchangeContactAccess,
     };

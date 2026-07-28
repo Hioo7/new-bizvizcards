@@ -3,10 +3,12 @@ import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   ECardComponentType,
+  ECardHeroLayout,
   EventMemberRole,
   PlanBusinessModelType,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
+import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
 import { PlanEnforcementService } from './plan-enforcement.service';
 import { PlanPolicyResolverService } from './plan-policy-resolver.service';
 
@@ -20,6 +22,10 @@ interface PlanOverrides {
     maxImagesPerGallery: number;
     maxGallerySizeBytes: number;
   };
+  // Defaults to every gated layout OFF, matching every real plan's
+  // default-off state — override with the specific layouts a test needs on.
+  availableHeroLayouts?: ECardHeroLayout[];
+  orgAvailableHeroLayouts?: ECardHeroLayout[];
   smartCardIsAvailable?: boolean;
   maxSmartCards?: number;
   smartCardExchangeContactAccess?: boolean;
@@ -102,7 +108,10 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
     return prisma.customer.create({ data: { accountId: account.id } });
   }
 
-  function ecardPolicyCreateData(overrides: PlanOverrides) {
+  function ecardPolicyCreateData(
+    overrides: PlanOverrides,
+    availableHeroLayouts: ECardHeroLayout[] = [],
+  ) {
     return {
       isAvailable: overrides.ecardIsAvailable ?? true,
       maxEcards: overrides.maxEcards ?? 3,
@@ -122,6 +131,12 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
           }),
         })),
       },
+      heroLayoutAvailabilities: {
+        create: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
+          layout,
+          isAvailable: availableHeroLayouts.includes(layout),
+        })),
+      },
     };
   }
 
@@ -134,7 +149,12 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
         isFallbackPlan: overrides.isFallbackPlan ?? false,
         policy: {
           create: {
-            ecardPolicy: { create: ecardPolicyCreateData(overrides) },
+            ecardPolicy: {
+              create: ecardPolicyCreateData(
+                overrides,
+                overrides.availableHeroLayouts,
+              ),
+            },
             smartCardPolicy: {
               create: {
                 isAvailable: overrides.smartCardIsAvailable ?? true,
@@ -174,6 +194,14 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                             },
                           },
                         }),
+                      })),
+                    },
+                    heroLayoutAvailabilities: {
+                      create: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
+                        layout,
+                        isAvailable: (
+                          overrides.orgAvailableHeroLayouts ?? []
+                        ).includes(layout),
                       })),
                     },
                   },
@@ -553,6 +581,139 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
       await expect(service.assertCanCreateEvent(customer.id)).rejects.toThrow(
         "This customer's plan does not include business events",
       );
+    });
+  });
+
+  describe('assertHeroLayoutAllowedForCard', () => {
+    it('always passes for DEFAULT, even with no plan assigned at all', async () => {
+      const customer = await seedCustomer();
+
+      await expect(
+        service.assertHeroLayoutAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardHeroLayout.DEFAULT,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('passes for a gated layout the plan explicitly allows', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        availableHeroLayouts: [ECardHeroLayout.BANNER],
+      });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertHeroLayoutAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardHeroLayout.BANNER,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks a gated layout the plan does not allow (default-off)', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan();
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertHeroLayoutAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardHeroLayout.ORG_BADGE,
+        ),
+      ).rejects.toThrow('This plan does not include this Hero layout');
+    });
+
+    it("passes via the organisation's boost even when the personal plan denies it", async () => {
+      const creator = await seedCustomer('Creator');
+      const creatorPlan = await seedPlan({
+        orgAvailableHeroLayouts: [ECardHeroLayout.BANNER_PROFILE],
+      });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const owner = await seedCustomer('Owner');
+      const ownerPlan = await seedPlan();
+      await assignPlan(owner.id, ownerPlan.id);
+
+      await expect(
+        service.assertHeroLayoutAllowedForCard(
+          { customerId: owner.id, organisationId: organisation.id },
+          ECardHeroLayout.BANNER_PROFILE,
+        ),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertHeroLayoutAllowedForOrganisationTemplate', () => {
+    it('always passes for DEFAULT', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertHeroLayoutAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardHeroLayout.DEFAULT,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it("passes for a layout the org creator's plan grants to the organisation", async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan({
+        orgAvailableHeroLayouts: [ECardHeroLayout.ORG_BADGE],
+      });
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertHeroLayoutAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardHeroLayout.ORG_BADGE,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks a layout not granted to the organisation (default-off)', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertHeroLayoutAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardHeroLayout.BANNER,
+        ),
+      ).rejects.toThrow('This plan does not include this Hero layout');
+    });
+
+    it('fails closed when the organisation has no resolvable creator', async () => {
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Ownerless Org' },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertHeroLayoutAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardHeroLayout.BANNER,
+        ),
+      ).rejects.toThrow('This plan does not include this Hero layout');
     });
   });
 

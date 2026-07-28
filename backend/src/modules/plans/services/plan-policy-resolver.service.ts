@@ -2,9 +2,11 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   ECardComponentType,
+  ECardHeroLayout,
   Prisma,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
+import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
 import { PLAN_FALLBACK_PLAN_MISSING_MESSAGE } from '../plans.constants';
 
 export interface EffectiveGalleryLimits {
@@ -19,6 +21,9 @@ export interface EffectiveEcardPolicy {
   exchangeContactAccess: boolean;
   components: Record<ECardComponentType, boolean>;
   galleryLimits: EffectiveGalleryLimits;
+  // Only the plan-restrictable layouts are ever false-by-default here —
+  // DEFAULT is unconditionally forced to true in mapEcardPolicy below.
+  heroLayouts: Record<ECardHeroLayout, boolean>;
 }
 
 export interface EffectiveSmartCardPolicy {
@@ -57,6 +62,7 @@ export interface EffectivePolicy {
 // shape to round-trip a plan's policy tree back out as a DTO.
 export const ecardPolicyInclude = {
   componentAvailabilities: { include: { galleryLimits: true } },
+  heroLayoutAvailabilities: true,
 } satisfies Prisma.EcardPolicyInclude;
 
 export type EcardPolicyWithRelations = Prisma.EcardPolicyGetPayload<{
@@ -273,12 +279,23 @@ export class PlanPolicyResolverService {
       }
     }
 
+    const heroLayouts = Object.fromEntries(
+      ECARD_GATED_HERO_LAYOUTS.map((layout) => [layout, false]),
+    ) as Record<ECardHeroLayout, boolean>;
+    for (const availability of ecardPolicy.heroLayoutAvailabilities) {
+      heroLayouts[availability.layout] = availability.isAvailable;
+    }
+    // The one place DEFAULT's "never plan-restricted" invariant lives — no
+    // stored row for it is ever read, it's always true.
+    heroLayouts[ECardHeroLayout.DEFAULT] = true;
+
     return {
       isAvailable: ecardPolicy.isAvailable,
       maxEcards: ecardPolicy.maxEcards,
       exchangeContactAccess: ecardPolicy.exchangeContactAccess,
       components,
       galleryLimits,
+      heroLayouts,
     };
   }
 
@@ -304,6 +321,12 @@ export class PlanPolicyResolverService {
       components[type] = personal.components[type] || orgBoost.components[type];
     }
 
+    const heroLayouts = { ...personal.heroLayouts };
+    for (const layout of Object.keys(heroLayouts) as ECardHeroLayout[]) {
+      heroLayouts[layout] =
+        personal.heroLayouts[layout] || orgBoost.heroLayouts[layout];
+    }
+
     return {
       isAvailable: personal.isAvailable || orgBoost.isAvailable,
       // Never boosted — a personal, account-wide cap unrelated to one
@@ -312,6 +335,7 @@ export class PlanPolicyResolverService {
       exchangeContactAccess:
         personal.exchangeContactAccess || orgBoost.exchangeContactAccess,
       components,
+      heroLayouts,
       galleryLimits: {
         maxGalleries: Math.max(
           personal.galleryLimits.maxGalleries,

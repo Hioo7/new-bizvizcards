@@ -18,6 +18,8 @@ interface ImageSlotFieldProps {
   cropShape: "round" | "rect";
   /** Visual preview container for non-avatar slots: a fixed square thumbnail, or a wide card matching a public-template gallery card. */
   variant?: "square" | "card";
+  /** Overrides variant="card"'s default aspect-[4/3] container (e.g. a wide banner's own aspect ratio). Ignored for variant="square" and round avatars. */
+  containerAspectClass?: string;
   /**
    * Skips the crop step entirely and uploads the selected file as-is. Use when the public
    * template preserves the source image's own aspect ratio (e.g. object-fit: contain) instead
@@ -39,6 +41,7 @@ export default function ImageSlotField({
   aspect,
   cropShape,
   variant = "square",
+  containerAspectClass,
   skipCrop = false,
   onRemove,
   error,
@@ -169,7 +172,10 @@ export default function ImageSlotField({
     );
   }
 
-  const containerSizeClass = variant === "card" ? "aspect-[4/3] w-full" : "h-28 w-28";
+  const containerSizeClass =
+    variant === "card"
+      ? `${containerAspectClass ?? "aspect-[4/3]"} w-full`
+      : "h-28 w-28";
 
   return (
     <div>

@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import {
   ECARD_TEXT_SHORT_MAX_LENGTH,
-  ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN,
   ECARD_VIDEO_URL_MAX_LENGTH,
 } from '../../ecards.constants';
+import { normalizeEcardVideoUrl } from '../../utils/normalize-video-url.util';
 
 export const ecardVideoComponentSchema = z
   .object({
@@ -13,7 +13,17 @@ export const ecardVideoComponentSchema = z
       .string()
       .trim()
       .max(ECARD_VIDEO_URL_MAX_LENGTH)
-      .regex(ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN),
+      .transform((value, ctx) => {
+        const normalized = normalizeEcardVideoUrl(value);
+        if (!normalized) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Enter a valid YouTube or Vimeo link',
+          });
+          return z.NEVER;
+        }
+        return normalized;
+      }),
   })
   .strict();
 

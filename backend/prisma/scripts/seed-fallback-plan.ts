@@ -13,6 +13,7 @@ import {
   PlanBusinessModelType,
   PrismaClient,
 } from '../../src/generated/prisma/client';
+import { ECARD_GATED_HERO_LAYOUTS } from '../../src/modules/ecards/ecards.constants';
 import {
   PLAN_FALLBACK_MAX_ECARDS,
   PLAN_FALLBACK_MAX_EVENTS,
@@ -48,6 +49,14 @@ function ecardPolicyCreateData(maxEcards: number) {
             },
           },
         }),
+      })),
+    },
+    // New paid-tier layouts are never granted on the fallback plan, matching
+    // every other real plan's default-off state until an admin opts it in.
+    heroLayoutAvailabilities: {
+      create: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
+        layout,
+        isAvailable: false,
       })),
     },
   };

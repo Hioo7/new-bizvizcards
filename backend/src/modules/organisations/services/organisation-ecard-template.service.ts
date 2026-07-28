@@ -2,13 +2,18 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { MediaSlotResolverService } from '../../../common/media/media-slot-resolver.service';
 import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { ECardComponentType } from '../../../generated/prisma/client';
+import {
+  ECardComponentType,
+  ECardHeroLayout,
+} from '../../../generated/prisma/client';
+import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import type {
   OrganisationEcardTemplateComponentInputDto,
   OrganisationEcardTemplateDto,
 } from '../dto/organisation-ecard-template.dto';
 import {
   ORGANISATION_ECARD_TEMPLATE_BROCHURE_FIELD,
+  ORGANISATION_ECARD_TEMPLATE_HERO_BANNER_FIELD,
   ORGANISATION_ECARD_TEMPLATE_HERO_PHOTO_FIELD,
   ORGANISATION_ECARD_TEMPLATE_STORAGE_KEY_PREFIX,
   organisationEcardTemplateGalleryImageField,
@@ -17,6 +22,7 @@ import { OrganisationsService } from './organisations.service';
 
 const FULL_INCLUDE = {
   heroProfilePhoto: true,
+  heroBanner: true,
   components: {
     orderBy: { order: 'asc' as const },
     include: {
@@ -172,6 +178,11 @@ export interface OrganisationEcardTemplateResponse {
     profilePhotoUrl: string | null;
     phoneCountryDialCode: string | null;
     phoneNumber: string | null;
+    layout: ECardHeroLayout | null;
+    bannerMediaId: string | null;
+    bannerUrl: string | null;
+    bannerFallbackColor: string | null;
+    badgeFallbackColor: string | null;
   };
   components: OrganisationEcardTemplateComponentResponse[];
 }
@@ -190,6 +201,7 @@ export class OrganisationEcardTemplateService {
     private readonly mediaService: MediaService,
     private readonly mediaSlotResolver: MediaSlotResolverService,
     private readonly organisationsService: OrganisationsService,
+    private readonly planEnforcementService: PlanEnforcementService,
   ) {}
 
   async getByOrganisationId(
@@ -284,6 +296,13 @@ export class OrganisationEcardTemplateService {
     const keyPrefix = `${ORGANISATION_ECARD_TEMPLATE_STORAGE_KEY_PREFIX}/${organisationId}`;
     const fileMap = this.mediaSlotResolver.buildFileMap(files);
 
+    if (dto.heroLayout) {
+      await this.planEnforcementService.assertHeroLayoutAllowedForOrganisationTemplate(
+        organisationId,
+        dto.heroLayout,
+      );
+    }
+
     const teamComponent = dto.components.find(
       (component) => component.type === 'TEAM',
     );
@@ -299,6 +318,13 @@ export class OrganisationEcardTemplateService {
       ORGANISATION_ECARD_TEMPLATE_HERO_PHOTO_FIELD,
       fileMap,
       `${keyPrefix}/hero`,
+      existingMediaIds,
+    );
+    const bannerMediaId = await this.mediaSlotResolver.resolveUpdateSlot(
+      dto.heroBanner,
+      ORGANISATION_ECARD_TEMPLATE_HERO_BANNER_FIELD,
+      fileMap,
+      `${keyPrefix}/banner`,
       existingMediaIds,
     );
     const galleryMediaIds = await this.resolveGalleryUploads(
@@ -319,9 +345,12 @@ export class OrganisationEcardTemplateService {
     );
 
     const newMediaIds = new Set(
-      [heroMediaId, brochureMediaId, ...galleryMediaIds.flat()].filter(
-        (mediaId): mediaId is string => Boolean(mediaId),
-      ),
+      [
+        heroMediaId,
+        bannerMediaId,
+        brochureMediaId,
+        ...galleryMediaIds.flat(),
+      ].filter((mediaId): mediaId is string => Boolean(mediaId)),
     );
     const orphanedMediaIds = [...existingMediaIds].filter(
       (mediaId) => !newMediaIds.has(mediaId),
@@ -343,6 +372,10 @@ export class OrganisationEcardTemplateService {
           phoneCountryDialCode: dto.phoneCountryDialCode ?? null,
           phoneNumber: dto.phoneNumber ?? null,
           heroProfilePhotoMediaId: heroMediaId ?? null,
+          heroLayout: dto.heroLayout ?? null,
+          heroBannerMediaId: bannerMediaId ?? null,
+          heroBannerFallbackColor: dto.heroBannerFallbackColor ?? null,
+          heroBadgeFallbackColor: dto.heroBadgeFallbackColor ?? null,
         },
         update: {
           heroName: dto.heroName ?? null,
@@ -351,6 +384,10 @@ export class OrganisationEcardTemplateService {
           phoneCountryDialCode: dto.phoneCountryDialCode ?? null,
           phoneNumber: dto.phoneNumber ?? null,
           heroProfilePhotoMediaId: heroMediaId ?? null,
+          heroLayout: dto.heroLayout ?? null,
+          heroBannerMediaId: bannerMediaId ?? null,
+          heroBannerFallbackColor: dto.heroBannerFallbackColor ?? null,
+          heroBadgeFallbackColor: dto.heroBadgeFallbackColor ?? null,
         },
       });
 
@@ -568,6 +605,7 @@ export class OrganisationEcardTemplateService {
   private collectMediaIds(template: FullTemplate): string[] {
     const ids: (string | null | undefined)[] = [
       template.heroProfilePhotoMediaId,
+      template.heroBannerMediaId,
       ...template.components.flatMap(
         (component) =>
           component.gallery?.subGalleries.flatMap((subGallery) =>
@@ -598,6 +636,13 @@ export class OrganisationEcardTemplateService {
           : null,
         phoneCountryDialCode: template.phoneCountryDialCode,
         phoneNumber: template.phoneNumber,
+        layout: template.heroLayout,
+        bannerMediaId: template.heroBannerMediaId,
+        bannerUrl: template.heroBanner
+          ? this.mediaService.getPublicUrl(template.heroBanner)
+          : null,
+        bannerFallbackColor: template.heroBannerFallbackColor,
+        badgeFallbackColor: template.heroBadgeFallbackColor,
       },
       components: template.components.map((component) =>
         this.componentToResponse(component, organisationId),

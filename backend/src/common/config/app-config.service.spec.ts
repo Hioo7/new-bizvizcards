@@ -10,6 +10,7 @@ describe('AppConfigService', () => {
     BETTER_AUTH_CUSTOMER_SECRET: 'b'.repeat(32),
     BETTER_AUTH_URL: 'http://localhost:3000',
     PUBLIC_APP_BASE_URL: 'http://localhost:5173',
+    CORS_ALLOWED_ORIGINS: 'http://localhost:5173,http://localhost:5174',
     SMTP_HOST: 'smtp.example.com',
     SMTP_PORT: '587',
     SMTP_SECURE: 'false',
@@ -49,6 +50,10 @@ describe('AppConfigService', () => {
     );
     expect(config.betterAuthUrl).toBe(validEnv.BETTER_AUTH_URL);
     expect(config.publicAppBaseUrl).toBe(validEnv.PUBLIC_APP_BASE_URL);
+    expect(config.corsAllowedOrigins).toEqual([
+      'http://localhost:5173',
+      'http://localhost:5174',
+    ]);
     expect(config.smtpHost).toBe(validEnv.SMTP_HOST);
     expect(config.smtpPort).toBe(587);
     expect(config.smtpSecure).toBe(false);

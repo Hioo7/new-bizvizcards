@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { HEX_COLOR_REGEX } from '../../../common/constants/color.constants';
 import { updateImageSlotSchema } from '../../../common/validators/image-slot.dto';
 import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
+import { ECardHeroLayout } from '../../../generated/prisma/client';
 import { ecardAboutComponentSchema } from '../../ecards/dto/components/about.dto';
 import { updateEcardGalleryComponentSchema } from '../../ecards/dto/components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from '../../ecards/dto/components/social-links.dto';
@@ -13,9 +15,9 @@ import {
   ECARD_PHONE_NUMBER_MAX_DIGITS,
   ECARD_PHONE_NUMBER_MIN_DIGITS,
   ECARD_TEXT_SHORT_MAX_LENGTH,
-  ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN,
   ECARD_VIDEO_URL_MAX_LENGTH,
 } from '../../ecards/ecards.constants';
+import { normalizeEcardVideoUrl } from '../../ecards/utils/normalize-video-url.util';
 
 // ABOUT, SOCIAL_LINKS, GALLERY (update variant), and TEAM are already fully
 // optional/defaulted on the customer's own e-card — reused verbatim here.
@@ -50,7 +52,17 @@ const organisationEcardTemplateVideoComponentSchema = z
       .string()
       .trim()
       .max(ECARD_VIDEO_URL_MAX_LENGTH)
-      .regex(ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN)
+      .transform((value, ctx) => {
+        const normalized = normalizeEcardVideoUrl(value);
+        if (!normalized) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Enter a valid YouTube or Vimeo link',
+          });
+          return z.NEVER;
+        }
+        return normalized;
+      })
       .optional(),
   })
   .strict();
@@ -86,6 +98,20 @@ export const organisationEcardTemplateSchema = z
       .max(ECARD_TEXT_SHORT_MAX_LENGTH)
       .optional(),
     heroProfilePhoto: updateImageSlotSchema.optional(),
+    // Left unset, the member's own e-card layout/banner/colors apply
+    // unchanged — see organisation-ecard-template-merge.util.ts. No
+    // cross-field requirement is enforced here (e.g. BANNER without an
+    // image) since a template may deliberately configure a layout only
+    // partially; that requirement only bites once a real card resolves to
+    // this layout, via ecard-core.dto.ts's own refine.
+    heroLayout: z.enum(ECardHeroLayout).optional(),
+    heroBanner: updateImageSlotSchema.optional(),
+    heroBannerFallbackColor: z
+      .string()
+      .trim()
+      .regex(HEX_COLOR_REGEX)
+      .optional(),
+    heroBadgeFallbackColor: z.string().trim().regex(HEX_COLOR_REGEX).optional(),
     phoneCountryDialCode: z
       .string()
       .trim()

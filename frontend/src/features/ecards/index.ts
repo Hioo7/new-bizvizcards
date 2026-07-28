@@ -14,6 +14,9 @@ export { default as GalleryEditSheet } from "@features/ecards/components/Gallery
 export { default as TeamEditSheet } from "@features/ecards/components/TeamEditSheet";
 export { default as WhatsAppEditSheet } from "@features/ecards/components/WhatsAppEditSheet";
 export { default as BrochureEditSheet } from "@features/ecards/components/BrochureEditSheet";
+export { default as HeroLayoutPickerStep } from "@features/ecards/components/HeroLayoutPickerStep";
+export { default as BannerFieldsGroup } from "@features/ecards/components/BannerFieldsGroup";
+export { default as OrgBadgeFieldsGroup } from "@features/ecards/components/OrgBadgeFieldsGroup";
 
 // Types
 export type {
@@ -33,8 +36,10 @@ export {
   componentToDraft,
   buildImageSlot,
   getHeroValidationErrors,
+  getHeroLayoutValidationErrors,
   mapServerFieldErrorsToHeroFields,
 } from "@features/ecards/utils/ecardFormMapping";
+export { normalizeEcardVideoUrl } from "@features/ecards/utils/normalizeVideoUrl";
 
 // Schemas
 export {
@@ -53,6 +58,10 @@ export {
   ECARD_PHONE_NUMBER_MIN_DIGITS,
   ECARD_PHONE_NUMBER_MAX_DIGITS,
   ECARD_PHONE_NUMBER_DIGITS_REGEX,
-  ECARD_VIDEO_URL_ALLOWED_HOST_PATTERN,
   ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE,
+  ECARD_HERO_LAYOUTS,
+  ECARD_HERO_LAYOUT_META,
+  ECARD_HERO_BANNER_ASPECT,
+  ECARD_HERO_BANNER_ASPECT_CLASS,
+  ECARD_HERO_DEFAULT_FALLBACK_COLOR,
 } from "@features/ecards/config/ecardBuilder.config";
