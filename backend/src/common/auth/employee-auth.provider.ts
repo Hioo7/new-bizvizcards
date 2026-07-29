@@ -15,6 +15,7 @@ export const employeeAuthProvider: Provider = {
     createEmployeeAuth({
       secret: appConfig.betterAuthStaffSecret,
       baseUrl: appConfig.betterAuthUrl,
+      trustedFrontendOrigins: appConfig.corsAllowedOrigins,
       prisma,
       otpSender,
     }),

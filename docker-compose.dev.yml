@@ -1,0 +1,68 @@
+# Dev compose — runs only infrastructure (database + minio) locally.
+# Run with:
+#   docker compose -f docker-compose.dev.yml --env-file backend/.env up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cards-app-postgres
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  minio:
+    image: minio/minio
+    container_name: cards-app-minio
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  mc-init:
+    image: minio/mc
+    container_name: cards-app-mc-init
+    env_file:
+      - ./backend/.env
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+      mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" &&
+      mc mb --ignore-existing local/$$MINIO_BUCKET &&
+      mc anonymous set download local/$$MINIO_BUCKET/pfp
+      "
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  app-network:
+    driver: bridge

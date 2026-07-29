@@ -21,6 +21,7 @@ export interface CreateEmployeeAuthDeps {
   baseUrl: string;
   prisma: PrismaClient;
   otpSender: OtpSender;
+  trustedFrontendOrigins: string[];
 }
 
 export function createEmployeeAuth(deps: CreateEmployeeAuthDeps) {
@@ -62,6 +63,7 @@ export function createEmployeeAuth(deps: CreateEmployeeAuthDeps) {
         },
       },
     },
+    trustedOrigins: deps.trustedFrontendOrigins,
     plugins: [
       admin({
         ac: employeeAccessControl,
