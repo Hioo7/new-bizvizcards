@@ -165,6 +165,17 @@ jobs:
 
             docker compose --env-file backend/.env up -d --remove-orphans
 
+            # Compose only recreates a container when its *service
+            # definition* changes (image, env, volume list, ...) — it has no
+            # way to detect that a bind-mounted file's *contents* changed, so
+            # editing nginx/default.conf and pushing never restarts nginx on
+            # its own. Reload it explicitly on every deploy so it always
+            # picks up the latest config/upstream resolution instead of
+            # silently continuing to run whatever it loaded at its last
+            # actual start (which is what caused backend/frontend recreates
+            # to 502 until nginx was manually restarted).
+            docker compose --env-file backend/.env exec -T nginx nginx -s reload
+
             # Remove dangling images to reclaim disk
             docker image prune -f
 
