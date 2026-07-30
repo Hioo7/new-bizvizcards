@@ -49,6 +49,10 @@ const HERO_SERVER_FIELD_TO_LAYOUT_FIELD: Record<string, string> = {
   heroBannerFallbackColor: "bannerFallbackColor",
   heroBadgeFallbackColor: "badgeFallbackColor",
   organisationId: "layout",
+  heroTheme: "heroTheme",
+  heroIconShape: "heroIconShape",
+  heroPrimaryAccentColor: "heroPrimaryAccentColor",
+  heroSecondaryAccentColor: "heroSecondaryAccentColor",
 };
 
 /** Mirrors the backend's assertHeroLayoutFieldsConsistent/
@@ -162,6 +166,10 @@ export function ecardToBuilderState(card: Ecard): EcardBuilderState {
         card.hero.bannerFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
       badgeFallbackColor:
         card.hero.badgeFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
+      theme: card.hero.theme,
+      primaryAccentColor: card.hero.primaryAccentColor,
+      secondaryAccentColor: card.hero.secondaryAccentColor,
+      iconShape: card.hero.iconShape,
     },
     components: card.components
       .slice()
@@ -365,6 +373,10 @@ export function buildEcardSubmission(state: EcardBuilderState): EcardSubmission 
       state.hero.layout === "ORG_BADGE"
         ? state.hero.badgeFallbackColor
         : undefined,
+    heroTheme: state.hero.theme,
+    heroIconShape: state.hero.iconShape,
+    heroPrimaryAccentColor: state.hero.primaryAccentColor ?? undefined,
+    heroSecondaryAccentColor: state.hero.secondaryAccentColor ?? undefined,
     components,
   };
 

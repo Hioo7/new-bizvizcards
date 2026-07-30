@@ -43,3 +43,9 @@ export function updateCustomerEcard(
 export function deleteCustomerEcard(id: string): Promise<void> {
   return apiRequest<void>(ECARD_ENDPOINTS.meById(id), { method: "DELETE" });
 }
+
+export function getCustomerEcardGoogleWalletUrl(
+  id: string,
+): Promise<{ url: string }> {
+  return apiRequest<{ url: string }>(ECARD_ENDPOINTS.googleWallet(id));
+}

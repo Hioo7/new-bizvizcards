@@ -21,6 +21,15 @@ function makeAvailablePolicyResolver() {
         BANNER_PROFILE: true,
         ORG_BADGE: true,
       },
+      themes: { DEFAULT_DARK: true, LIGHT: true, NAVY_TEAL: true },
+      iconShapes: {
+        CIRCLE: true,
+        SQUIRCLE: true,
+        ROUNDED_SQUARE: true,
+        TEARDROP: true,
+      },
+      accentColorCustomizationAvailable: true,
+      accentColorPresets: [],
     }),
   } as unknown as PlanPolicyResolverService;
 }
@@ -47,7 +56,13 @@ describe('PublicEcardsController', () => {
       id: 'card-1',
       customerId: 'customer-1',
       organisationId: null,
-      hero: { layout: 'DEFAULT' },
+      hero: {
+        layout: 'DEFAULT',
+        theme: 'DEFAULT_DARK',
+        iconShape: 'CIRCLE',
+        primaryAccentColor: null,
+        secondaryAccentColor: null,
+      },
       components: [],
     };
     const getByEndpoint = jest.fn().mockResolvedValue(card);
@@ -71,6 +86,57 @@ describe('PublicEcardsController', () => {
       viewEventId: 'event-1',
       exchangeContactAllowed: true,
     });
+  });
+
+  it('get degrades the theme, icon shape, and accent colors when the effective policy no longer allows them', async () => {
+    const card = {
+      id: 'card-1',
+      customerId: 'customer-1',
+      organisationId: null,
+      hero: {
+        layout: 'DEFAULT',
+        theme: 'NAVY_TEAL',
+        iconShape: 'TEARDROP',
+        primaryAccentColor: '#111111',
+        secondaryAccentColor: '#222222',
+      },
+      components: [],
+    };
+    const getByEndpoint = jest.fn().mockResolvedValue(card);
+    const recordEvent = jest.fn().mockResolvedValue({ id: 'event-1' });
+    const getEffectiveEcardPolicyForCard = jest.fn().mockResolvedValue({
+      isAvailable: true,
+      exchangeContactAccess: true,
+      components: {},
+      heroLayouts: { DEFAULT: true },
+      themes: { DEFAULT_DARK: true, LIGHT: false, NAVY_TEAL: false },
+      iconShapes: {
+        CIRCLE: true,
+        SQUIRCLE: false,
+        ROUNDED_SQUARE: false,
+        TEARDROP: false,
+      },
+      accentColorCustomizationAvailable: false,
+      accentColorPresets: [],
+    });
+    const controller = new PublicEcardsController(
+      { getByEndpoint } as unknown as EcardsService,
+      {} as unknown as EcardVCardService,
+      {} as unknown as EcardOgPreviewService,
+      { recordEvent } as unknown as EcardAnalyticsService,
+      {} as unknown as LeadsService,
+      {
+        getEffectiveEcardPolicyForCard,
+      } as unknown as PlanPolicyResolverService,
+      makeOrganisationEcardTemplateService(),
+    );
+
+    const result = await controller.get('my-card');
+
+    expect(result.card.hero.theme).toBe('DEFAULT_DARK');
+    expect(result.card.hero.iconShape).toBe('CIRCLE');
+    expect(result.card.hero.primaryAccentColor).toBeNull();
+    expect(result.card.hero.secondaryAccentColor).toBeNull();
   });
 
   it('get 404s when the effective policy makes the e-card unavailable', async () => {
@@ -113,6 +179,10 @@ describe('PublicEcardsController', () => {
         phoneCountryDialCode: null,
         phoneNumber: null,
         layout: 'DEFAULT',
+        theme: 'DEFAULT_DARK',
+        iconShape: 'CIRCLE',
+        primaryAccentColor: null,
+        secondaryAccentColor: null,
       },
       components: [],
     };
@@ -128,6 +198,10 @@ describe('PublicEcardsController', () => {
         phoneCountryDialCode: null,
         phoneNumber: null,
         layout: null,
+        theme: null,
+        iconShape: null,
+        primaryAccentColor: null,
+        secondaryAccentColor: null,
       },
       components: [],
     });
@@ -153,7 +227,14 @@ describe('PublicEcardsController', () => {
       id: 'card-1',
       customerId: 'customer-1',
       organisationId: null,
-      hero: { name: 'Jane', layout: 'DEFAULT' },
+      hero: {
+        name: 'Jane',
+        layout: 'DEFAULT',
+        theme: 'DEFAULT_DARK',
+        iconShape: 'CIRCLE',
+        primaryAccentColor: null,
+        secondaryAccentColor: null,
+      },
       components: [],
     };
     const getByEndpoint = jest.fn().mockResolvedValue(card);

@@ -35,6 +35,10 @@ export const PUBLIC_ECARDS_BASE_PATH = "/api/public/ecards";
 
 export const EMPLOYEE_ORGANISATIONS_BASE_PATH = "/api/employee/organisations";
 
+// Customer-facing (member-read) organisations routes — distinct from the
+// employee-facing base path above.
+export const ORGANISATIONS_BASE_PATH = "/api/organisations";
+
 export const EMPLOYEE_PLANS_BASE_PATH = "/api/employee/plans";
 
 export const EMPLOYEE_CUSTOMER_PLAN_BASE_PATH = "/api/employee/customers";
@@ -73,4 +77,5 @@ export const ECARD_ENDPOINTS = {
   me: `${ECARDS_BASE_PATH}/me`,
   create: ECARDS_BASE_PATH,
   meById: (id: string) => `${ECARDS_BASE_PATH}/me/${id}`,
+  googleWallet: (id: string) => `${ECARDS_BASE_PATH}/me/${id}/wallet/google`,
 };

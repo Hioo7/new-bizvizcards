@@ -24,6 +24,27 @@ enum ECardHeroLayout {
   @@map("ECardHeroLayout")
 }
 
+enum ECardTheme {
+  // Today's existing dark gradient theme — the only theme never gated by a
+  // plan, same convention as ECardHeroLayout.DEFAULT.
+  DEFAULT_DARK
+  LIGHT
+  NAVY_TEAL
+
+  @@map("ECardTheme")
+}
+
+enum ECardIconShape {
+  // Android-adaptive-icon-shape analogues for the SOCIAL_LINKS component's
+  // icon container. CIRCLE is the only shape never gated by a plan.
+  CIRCLE
+  SQUIRCLE
+  ROUNDED_SQUARE
+  TEARDROP
+
+  @@map("ECardIconShape")
+}
+
 model ECard {
   id                  String    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
   customerId          String    @db.Uuid
@@ -61,6 +82,15 @@ model ECard {
   heroBannerFallbackColor String?
   // Fill color around the org-logo badge when the logo has no background of its own.
   heroBadgeFallbackColor  String?
+
+  // Card-wide visual identity — grouped here alongside the other hero/style
+  // fields per this schema's convention, even though theme/accent/icon-shape
+  // affect the whole rendered card, not just the hero section specifically.
+  heroTheme                ECardTheme     @default(DEFAULT_DARK)
+  // null = inherit from the active theme's own accent tokens.
+  heroPrimaryAccentColor   String?
+  heroSecondaryAccentColor String?
+  heroIconShape            ECardIconShape @default(CIRCLE)
 
   phoneCountryDialCode     String?
   phoneNumber              String?

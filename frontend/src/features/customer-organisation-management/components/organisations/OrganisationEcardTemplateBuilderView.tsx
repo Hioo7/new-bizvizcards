@@ -17,7 +17,13 @@ import EmptyStepState from "@components/EmptyStepState";
 import { getOrganisation } from "@services/organisationService";
 import { getCustomerEffectivePolicy } from "@services/planService";
 import { adminOrganisationDetailPath } from "@config/routes";
-import type { ECardHeroLayout, EcardComponentType } from "@app-types/ecard";
+import type {
+  ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
+  EcardComponentType,
+} from "@app-types/ecard";
+import type { EcardAccentColorPreset } from "@app-types/plan";
 import type { OrganisationSummary } from "@app-types/organisation";
 import {
   AboutEditSheet,
@@ -58,6 +64,19 @@ export default function OrganisationEcardTemplateBuilderView() {
     ECardHeroLayout,
     boolean
   > | null>(null);
+  const [availableThemes, setAvailableThemes] = useState<Record<
+    ECardTheme,
+    boolean
+  > | null>(null);
+  const [availableIconShapes, setAvailableIconShapes] = useState<Record<
+    ECardIconShape,
+    boolean
+  > | null>(null);
+  const [accentColorCustomizationAvailable, setAccentColorCustomizationAvailable] =
+    useState(false);
+  const [accentColorPresets, setAccentColorPresets] = useState<
+    EcardAccentColorPreset[]
+  >([]);
 
   useEffect(() => {
     if (!organisationId) return;
@@ -80,6 +99,14 @@ export default function OrganisationEcardTemplateBuilderView() {
         ),
       );
       setAvailableHeroLayouts(policy.organisation.orgEcardPolicy.heroLayouts);
+      setAvailableThemes(policy.organisation.orgEcardPolicy.themes);
+      setAvailableIconShapes(policy.organisation.orgEcardPolicy.iconShapes);
+      setAccentColorCustomizationAvailable(
+        policy.organisation.orgEcardPolicy.accentColorCustomizationAvailable,
+      );
+      setAccentColorPresets(
+        policy.organisation.orgEcardPolicy.accentColorPresets,
+      );
     }
 
     void loadOrgAndPolicy();
@@ -268,6 +295,10 @@ export default function OrganisationEcardTemplateBuilderView() {
           isSubmitting={false}
           error={null}
           availableHeroLayouts={availableHeroLayouts}
+          availableThemes={availableThemes}
+          availableIconShapes={availableIconShapes}
+          accentColorCustomizationAvailable={accentColorCustomizationAvailable}
+          accentColorPresets={accentColorPresets}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state) => ({ ...state, hero }));

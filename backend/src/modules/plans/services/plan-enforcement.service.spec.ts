@@ -2,13 +2,20 @@ import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
+  ECardAccentColorPresetThemeAffinity,
   ECardComponentType,
   ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
   EventMemberRole,
   PlanBusinessModelType,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
-import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
+} from '../../ecards/ecards.constants';
 import { PlanEnforcementService } from './plan-enforcement.service';
 import { PlanPolicyResolverService } from './plan-policy-resolver.service';
 
@@ -26,6 +33,22 @@ interface PlanOverrides {
   // default-off state — override with the specific layouts a test needs on.
   availableHeroLayouts?: ECardHeroLayout[];
   orgAvailableHeroLayouts?: ECardHeroLayout[];
+  availableThemes?: ECardTheme[];
+  orgAvailableThemes?: ECardTheme[];
+  availableIconShapes?: ECardIconShape[];
+  orgAvailableIconShapes?: ECardIconShape[];
+  accentColorCustomizationAvailable?: boolean;
+  orgAccentColorCustomizationAvailable?: boolean;
+  accentColorPresets?: {
+    themeAffinity: ECardAccentColorPresetThemeAffinity;
+    primaryColor: string;
+    secondaryColor: string;
+  }[];
+  orgAccentColorPresets?: {
+    themeAffinity: ECardAccentColorPresetThemeAffinity;
+    primaryColor: string;
+    secondaryColor: string;
+  }[];
   smartCardIsAvailable?: boolean;
   maxSmartCards?: number;
   smartCardExchangeContactAccess?: boolean;
@@ -111,11 +134,16 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
   function ecardPolicyCreateData(
     overrides: PlanOverrides,
     availableHeroLayouts: ECardHeroLayout[] = [],
+    availableThemes: ECardTheme[] = [],
+    availableIconShapes: ECardIconShape[] = [],
+    accentColorCustomizationAvailable = false,
+    accentColorPresets: PlanOverrides['accentColorPresets'] = [],
   ) {
     return {
       isAvailable: overrides.ecardIsAvailable ?? true,
       maxEcards: overrides.maxEcards ?? 3,
       exchangeContactAccess: overrides.ecardExchangeContactAccess ?? false,
+      accentColorCustomizationAvailable,
       componentAvailabilities: {
         create: Object.values(ECardComponentType).map((type) => ({
           type,
@@ -137,6 +165,24 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
           isAvailable: availableHeroLayouts.includes(layout),
         })),
       },
+      themeAvailabilities: {
+        create: ECARD_GATED_THEMES.map((theme) => ({
+          theme,
+          isAvailable: availableThemes.includes(theme),
+        })),
+      },
+      iconShapeAvailabilities: {
+        create: ECARD_GATED_ICON_SHAPES.map((iconShape) => ({
+          iconShape,
+          isAvailable: availableIconShapes.includes(iconShape),
+        })),
+      },
+      accentColorPresets: {
+        create: (accentColorPresets ?? []).map((preset, order) => ({
+          ...preset,
+          order,
+        })),
+      },
     };
   }
 
@@ -153,6 +199,10 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
               create: ecardPolicyCreateData(
                 overrides,
                 overrides.availableHeroLayouts,
+                overrides.availableThemes,
+                overrides.availableIconShapes,
+                overrides.accentColorCustomizationAvailable,
+                overrides.accentColorPresets,
               ),
             },
             smartCardPolicy: {
@@ -181,6 +231,8 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                     maxEcards: 0,
                     exchangeContactAccess:
                       overrides.orgEcardExchangeContactAccess ?? false,
+                    accentColorCustomizationAvailable:
+                      overrides.orgAccentColorCustomizationAvailable ?? false,
                     componentAvailabilities: {
                       create: Object.values(ECardComponentType).map((type) => ({
                         type,
@@ -203,6 +255,27 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                           overrides.orgAvailableHeroLayouts ?? []
                         ).includes(layout),
                       })),
+                    },
+                    themeAvailabilities: {
+                      create: ECARD_GATED_THEMES.map((theme) => ({
+                        theme,
+                        isAvailable: (
+                          overrides.orgAvailableThemes ?? []
+                        ).includes(theme),
+                      })),
+                    },
+                    iconShapeAvailabilities: {
+                      create: ECARD_GATED_ICON_SHAPES.map((iconShape) => ({
+                        iconShape,
+                        isAvailable: (
+                          overrides.orgAvailableIconShapes ?? []
+                        ).includes(iconShape),
+                      })),
+                    },
+                    accentColorPresets: {
+                      create: (overrides.orgAccentColorPresets ?? []).map(
+                        (preset, order) => ({ ...preset, order }),
+                      ),
                     },
                   },
                 },
@@ -714,6 +787,417 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
           ECardHeroLayout.BANNER,
         ),
       ).rejects.toThrow('This plan does not include this Hero layout');
+    });
+  });
+
+  describe('assertThemeAllowedForCard', () => {
+    it('always passes for DEFAULT_DARK, even with no plan assigned at all', async () => {
+      const customer = await seedCustomer();
+
+      await expect(
+        service.assertThemeAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardTheme.DEFAULT_DARK,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('passes for a gated theme the plan explicitly allows', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ availableThemes: [ECardTheme.LIGHT] });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertThemeAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardTheme.LIGHT,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks a gated theme the plan does not allow (default-off)', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan();
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertThemeAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardTheme.NAVY_TEAL,
+        ),
+      ).rejects.toThrow('This plan does not include this theme');
+    });
+
+    it("passes via the organisation's boost even when the personal plan denies it", async () => {
+      const creator = await seedCustomer('Creator');
+      const creatorPlan = await seedPlan({
+        orgAvailableThemes: [ECardTheme.NAVY_TEAL],
+      });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const owner = await seedCustomer('Owner');
+      const ownerPlan = await seedPlan();
+      await assignPlan(owner.id, ownerPlan.id);
+
+      await expect(
+        service.assertThemeAllowedForCard(
+          { customerId: owner.id, organisationId: organisation.id },
+          ECardTheme.NAVY_TEAL,
+        ),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertThemeAllowedForOrganisationTemplate', () => {
+    it('always passes for DEFAULT_DARK', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertThemeAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardTheme.DEFAULT_DARK,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it("passes for a theme the org creator's plan grants to the organisation", async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan({
+        orgAvailableThemes: [ECardTheme.LIGHT],
+      });
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertThemeAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardTheme.LIGHT,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks a theme not granted to the organisation (default-off)', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertThemeAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardTheme.LIGHT,
+        ),
+      ).rejects.toThrow('This plan does not include this theme');
+    });
+
+    it('fails closed when the organisation has no resolvable creator', async () => {
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Ownerless Org' },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertThemeAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardTheme.LIGHT,
+        ),
+      ).rejects.toThrow('This plan does not include this theme');
+    });
+  });
+
+  describe('assertIconShapeAllowedForCard', () => {
+    it('always passes for CIRCLE, even with no plan assigned at all', async () => {
+      const customer = await seedCustomer();
+
+      await expect(
+        service.assertIconShapeAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardIconShape.CIRCLE,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('passes for a gated icon shape the plan explicitly allows', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        availableIconShapes: [ECardIconShape.SQUIRCLE],
+      });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertIconShapeAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardIconShape.SQUIRCLE,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks a gated icon shape the plan does not allow (default-off)', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan();
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertIconShapeAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          ECardIconShape.TEARDROP,
+        ),
+      ).rejects.toThrow('This plan does not include this icon shape');
+    });
+
+    it("passes via the organisation's boost even when the personal plan denies it", async () => {
+      const creator = await seedCustomer('Creator');
+      const creatorPlan = await seedPlan({
+        orgAvailableIconShapes: [ECardIconShape.ROUNDED_SQUARE],
+      });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const owner = await seedCustomer('Owner');
+      const ownerPlan = await seedPlan();
+      await assignPlan(owner.id, ownerPlan.id);
+
+      await expect(
+        service.assertIconShapeAllowedForCard(
+          { customerId: owner.id, organisationId: organisation.id },
+          ECardIconShape.ROUNDED_SQUARE,
+        ),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertIconShapeAllowedForOrganisationTemplate', () => {
+    it('always passes for CIRCLE', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertIconShapeAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardIconShape.CIRCLE,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks an icon shape not granted to the organisation (default-off)', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertIconShapeAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardIconShape.SQUIRCLE,
+        ),
+      ).rejects.toThrow('This plan does not include this icon shape');
+    });
+
+    it('fails closed when the organisation has no resolvable creator', async () => {
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Ownerless Org' },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertIconShapeAllowedForOrganisationTemplate(
+          organisation.id,
+          ECardIconShape.SQUIRCLE,
+        ),
+      ).rejects.toThrow('This plan does not include this icon shape');
+    });
+  });
+
+  describe('assertAccentColorCustomizationAllowedForCard', () => {
+    it('always passes when both colors are null', async () => {
+      const customer = await seedCustomer();
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          { primary: null, secondary: null },
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('passes when the pair matches an available preset, with the custom toggle off', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        accentColorCustomizationAvailable: false,
+        accentColorPresets: [
+          {
+            themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+            primaryColor: '#111111',
+            secondaryColor: '#222222',
+          },
+        ],
+      });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          { primary: '#111111', secondary: '#222222' },
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks a pair that matches no preset when the custom toggle is off', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ accentColorCustomizationAvailable: false });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          { primary: '#abcdef', secondary: '#fedcba' },
+        ),
+      ).rejects.toThrow(
+        "This customer's plan does not allow custom accent colors",
+      );
+    });
+
+    it('allows an arbitrary non-preset pair when the custom toggle is on', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ accentColorCustomizationAvailable: true });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          { primary: '#abcdef', secondary: '#fedcba' },
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks a partial pair (only one color set) that matches no preset, with the toggle off', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        accentColorCustomizationAvailable: false,
+        accentColorPresets: [
+          {
+            themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+            primaryColor: '#111111',
+            secondaryColor: '#222222',
+          },
+        ],
+      });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForCard(
+          { customerId: customer.id, organisationId: null },
+          { primary: '#111111', secondary: null },
+        ),
+      ).rejects.toThrow(
+        "This customer's plan does not allow custom accent colors",
+      );
+    });
+
+    it("passes via the organisation's boosted custom-color toggle even when the personal plan denies it", async () => {
+      const creator = await seedCustomer('Creator');
+      const creatorPlan = await seedPlan({
+        orgAccentColorCustomizationAvailable: true,
+      });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const owner = await seedCustomer('Owner');
+      const ownerPlan = await seedPlan({
+        accentColorCustomizationAvailable: false,
+      });
+      await assignPlan(owner.id, ownerPlan.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForCard(
+          { customerId: owner.id, organisationId: organisation.id },
+          { primary: '#abcdef', secondary: '#fedcba' },
+        ),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertAccentColorCustomizationAllowedForOrganisationTemplate', () => {
+    it('always passes when both colors are null', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForOrganisationTemplate(
+          organisation.id,
+          { primary: null, secondary: null },
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it("blocks a pair not covered by the org creator's plan (default-off)", async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan();
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForOrganisationTemplate(
+          organisation.id,
+          { primary: '#abcdef', secondary: '#fedcba' },
+        ),
+      ).rejects.toThrow(
+        "This customer's plan does not allow custom accent colors",
+      );
+    });
+
+    it('fails closed when the organisation has no resolvable creator', async () => {
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Ownerless Org' },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertAccentColorCustomizationAllowedForOrganisationTemplate(
+          organisation.id,
+          { primary: '#abcdef', secondary: '#fedcba' },
+        ),
+      ).rejects.toThrow(
+        "This customer's plan does not allow custom accent colors",
+      );
     });
   });
 

@@ -1,6 +1,15 @@
 import { z } from 'zod';
-import { ECardComponentType } from '../../../generated/prisma/client';
-import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
+import { HEX_COLOR_REGEX } from '../../../common/constants/color.constants';
+import {
+  ECardAccentColorPresetThemeAffinity,
+  ECardComponentType,
+} from '../../../generated/prisma/client';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
+  ECARD_MAX_ACCENT_COLOR_PRESETS,
+} from '../../ecards/ecards.constants';
 
 const galleryComponentLimitsSchema = z
   .object({
@@ -43,13 +52,49 @@ const ecardHeroLayoutAvailabilitySchema = z
   })
   .strict();
 
+// Only the plan-restrictable themes — DEFAULT_DARK is never included here,
+// it's hard-coded as always-available in PlanPolicyResolverService.
+const ecardThemeAvailabilitySchema = z
+  .object({
+    theme: z.enum(ECARD_GATED_THEMES),
+    isAvailable: z.boolean(),
+  })
+  .strict();
+
+// Only the plan-restrictable icon shapes — CIRCLE is never included here,
+// same convention as ecardThemeAvailabilitySchema above.
+const ecardIconShapeAvailabilitySchema = z
+  .object({
+    iconShape: z.enum(ECARD_GATED_ICON_SHAPES),
+    isAvailable: z.boolean(),
+  })
+  .strict();
+
+// Free-form admin-authored content, not a fixed-enum whitelist — no
+// completeness refine needed the way the availability lists above have one.
+const ecardAccentColorPresetSchema = z
+  .object({
+    themeAffinity: z.enum(ECardAccentColorPresetThemeAffinity),
+    primaryColor: z.string().trim().regex(HEX_COLOR_REGEX),
+    secondaryColor: z.string().trim().regex(HEX_COLOR_REGEX),
+  })
+  .strict();
+
 export const ecardPolicySchema = z
   .object({
     isAvailable: z.boolean(),
     maxEcards: z.number().int().min(0),
     exchangeContactAccess: z.boolean(),
+    // Full free-hex custom accent-color entry — independent of
+    // accentColorPresets below.
+    accentColorCustomizationAvailable: z.boolean(),
     componentAvailabilities: z.array(ecardComponentAvailabilitySchema),
     heroLayoutAvailabilities: z.array(ecardHeroLayoutAvailabilitySchema),
+    themeAvailabilities: z.array(ecardThemeAvailabilitySchema),
+    iconShapeAvailabilities: z.array(ecardIconShapeAvailabilitySchema),
+    accentColorPresets: z
+      .array(ecardAccentColorPresetSchema)
+      .max(ECARD_MAX_ACCENT_COLOR_PRESETS),
   })
   .strict()
   .refine(
@@ -81,6 +126,36 @@ export const ecardPolicySchema = z
       message:
         'heroLayoutAvailabilities must include exactly one entry for every gated Hero layout',
       path: ['heroLayoutAvailabilities'],
+    },
+  )
+  .refine(
+    (value) => {
+      const themes = value.themeAvailabilities.map((t) => t.theme);
+      const uniqueThemes = new Set(themes);
+      return (
+        uniqueThemes.size === themes.length &&
+        ECARD_GATED_THEMES.every((theme) => uniqueThemes.has(theme))
+      );
+    },
+    {
+      message:
+        'themeAvailabilities must include exactly one entry for every gated theme',
+      path: ['themeAvailabilities'],
+    },
+  )
+  .refine(
+    (value) => {
+      const shapes = value.iconShapeAvailabilities.map((s) => s.iconShape);
+      const uniqueShapes = new Set(shapes);
+      return (
+        uniqueShapes.size === shapes.length &&
+        ECARD_GATED_ICON_SHAPES.every((shape) => uniqueShapes.has(shape))
+      );
+    },
+    {
+      message:
+        'iconShapeAvailabilities must include exactly one entry for every gated icon shape',
+      path: ['iconShapeAvailabilities'],
     },
   );
 

@@ -35,6 +35,10 @@ function makeCard(overrides?: {
       bannerUrl: null,
       bannerFallbackColor: null,
       badgeFallbackColor: null,
+      theme: 'DEFAULT_DARK',
+      primaryAccentColor: null,
+      secondaryAccentColor: null,
+      iconShape: 'CIRCLE',
       organisationLogoUrl: null,
       ...overrides?.hero,
     },
@@ -64,6 +68,10 @@ function makeTemplate(overrides?: {
       bannerUrl: null,
       bannerFallbackColor: null,
       badgeFallbackColor: null,
+      theme: null,
+      primaryAccentColor: null,
+      secondaryAccentColor: null,
+      iconShape: null,
       ...overrides?.hero,
     },
     components: overrides?.components ?? [],
@@ -142,6 +150,51 @@ describe('mergeOrganisationEcardTemplateOntoCard', () => {
       expect(merged.hero.bannerUrl).toBe('/card-banner.png');
       expect(merged.hero.bannerFallbackColor).toBe('#aabbcc');
       expect(merged.hero.badgeFallbackColor).toBe('#ffffff');
+    });
+
+    it("overrides the card's theme, accent colors, and icon shape when the template locks them", () => {
+      const card = makeCard({
+        hero: {
+          theme: 'DEFAULT_DARK',
+          primaryAccentColor: null,
+          secondaryAccentColor: null,
+          iconShape: 'CIRCLE',
+        },
+      });
+      const template = makeTemplate({
+        hero: {
+          theme: 'NAVY_TEAL',
+          primaryAccentColor: '#112233',
+          secondaryAccentColor: '#445566',
+          iconShape: 'TEARDROP',
+        },
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+
+      expect(merged.hero.theme).toBe('NAVY_TEAL');
+      expect(merged.hero.primaryAccentColor).toBe('#112233');
+      expect(merged.hero.secondaryAccentColor).toBe('#445566');
+      expect(merged.hero.iconShape).toBe('TEARDROP');
+    });
+
+    it("falls through to the card's own theme, accent colors, and icon shape when the template leaves them unset", () => {
+      const card = makeCard({
+        hero: {
+          theme: 'LIGHT',
+          primaryAccentColor: '#abcdef',
+          secondaryAccentColor: '#fedcba',
+          iconShape: 'SQUIRCLE',
+        },
+      });
+      const template = makeTemplate();
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+
+      expect(merged.hero.theme).toBe('LIGHT');
+      expect(merged.hero.primaryAccentColor).toBe('#abcdef');
+      expect(merged.hero.secondaryAccentColor).toBe('#fedcba');
+      expect(merged.hero.iconShape).toBe('SQUIRCLE');
     });
   });
 

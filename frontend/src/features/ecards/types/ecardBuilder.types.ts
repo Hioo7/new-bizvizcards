@@ -1,6 +1,6 @@
 import { emptyImageField } from "@app-types/media.types";
 import type { ImageFieldValue } from "@app-types/media.types";
-import type { ECardHeroLayout } from "@app-types/ecard";
+import type { ECardHeroLayout, ECardIconShape, ECardTheme } from "@app-types/ecard";
 import { ECARD_HERO_DEFAULT_FALLBACK_COLOR } from "@features/ecards/config/ecardBuilder.config";
 
 export interface EcardHeroDraft {
@@ -19,6 +19,11 @@ export interface EcardHeroDraft {
   banner: ImageFieldValue;
   bannerFallbackColor: string;
   badgeFallbackColor: string;
+  theme: ECardTheme;
+  // null = inherit from the active theme's own accent tokens.
+  primaryAccentColor: string | null;
+  secondaryAccentColor: string | null;
+  iconShape: ECardIconShape;
 }
 
 export function emptyHeroDraft(): EcardHeroDraft {
@@ -38,6 +43,10 @@ export function emptyHeroDraft(): EcardHeroDraft {
     banner: emptyImageField(),
     bannerFallbackColor: ECARD_HERO_DEFAULT_FALLBACK_COLOR,
     badgeFallbackColor: ECARD_HERO_DEFAULT_FALLBACK_COLOR,
+    theme: "DEFAULT_DARK",
+    primaryAccentColor: null,
+    secondaryAccentColor: null,
+    iconShape: "CIRCLE",
   };
 }
 

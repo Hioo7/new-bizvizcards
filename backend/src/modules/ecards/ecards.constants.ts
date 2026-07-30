@@ -1,4 +1,9 @@
-import { ECardHeroLayout } from '../../generated/prisma/client';
+import {
+  ECardAccentColorPresetThemeAffinity,
+  ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
+} from '../../generated/prisma/client';
 
 export const ECARD_TEXT_SHORT_MAX_LENGTH = 150;
 export const ECARD_TEXT_MEDIUM_MAX_LENGTH = 500;
@@ -53,6 +58,79 @@ export function isGatedHeroLayout(
     layout,
   );
 }
+
+// The only ECardTheme values a plan can ever restrict — DEFAULT_DARK is
+// hard-coded as always-available in PlanPolicyResolverService and never
+// given a row in EcardThemeAvailability. Single source of truth for the
+// admin toggle-grid UI, the policy DTO's completeness check, and the
+// resolver's default-false seeding — mirrors ECARD_GATED_HERO_LAYOUTS.
+export const ECARD_GATED_THEMES = [
+  ECardTheme.LIGHT,
+  ECardTheme.NAVY_TEAL,
+] as const;
+
+export type GatedTheme = (typeof ECARD_GATED_THEMES)[number];
+
+export function isGatedTheme(theme: ECardTheme): theme is GatedTheme {
+  return (ECARD_GATED_THEMES as readonly ECardTheme[]).includes(theme);
+}
+
+// The only ECardIconShape values a plan can ever restrict — CIRCLE is
+// hard-coded as always-available, never given a row in
+// EcardIconShapeAvailability. Same convention as ECARD_GATED_THEMES above.
+export const ECARD_GATED_ICON_SHAPES = [
+  ECardIconShape.SQUIRCLE,
+  ECardIconShape.ROUNDED_SQUARE,
+  ECardIconShape.TEARDROP,
+] as const;
+
+export type GatedIconShape = (typeof ECARD_GATED_ICON_SHAPES)[number];
+
+export function isGatedIconShape(
+  shape: ECardIconShape,
+): shape is GatedIconShape {
+  return (ECARD_GATED_ICON_SHAPES as readonly ECardIconShape[]).includes(shape);
+}
+
+// A sanity guardrail on the admin-authored preset list per plan, not a
+// product-mandated limit.
+export const ECARD_MAX_ACCENT_COLOR_PRESETS = 20;
+
+// Seeded onto every pre-existing EcardPolicy row by
+// prisma/scripts/seed-ecard-accent-color-preset-defaults.ts (this feature
+// is a retrofit — every plan currently has zero presets), and used as the
+// starting draft for any new plan created in the admin panel going forward.
+// Editable/removable per plan afterwards — not hardcoded once seeded.
+export const DEFAULT_ECARD_ACCENT_COLOR_PRESETS: {
+  themeAffinity: ECardAccentColorPresetThemeAffinity;
+  primaryColor: string;
+  secondaryColor: string;
+}[] = [
+  { themeAffinity: 'DARK', primaryColor: '#38bdf8', secondaryColor: '#818cf8' },
+  { themeAffinity: 'DARK', primaryColor: '#34d399', secondaryColor: '#2dd4bf' },
+  { themeAffinity: 'DARK', primaryColor: '#fbbf24', secondaryColor: '#fb923c' },
+  { themeAffinity: 'DARK', primaryColor: '#fb7185', secondaryColor: '#f472b6' },
+  {
+    themeAffinity: 'LIGHT',
+    primaryColor: '#2563eb',
+    secondaryColor: '#4f46e5',
+  },
+  {
+    themeAffinity: 'LIGHT',
+    primaryColor: '#059669',
+    secondaryColor: '#0d9488',
+  },
+  {
+    themeAffinity: 'LIGHT',
+    primaryColor: '#d97706',
+    secondaryColor: '#ea580c',
+  },
+  {
+    themeAffinity: 'LIGHT',
+    primaryColor: '#e11d48',
+    secondaryColor: '#db2777',
+  },
+];
 
 export function ecardGalleryImageField(
   subGalleryIndex: number,

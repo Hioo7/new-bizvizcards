@@ -15,7 +15,9 @@ import { VideoSection } from "@features/public-ecard/components/sections/VideoSe
 import { TeamSection } from "@features/public-ecard/components/sections/TeamSection";
 import { WhatsAppSection } from "@features/public-ecard/components/sections/WhatsAppSection";
 import { BrochureSection } from "@features/public-ecard/components/sections/BrochureSection";
+import { ECARD_THEME_TO_DAISYUI_THEME } from "@features/public-ecard/config";
 import type { Ecard, EcardComponent } from "@app-types/ecard";
+import type { CSSProperties } from "react";
 
 interface HeroProps {
   hero: Ecard["hero"];
@@ -37,12 +39,22 @@ function renderHero(props: HeroProps) {
   }
 }
 
-function renderComponent(component: EcardComponent, heroName: string) {
+function renderComponent(
+  component: EcardComponent,
+  heroName: string,
+  iconShape: Ecard["hero"]["iconShape"],
+) {
   switch (component.type) {
     case "ABOUT":
       return <AboutSection key={component.id} component={component} />;
     case "SOCIAL_LINKS":
-      return <SocialLinksSection key={component.id} component={component} />;
+      return (
+        <SocialLinksSection
+          key={component.id}
+          component={component}
+          iconShape={iconShape}
+        />
+      );
     case "GALLERY":
       return <GallerySection key={component.id} component={component} />;
     case "VIDEO":
@@ -123,9 +135,28 @@ export function EcardRenderer({ card, exchangeContactAllowed }: EcardRendererPro
         )
       : null;
 
+  // Card-wide custom hex overrides, applied as CSS custom properties on the
+  // root element so every existing `text-base-content`/`text-primary` class
+  // downstream picks them up automatically (no per-component changes needed)
+  // — the same technique already used for heroBannerFallbackColor.
+  // primaryAccentColor overrides the main text/icon color (today's "white"
+  // — base-content); secondaryAccentColor overrides the highlight color used
+  // for the name, About section, and button link text (today's "blue" —
+  // primary). Names mirror the two accent colors as described by the
+  // product brief, not a 1:1 match to the daisyUI token names they target.
+  const accentColorStyle = {
+    ...(card.hero.primaryAccentColor && {
+      "--color-base-content": card.hero.primaryAccentColor,
+    }),
+    ...(card.hero.secondaryAccentColor && {
+      "--color-primary": card.hero.secondaryAccentColor,
+    }),
+  } as CSSProperties;
+
   return (
     <div
-      data-theme="ecard-legacy"
+      data-theme={ECARD_THEME_TO_DAISYUI_THEME[card.hero.theme]}
+      style={accentColorStyle}
       className="min-h-screen bg-gradient-to-r from-neutral via-secondary to-neutral text-base-content"
     >
       <div className="px-4 md:px-48 pt-6 md:pt-20">
@@ -136,7 +167,9 @@ export function EcardRenderer({ card, exchangeContactAllowed }: EcardRendererPro
           onExchangeContact: () => setIsExchangeOpen(true),
         })}
         <div className="mt-6 space-y-2">
-          {card.components.map((component) => renderComponent(component, card.hero.name))}
+          {card.components.map((component) =>
+            renderComponent(component, card.hero.name, card.hero.iconShape),
+          )}
         </div>
         <EcardFooter whatsappHref={whatsappHref} />
       </div>

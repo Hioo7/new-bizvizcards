@@ -4,6 +4,14 @@ export type ECardHeroLayout =
   | "BANNER_PROFILE"
   | "ORG_BADGE";
 
+export type ECardTheme = "DEFAULT_DARK" | "LIGHT" | "NAVY_TEAL";
+
+export type ECardIconShape =
+  | "CIRCLE"
+  | "SQUIRCLE"
+  | "ROUNDED_SQUARE"
+  | "TEARDROP";
+
 export interface EcardHero {
   name: string;
   email: string;
@@ -19,6 +27,11 @@ export interface EcardHero {
   bannerUrl: string | null;
   bannerFallbackColor: string | null;
   badgeFallbackColor: string | null;
+  theme: ECardTheme;
+  // null = inherit from the active theme's own accent tokens.
+  primaryAccentColor: string | null;
+  secondaryAccentColor: string | null;
+  iconShape: ECardIconShape;
   organisationLogoUrl: string | null;
 }
 
@@ -241,6 +254,10 @@ export interface EcardPayload {
   heroBanner?: ImageSlotPayload;
   heroBannerFallbackColor?: string;
   heroBadgeFallbackColor?: string;
+  heroTheme: ECardTheme;
+  heroPrimaryAccentColor?: string;
+  heroSecondaryAccentColor?: string;
+  heroIconShape: ECardIconShape;
   components: EcardComponentPayload[];
 }
 

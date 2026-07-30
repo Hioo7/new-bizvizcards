@@ -13,7 +13,11 @@ import {
   PlanBusinessModelType,
   PrismaClient,
 } from '../../src/generated/prisma/client';
-import { ECARD_GATED_HERO_LAYOUTS } from '../../src/modules/ecards/ecards.constants';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
+} from '../../src/modules/ecards/ecards.constants';
 import {
   PLAN_FALLBACK_MAX_ECARDS,
   PLAN_FALLBACK_MAX_EVENTS,
@@ -59,6 +63,19 @@ function ecardPolicyCreateData(maxEcards: number) {
         isAvailable: false,
       })),
     },
+    themeAvailabilities: {
+      create: ECARD_GATED_THEMES.map((theme) => ({
+        theme,
+        isAvailable: false,
+      })),
+    },
+    iconShapeAvailabilities: {
+      create: ECARD_GATED_ICON_SHAPES.map((iconShape) => ({
+        iconShape,
+        isAvailable: false,
+      })),
+    },
+    accentColorCustomizationAvailable: false,
   };
 }
 

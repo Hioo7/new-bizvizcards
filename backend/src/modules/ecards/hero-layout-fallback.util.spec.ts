@@ -22,6 +22,15 @@ function makePolicy(
       ORG_BADGE: false,
       ...heroLayouts,
     },
+    themes: { DEFAULT_DARK: true, LIGHT: false, NAVY_TEAL: false },
+    iconShapes: {
+      CIRCLE: true,
+      SQUIRCLE: false,
+      ROUNDED_SQUARE: false,
+      TEARDROP: false,
+    },
+    accentColorCustomizationAvailable: false,
+    accentColorPresets: [],
   };
 }
 

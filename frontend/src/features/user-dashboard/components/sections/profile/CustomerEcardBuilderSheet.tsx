@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -33,6 +33,7 @@ import {
 import type { EcardComponentType } from "@app-types/ecard";
 import { useCustomerEcardBuilder } from "@features/user-dashboard/hooks/useCustomerEcardBuilder";
 import { useMyEffectivePolicy } from "@hooks/useMyEffectivePolicy";
+import { getMyOrganisationEcardTemplate } from "@services/organisationEcardTemplateService";
 import CustomerHeroEditSheet from "./CustomerHeroEditSheet";
 
 type EditingTarget = { kind: "hero" } | { kind: "component"; key: string } | null;
@@ -60,7 +61,48 @@ export default function CustomerEcardBuilderSheet({
     ? ECARD_COMPONENT_TYPES.filter((type) => !policy.ecard.components[type])
     : [];
   const availableHeroLayouts = policy?.ecard.heroLayouts ?? null;
+  const availableThemes = policy?.ecard.themes ?? null;
+  const availableIconShapes = policy?.ecard.iconShapes ?? null;
+  const accentColorCustomizationAvailable =
+    policy?.ecard.accentColorCustomizationAvailable ?? false;
+  const accentColorPresets = policy?.ecard.accentColorPresets ?? [];
+  const organisationId = builder.state.hero.organisationId;
+  const [organisationAccentColorLock, setOrganisationAccentColorLock] =
+    useState<{
+      primaryAccentColor: string | null;
+      secondaryAccentColor: string | null;
+    } | null>(null);
   const [editing, setEditing] = useState<EditingTarget>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrganisationAccentColorLock() {
+      if (!organisationId) {
+        if (!cancelled) setOrganisationAccentColorLock(null);
+        return;
+      }
+      try {
+        const template = await getMyOrganisationEcardTemplate(organisationId);
+        if (cancelled) return;
+        setOrganisationAccentColorLock(
+          template
+            ? {
+                primaryAccentColor: template.hero.primaryAccentColor,
+                secondaryAccentColor: template.hero.secondaryAccentColor,
+              }
+            : null,
+        );
+      } catch {
+        if (!cancelled) setOrganisationAccentColorLock(null);
+      }
+    }
+
+    void loadOrganisationAccentColorLock();
+    return () => {
+      cancelled = true;
+    };
+  }, [organisationId]);
   // Reset editing state when we load a new card (e.g. switching from one ecard to another)
   // Handled by the `key` prop on this component — state already resets on key change.
   const [isPickingType, setIsPickingType] = useState(false);
@@ -250,6 +292,11 @@ export default function CustomerEcardBuilderSheet({
           error={builder.saveError}
           fieldErrors={builder.heroFieldErrors}
           availableHeroLayouts={availableHeroLayouts}
+          availableThemes={availableThemes}
+          availableIconShapes={availableIconShapes}
+          accentColorCustomizationAvailable={accentColorCustomizationAvailable}
+          accentColorPresets={accentColorPresets}
+          organisationAccentColorLock={organisationAccentColorLock}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state: EcardBuilderState) => ({ ...state, hero }));

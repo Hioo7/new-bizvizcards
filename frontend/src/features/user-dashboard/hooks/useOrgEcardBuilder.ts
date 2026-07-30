@@ -33,6 +33,13 @@ function orgEcardToBuilderState(orgEcard: OrgEcard): EcardBuilderState {
       bannerUrl: null,
       bannerFallbackColor: null,
       badgeFallbackColor: null,
+      // This SPOC-facing member-ecard editor doesn't expose style editing
+      // either — same reasoning as layout above, left at their always-free
+      // defaults.
+      theme: "DEFAULT_DARK",
+      primaryAccentColor: null,
+      secondaryAccentColor: null,
+      iconShape: "CIRCLE",
       organisationLogoUrl: null,
     },
     components: orgEcard.components as EcardComponent[],

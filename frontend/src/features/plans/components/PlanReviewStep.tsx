@@ -1,5 +1,10 @@
 import type { CreatePlanPayload } from "@app-types/plan";
-import { ECARD_COMPONENT_LABELS, ECARD_HERO_LAYOUT_LABELS } from "@features/plans/config";
+import {
+  ECARD_COMPONENT_LABELS,
+  ECARD_HERO_LAYOUT_LABELS,
+  ECARD_ICON_SHAPE_LABELS,
+  ECARD_THEME_LABELS,
+} from "@features/plans/config";
 
 interface PlanReviewStepProps {
   value: CreatePlanPayload;
@@ -21,6 +26,12 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
   const availableHeroLayouts = value.ecardPolicy.heroLayoutAvailabilities
     .filter((layout) => layout.isAvailable)
     .map((layout) => ECARD_HERO_LAYOUT_LABELS[layout.layout]);
+  const availableThemes = value.ecardPolicy.themeAvailabilities
+    .filter((theme) => theme.isAvailable)
+    .map((theme) => ECARD_THEME_LABELS[theme.theme]);
+  const availableIconShapes = value.ecardPolicy.iconShapeAvailabilities
+    .filter((iconShape) => iconShape.isAvailable)
+    .map((iconShape) => ECARD_ICON_SHAPE_LABELS[iconShape.iconShape]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -61,6 +72,26 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
             <SummaryRow
               label="Extra hero layouts"
               value={availableHeroLayouts.length > 0 ? availableHeroLayouts.join(", ") : "None"}
+            />
+            <SummaryRow
+              label="Extra themes"
+              value={availableThemes.length > 0 ? availableThemes.join(", ") : "None"}
+            />
+            <SummaryRow
+              label="Extra icon shapes"
+              value={
+                availableIconShapes.length > 0
+                  ? availableIconShapes.join(", ")
+                  : "None"
+              }
+            />
+            <SummaryRow
+              label="Custom accent colors"
+              value={value.ecardPolicy.accentColorCustomizationAvailable ? "Yes" : "No"}
+            />
+            <SummaryRow
+              label="Accent color presets"
+              value={String(value.ecardPolicy.accentColorPresets.length)}
             />
           </>
         )}

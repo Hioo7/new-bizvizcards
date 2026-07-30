@@ -19,7 +19,10 @@ import { LeadsService } from '../leads/services/leads.service';
 import { OrganisationEcardTemplateService } from '../organisations/services/organisation-ecard-template.service';
 import { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
 import { filterEcardComponentsByPolicy } from './ecard-policy-filter.util';
+import { resolveEffectiveAccentColors } from './hero-accent-color-fallback.util';
+import { resolveEffectiveIconShape } from './hero-icon-shape-fallback.util';
 import { resolveEffectiveHeroLayout } from './hero-layout-fallback.util';
+import { resolveEffectiveTheme } from './hero-theme-fallback.util';
 import { mergeOrganisationEcardTemplateOntoCard } from './organisation-ecard-template-merge.util';
 import { EcardVCardService } from './services/ecard-vcard.service';
 import { EcardsService } from './services/ecards.service';
@@ -59,13 +62,22 @@ export class PublicEcardsController {
       : null;
     const mergedCard = mergeOrganisationEcardTemplateOntoCard(card, template);
     const layoutResolvedCard = resolveEffectiveHeroLayout(mergedCard, policy);
+    const themeResolvedCard = resolveEffectiveTheme(layoutResolvedCard, policy);
+    const iconShapeResolvedCard = resolveEffectiveIconShape(
+      themeResolvedCard,
+      policy,
+    );
+    const accentColorResolvedCard = resolveEffectiveAccentColors(
+      iconShapeResolvedCard,
+      policy,
+    );
 
     const event = await this.ecardAnalyticsService.recordEvent(
       card.id,
       ECardEventType.VIEW,
     );
     return {
-      card: filterEcardComponentsByPolicy(layoutResolvedCard, policy),
+      card: filterEcardComponentsByPolicy(accentColorResolvedCard, policy),
       viewEventId: event.id,
       exchangeContactAllowed: policy.exchangeContactAccess,
     };

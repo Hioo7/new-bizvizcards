@@ -7,8 +7,11 @@ import ImageSlotField from "@components/media/ImageSlotField";
 import EditWizardShell from "@components/EditWizardShell";
 import type { FormStepDefinition } from "@components/forms/FormStepShell";
 import {
+  AccentColorFieldsGroup,
   BannerFieldsGroup,
+  HeroIconShapePickerStep,
   HeroLayoutPickerStep,
+  HeroThemePickerStep,
   OrgBadgeFieldsGroup,
   getHeroLayoutValidationErrors,
   heroSheetSchema,
@@ -16,12 +19,14 @@ import {
 } from "@features/ecards";
 import type { EcardHeroDraft } from "@features/ecards/types/ecardBuilder.types";
 import type { ImageFieldValue } from "@app-types/media.types";
-import type { ECardHeroLayout } from "@app-types/ecard";
+import type { ECardHeroLayout, ECardIconShape, ECardTheme } from "@app-types/ecard";
+import type { EcardAccentColorPreset } from "@app-types/plan";
 import { useFieldHighlight } from "@hooks/useFieldHighlight";
 
 const HERO_WIZARD_STEPS: FormStepDefinition[] = [
   { id: "identity", label: "Identity" },
   { id: "layout", label: "Layout" },
+  { id: "style", label: "Style" },
   { id: "details", label: "Details" },
 ];
 
@@ -44,6 +49,16 @@ interface CustomerHeroEditSheetProps {
   fieldErrors?: Record<string, string> | null;
   /** Which layouts the customer's own plan allows — null while still loading. */
   availableHeroLayouts?: Record<ECardHeroLayout, boolean> | null;
+  availableThemes?: Record<ECardTheme, boolean> | null;
+  availableIconShapes?: Record<ECardIconShape, boolean> | null;
+  accentColorCustomizationAvailable?: boolean;
+  accentColorPresets?: EcardAccentColorPreset[];
+  /** Set when the linked organisation's template locks one or both accent
+   * colors — those fields render read-only in the Style step. */
+  organisationAccentColorLock?: {
+    primaryAccentColor: string | null;
+    secondaryAccentColor: string | null;
+  } | null;
   onClose: () => void;
   onSave: (draft: EcardHeroDraft) => void;
 }
@@ -55,6 +70,11 @@ export default function CustomerHeroEditSheet({
   error,
   fieldErrors,
   availableHeroLayouts = null,
+  availableThemes = null,
+  availableIconShapes = null,
+  accentColorCustomizationAvailable = false,
+  accentColorPresets = [],
+  organisationAccentColorLock = null,
   onClose,
   onSave,
 }: CustomerHeroEditSheetProps) {
@@ -85,6 +105,14 @@ export default function CustomerHeroEditSheet({
       fieldErrors.bannerFallbackColor ||
       fieldErrors.badgeFallbackColor
     ) {
+      return 3;
+    }
+    if (
+      fieldErrors.heroTheme ||
+      fieldErrors.heroIconShape ||
+      fieldErrors.heroPrimaryAccentColor ||
+      fieldErrors.heroSecondaryAccentColor
+    ) {
       return 2;
     }
     if (fieldErrors.layout) return 1;
@@ -99,6 +127,14 @@ export default function CustomerHeroEditSheet({
   );
   const [badgeFallbackColor, setBadgeFallbackColor] = useState(
     draft.badgeFallbackColor,
+  );
+  const [theme, setTheme] = useState<ECardTheme>(draft.theme);
+  const [iconShape, setIconShape] = useState<ECardIconShape>(draft.iconShape);
+  const [primaryAccentColor, setPrimaryAccentColor] = useState(
+    draft.primaryAccentColor,
+  );
+  const [secondaryAccentColor, setSecondaryAccentColor] = useState(
+    draft.secondaryAccentColor,
   );
   const { highlightedField, triggerHighlight } = useFieldHighlight();
 
@@ -133,6 +169,11 @@ export default function CustomerHeroEditSheet({
       return;
     }
 
+    if (stepId === "style") {
+      setCurrentIndex(3);
+      return;
+    }
+
     const values = getValues();
     const heroDraft: EcardHeroDraft = {
       ...values,
@@ -143,6 +184,10 @@ export default function CustomerHeroEditSheet({
       banner,
       bannerFallbackColor,
       badgeFallbackColor,
+      theme,
+      iconShape,
+      primaryAccentColor,
+      secondaryAccentColor,
       autoDownloadContact: draft.autoDownloadContact,
       isExchangeContactEnabled: draft.isExchangeContactEnabled,
     };
@@ -241,6 +286,33 @@ export default function CustomerHeroEditSheet({
           availableLayouts={availableHeroLayouts}
           hasOrganisationLinked={draft.organisationId !== null}
         />
+      )}
+
+      {stepId === "style" && (
+        <div className="flex flex-col gap-5">
+          <HeroThemePickerStep
+            value={theme}
+            onChange={setTheme}
+            availableThemes={availableThemes}
+          />
+          <HeroIconShapePickerStep
+            value={iconShape}
+            onChange={setIconShape}
+            availableIconShapes={availableIconShapes}
+          />
+          <AccentColorFieldsGroup
+            primaryAccentColor={primaryAccentColor}
+            secondaryAccentColor={secondaryAccentColor}
+            onChange={(primary, secondary) => {
+              setPrimaryAccentColor(primary);
+              setSecondaryAccentColor(secondary);
+            }}
+            theme={theme}
+            presets={accentColorPresets}
+            customizationAvailable={accentColorCustomizationAvailable}
+            organisationLock={organisationAccentColorLock}
+          />
+        </div>
       )}
 
       {stepId === "details" && (

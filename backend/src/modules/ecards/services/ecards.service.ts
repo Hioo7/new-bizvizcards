@@ -13,6 +13,8 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   ECardComponentType,
   ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
 } from '../../../generated/prisma/client';
 import { OrganisationMembersService } from '../../organisations/services/organisation-members.service';
 import { OrganisationsService } from '../../organisations/services/organisations.service';
@@ -438,6 +440,21 @@ export class EcardsService {
       { customerId, organisationId: dto.organisationId ?? null },
       dto.heroLayout ?? ECardHeroLayout.DEFAULT,
     );
+    await this.planEnforcementService.assertThemeAllowedForCard(
+      { customerId, organisationId: dto.organisationId ?? null },
+      dto.heroTheme ?? ECardTheme.DEFAULT_DARK,
+    );
+    await this.planEnforcementService.assertIconShapeAllowedForCard(
+      { customerId, organisationId: dto.organisationId ?? null },
+      dto.heroIconShape ?? ECardIconShape.CIRCLE,
+    );
+    await this.planEnforcementService.assertAccentColorCustomizationAllowedForCard(
+      { customerId, organisationId: dto.organisationId ?? null },
+      {
+        primary: dto.heroPrimaryAccentColor ?? null,
+        secondary: dto.heroSecondaryAccentColor ?? null,
+      },
+    );
 
     const teamComponent = dto.components.find(
       (component) => component.type === 'TEAM',
@@ -476,6 +493,10 @@ export class EcardsService {
         heroLayout: dto.heroLayout,
         heroBannerFallbackColor: dto.heroBannerFallbackColor,
         heroBadgeFallbackColor: dto.heroBadgeFallbackColor,
+        heroTheme: dto.heroTheme,
+        heroPrimaryAccentColor: dto.heroPrimaryAccentColor,
+        heroSecondaryAccentColor: dto.heroSecondaryAccentColor,
+        heroIconShape: dto.heroIconShape,
       },
     });
     const keyPrefix = `${ECARD_STORAGE_KEY_PREFIX}/${card.id}`;
@@ -570,6 +591,30 @@ export class EcardsService {
         organisationId: dto.organisationId ?? existing.organisationId,
       },
       dto.heroLayout ?? ECardHeroLayout.DEFAULT,
+    );
+    await this.planEnforcementService.assertThemeAllowedForCard(
+      {
+        customerId: existing.customerId,
+        organisationId: dto.organisationId ?? existing.organisationId,
+      },
+      dto.heroTheme ?? ECardTheme.DEFAULT_DARK,
+    );
+    await this.planEnforcementService.assertIconShapeAllowedForCard(
+      {
+        customerId: existing.customerId,
+        organisationId: dto.organisationId ?? existing.organisationId,
+      },
+      dto.heroIconShape ?? ECardIconShape.CIRCLE,
+    );
+    await this.planEnforcementService.assertAccentColorCustomizationAllowedForCard(
+      {
+        customerId: existing.customerId,
+        organisationId: dto.organisationId ?? existing.organisationId,
+      },
+      {
+        primary: dto.heroPrimaryAccentColor ?? null,
+        secondary: dto.heroSecondaryAccentColor ?? null,
+      },
     );
 
     const teamComponent = dto.components.find(
@@ -666,6 +711,10 @@ export class EcardsService {
           heroBannerMediaId: bannerMediaId ?? null,
           heroBannerFallbackColor: dto.heroBannerFallbackColor ?? null,
           heroBadgeFallbackColor: dto.heroBadgeFallbackColor ?? null,
+          heroTheme: dto.heroTheme,
+          heroPrimaryAccentColor: dto.heroPrimaryAccentColor ?? null,
+          heroSecondaryAccentColor: dto.heroSecondaryAccentColor ?? null,
+          heroIconShape: dto.heroIconShape,
         },
       });
 
@@ -1036,6 +1085,10 @@ export class EcardsService {
           : null,
         bannerFallbackColor: card.heroBannerFallbackColor,
         badgeFallbackColor: card.heroBadgeFallbackColor,
+        theme: card.heroTheme,
+        primaryAccentColor: card.heroPrimaryAccentColor,
+        secondaryAccentColor: card.heroSecondaryAccentColor,
+        iconShape: card.heroIconShape,
         organisationLogoUrl: card.organisation?.logo
           ? this.mediaService.getPublicUrl(card.organisation.logo)
           : null,

@@ -53,6 +53,10 @@ export function organisationEcardTemplateToBuilderState(
         template.hero.bannerFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
       badgeFallbackColor:
         template.hero.badgeFallbackColor ?? ECARD_HERO_DEFAULT_FALLBACK_COLOR,
+      theme: template.hero.theme,
+      primaryAccentColor: template.hero.primaryAccentColor,
+      secondaryAccentColor: template.hero.secondaryAccentColor,
+      iconShape: template.hero.iconShape,
     },
     components: template.components
       .slice()
@@ -166,6 +170,10 @@ export function buildOrganisationEcardTemplateSubmission(
       state.hero.layout === "ORG_BADGE"
         ? state.hero.badgeFallbackColor
         : undefined,
+    heroTheme: state.hero.theme ?? undefined,
+    heroIconShape: state.hero.iconShape ?? undefined,
+    heroPrimaryAccentColor: state.hero.primaryAccentColor ?? undefined,
+    heroSecondaryAccentColor: state.hero.secondaryAccentColor ?? undefined,
     components,
   };
 

@@ -7,8 +7,11 @@ import ImageSlotField from "@components/media/ImageSlotField";
 import EditWizardShell from "@components/EditWizardShell";
 import type { FormStepDefinition } from "@components/forms/FormStepShell";
 import {
+  AccentColorFieldsGroup,
   BannerFieldsGroup,
+  HeroIconShapePickerStep,
   HeroLayoutPickerStep,
+  HeroThemePickerStep,
   OrgBadgeFieldsGroup,
 } from "@features/ecards";
 import {
@@ -17,11 +20,13 @@ import {
 } from "@features/customer-organisation-management/schemas/organisationEcardTemplateHeroSchema";
 import type { OrganisationEcardTemplateHeroDraft } from "@features/customer-organisation-management/types/organisationEcardTemplateBuilder.types";
 import type { ImageFieldValue } from "@app-types/media.types";
-import type { ECardHeroLayout } from "@app-types/ecard";
+import type { ECardHeroLayout, ECardIconShape, ECardTheme } from "@app-types/ecard";
+import type { EcardAccentColorPreset } from "@app-types/plan";
 
 const HERO_WIZARD_STEPS: FormStepDefinition[] = [
   { id: "identity", label: "Identity" },
   { id: "layout", label: "Layout" },
+  { id: "style", label: "Style" },
   { id: "details", label: "Details" },
 ];
 
@@ -30,8 +35,13 @@ interface OrganisationEcardTemplateHeroEditSheetProps {
   draft: OrganisationEcardTemplateHeroDraft;
   isSubmitting: boolean;
   error: string | null;
-  /** Which layouts the organisation's own plan boost allows — null while still loading. */
+  /** Which layouts/themes/icon shapes the organisation's own plan boost
+   * allows — null while still loading. */
   availableHeroLayouts?: Record<ECardHeroLayout, boolean> | null;
+  availableThemes?: Record<ECardTheme, boolean> | null;
+  availableIconShapes?: Record<ECardIconShape, boolean> | null;
+  accentColorCustomizationAvailable?: boolean;
+  accentColorPresets?: EcardAccentColorPreset[];
   onClose: () => void;
   onSave: (draft: OrganisationEcardTemplateHeroDraft) => void;
 }
@@ -42,6 +52,10 @@ export default function OrganisationEcardTemplateHeroEditSheet({
   isSubmitting,
   error,
   availableHeroLayouts = null,
+  availableThemes = null,
+  availableIconShapes = null,
+  accentColorCustomizationAvailable = false,
+  accentColorPresets = [],
   onClose,
   onSave,
 }: OrganisationEcardTemplateHeroEditSheetProps) {
@@ -73,6 +87,17 @@ export default function OrganisationEcardTemplateHeroEditSheet({
   const [badgeFallbackColor, setBadgeFallbackColor] = useState(
     draft.badgeFallbackColor,
   );
+  // Same "unset = defer" starting-point convention as layout above.
+  const [theme, setTheme] = useState<ECardTheme>(draft.theme ?? "DEFAULT_DARK");
+  const [iconShape, setIconShape] = useState<ECardIconShape>(
+    draft.iconShape ?? "CIRCLE",
+  );
+  const [primaryAccentColor, setPrimaryAccentColor] = useState(
+    draft.primaryAccentColor,
+  );
+  const [secondaryAccentColor, setSecondaryAccentColor] = useState(
+    draft.secondaryAccentColor,
+  );
 
   const stepId = HERO_WIZARD_STEPS[currentIndex].id;
 
@@ -99,6 +124,11 @@ export default function OrganisationEcardTemplateHeroEditSheet({
       return;
     }
 
+    if (stepId === "style") {
+      setCurrentIndex(3);
+      return;
+    }
+
     const values = getValues();
     onSave({
       ...values,
@@ -107,6 +137,10 @@ export default function OrganisationEcardTemplateHeroEditSheet({
       banner,
       bannerFallbackColor,
       badgeFallbackColor,
+      theme,
+      iconShape,
+      primaryAccentColor,
+      secondaryAccentColor,
     });
   }
 
@@ -194,6 +228,36 @@ export default function OrganisationEcardTemplateHeroEditSheet({
             hasOrganisationLinked
           />
         </>
+      )}
+
+      {stepId === "style" && (
+        <div className="flex flex-col gap-5">
+          <p className="text-xs text-base-content/50">
+            Sets shared style for every member&rsquo;s e-card. Leave these as
+            the defaults to let each member choose their own.
+          </p>
+          <HeroThemePickerStep
+            value={theme}
+            onChange={setTheme}
+            availableThemes={availableThemes}
+          />
+          <HeroIconShapePickerStep
+            value={iconShape}
+            onChange={setIconShape}
+            availableIconShapes={availableIconShapes}
+          />
+          <AccentColorFieldsGroup
+            primaryAccentColor={primaryAccentColor}
+            secondaryAccentColor={secondaryAccentColor}
+            onChange={(primary, secondary) => {
+              setPrimaryAccentColor(primary);
+              setSecondaryAccentColor(secondary);
+            }}
+            theme={theme}
+            presets={accentColorPresets}
+            customizationAvailable={accentColorCustomizationAvailable}
+          />
+        </div>
       )}
 
       {stepId === "details" && (

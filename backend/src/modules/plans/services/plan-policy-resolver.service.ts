@@ -1,18 +1,31 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
+  ECardAccentColorPresetThemeAffinity,
   ECardComponentType,
   ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
   Prisma,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
-import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
+} from '../../ecards/ecards.constants';
 import { PLAN_FALLBACK_PLAN_MISSING_MESSAGE } from '../plans.constants';
 
 export interface EffectiveGalleryLimits {
   maxGalleries: number;
   maxImagesPerGallery: number;
   maxGallerySizeBytes: number;
+}
+
+export interface EffectiveAccentColorPreset {
+  themeAffinity: ECardAccentColorPresetThemeAffinity;
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 export interface EffectiveEcardPolicy {
@@ -24,6 +37,13 @@ export interface EffectiveEcardPolicy {
   // Only the plan-restrictable layouts are ever false-by-default here —
   // DEFAULT is unconditionally forced to true in mapEcardPolicy below.
   heroLayouts: Record<ECardHeroLayout, boolean>;
+  // Same convention — DEFAULT_DARK/CIRCLE are unconditionally forced to true.
+  themes: Record<ECardTheme, boolean>;
+  iconShapes: Record<ECardIconShape, boolean>;
+  // Full free-hex custom accent-color entry — independent of
+  // accentColorPresets below, which are available regardless of this flag.
+  accentColorCustomizationAvailable: boolean;
+  accentColorPresets: EffectiveAccentColorPreset[];
 }
 
 export interface EffectiveSmartCardPolicy {
@@ -63,6 +83,9 @@ export interface EffectivePolicy {
 export const ecardPolicyInclude = {
   componentAvailabilities: { include: { galleryLimits: true } },
   heroLayoutAvailabilities: true,
+  themeAvailabilities: true,
+  iconShapeAvailabilities: true,
+  accentColorPresets: { orderBy: { order: 'asc' } },
 } satisfies Prisma.EcardPolicyInclude;
 
 export type EcardPolicyWithRelations = Prisma.EcardPolicyGetPayload<{
@@ -289,6 +312,29 @@ export class PlanPolicyResolverService {
     // stored row for it is ever read, it's always true.
     heroLayouts[ECardHeroLayout.DEFAULT] = true;
 
+    const themes = Object.fromEntries(
+      ECARD_GATED_THEMES.map((theme) => [theme, false]),
+    ) as Record<ECardTheme, boolean>;
+    for (const availability of ecardPolicy.themeAvailabilities) {
+      themes[availability.theme] = availability.isAvailable;
+    }
+    themes[ECardTheme.DEFAULT_DARK] = true;
+
+    const iconShapes = Object.fromEntries(
+      ECARD_GATED_ICON_SHAPES.map((shape) => [shape, false]),
+    ) as Record<ECardIconShape, boolean>;
+    for (const availability of ecardPolicy.iconShapeAvailabilities) {
+      iconShapes[availability.iconShape] = availability.isAvailable;
+    }
+    iconShapes[ECardIconShape.CIRCLE] = true;
+
+    const accentColorPresets: EffectiveAccentColorPreset[] =
+      ecardPolicy.accentColorPresets.map((preset) => ({
+        themeAffinity: preset.themeAffinity,
+        primaryColor: preset.primaryColor,
+        secondaryColor: preset.secondaryColor,
+      }));
+
     return {
       isAvailable: ecardPolicy.isAvailable,
       maxEcards: ecardPolicy.maxEcards,
@@ -296,6 +342,11 @@ export class PlanPolicyResolverService {
       components,
       galleryLimits,
       heroLayouts,
+      themes,
+      iconShapes,
+      accentColorCustomizationAvailable:
+        ecardPolicy.accentColorCustomizationAvailable,
+      accentColorPresets,
     };
   }
 
@@ -327,6 +378,32 @@ export class PlanPolicyResolverService {
         personal.heroLayouts[layout] || orgBoost.heroLayouts[layout];
     }
 
+    const themes = { ...personal.themes };
+    for (const theme of Object.keys(themes) as ECardTheme[]) {
+      themes[theme] = personal.themes[theme] || orgBoost.themes[theme];
+    }
+
+    const iconShapes = { ...personal.iconShapes };
+    for (const shape of Object.keys(iconShapes) as ECardIconShape[]) {
+      iconShapes[shape] =
+        personal.iconShapes[shape] || orgBoost.iconShapes[shape];
+    }
+
+    // List-union, not a boolean OR — presets are content, not a flag.
+    // De-duped by exact (primaryColor, secondaryColor) pair so a preset
+    // defined identically on both sides doesn't appear twice.
+    const accentColorPresets = [...personal.accentColorPresets];
+    for (const boostPreset of orgBoost.accentColorPresets) {
+      const alreadyPresent = accentColorPresets.some(
+        (preset) =>
+          preset.primaryColor === boostPreset.primaryColor &&
+          preset.secondaryColor === boostPreset.secondaryColor,
+      );
+      if (!alreadyPresent) {
+        accentColorPresets.push(boostPreset);
+      }
+    }
+
     return {
       isAvailable: personal.isAvailable || orgBoost.isAvailable,
       // Never boosted — a personal, account-wide cap unrelated to one
@@ -336,6 +413,12 @@ export class PlanPolicyResolverService {
         personal.exchangeContactAccess || orgBoost.exchangeContactAccess,
       components,
       heroLayouts,
+      themes,
+      iconShapes,
+      accentColorCustomizationAvailable:
+        personal.accentColorCustomizationAvailable ||
+        orgBoost.accentColorCustomizationAvailable,
+      accentColorPresets,
       galleryLimits: {
         maxGalleries: Math.max(
           personal.galleryLimits.maxGalleries,

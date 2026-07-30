@@ -15,6 +15,9 @@ export { default as TeamEditSheet } from "@features/ecards/components/TeamEditSh
 export { default as WhatsAppEditSheet } from "@features/ecards/components/WhatsAppEditSheet";
 export { default as BrochureEditSheet } from "@features/ecards/components/BrochureEditSheet";
 export { default as HeroLayoutPickerStep } from "@features/ecards/components/HeroLayoutPickerStep";
+export { default as HeroThemePickerStep } from "@features/ecards/components/HeroThemePickerStep";
+export { default as HeroIconShapePickerStep } from "@features/ecards/components/HeroIconShapePickerStep";
+export { default as AccentColorFieldsGroup } from "@features/ecards/components/AccentColorFieldsGroup";
 export { default as BannerFieldsGroup } from "@features/ecards/components/BannerFieldsGroup";
 export { default as OrgBadgeFieldsGroup } from "@features/ecards/components/OrgBadgeFieldsGroup";
 
@@ -61,6 +64,10 @@ export {
   ECARD_HERO_FIELDS_INCOMPLETE_MESSAGE,
   ECARD_HERO_LAYOUTS,
   ECARD_HERO_LAYOUT_META,
+  ECARD_HERO_THEMES,
+  ECARD_HERO_THEME_META,
+  ECARD_HERO_ICON_SHAPES,
+  ECARD_HERO_ICON_SHAPE_META,
   ECARD_HERO_BANNER_ASPECT,
   ECARD_HERO_BANNER_ASPECT_CLASS,
   ECARD_HERO_DEFAULT_FALLBACK_COLOR,

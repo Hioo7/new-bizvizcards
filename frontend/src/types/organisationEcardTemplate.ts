@@ -1,5 +1,7 @@
 import type {
   ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
   EcardAboutComponentPayload,
   EcardComponent,
   EcardGalleryComponentPayload,
@@ -22,6 +24,10 @@ export interface OrganisationEcardTemplateHero {
   bannerUrl: string | null;
   bannerFallbackColor: string | null;
   badgeFallbackColor: string | null;
+  theme: ECardTheme | null;
+  primaryAccentColor: string | null;
+  secondaryAccentColor: string | null;
+  iconShape: ECardIconShape | null;
 }
 
 /** The response's `components` are the exact same shape as an e-card's own
@@ -76,6 +82,10 @@ export interface OrganisationEcardTemplatePayload {
   heroBanner?: ImageSlotPayload;
   heroBannerFallbackColor?: string;
   heroBadgeFallbackColor?: string;
+  heroTheme?: ECardTheme;
+  heroPrimaryAccentColor?: string;
+  heroSecondaryAccentColor?: string;
+  heroIconShape?: ECardIconShape;
   components: OrganisationEcardTemplateComponentPayload[];
 }
 

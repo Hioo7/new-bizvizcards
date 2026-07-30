@@ -1,4 +1,9 @@
-import type { ECardHeroLayout, EcardComponentType } from "./ecard";
+import type {
+  ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
+  EcardComponentType,
+} from "./ecard";
 import type { SmartCardTemplateKey } from "./smartCard";
 
 // Only the plan-restrictable layouts — DEFAULT is never included here, it's
@@ -8,6 +13,29 @@ export type GatedHeroLayout = Exclude<ECardHeroLayout, "DEFAULT">;
 export interface EcardHeroLayoutAvailability {
   layout: GatedHeroLayout;
   isAvailable: boolean;
+}
+
+// Same convention — DEFAULT_DARK/CIRCLE are never included, they're
+// hard-coded as always-available on the backend.
+export type GatedTheme = Exclude<ECardTheme, "DEFAULT_DARK">;
+export type GatedIconShape = Exclude<ECardIconShape, "CIRCLE">;
+
+export interface EcardThemeAvailability {
+  theme: GatedTheme;
+  isAvailable: boolean;
+}
+
+export interface EcardIconShapeAvailability {
+  iconShape: GatedIconShape;
+  isAvailable: boolean;
+}
+
+export type AccentColorPresetThemeAffinity = "DARK" | "LIGHT";
+
+export interface EcardAccentColorPreset {
+  themeAffinity: AccentColorPresetThemeAffinity;
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 export type PlanBusinessModelType = "ONE_TIME" | "SUBSCRIPTION" | "TRIAL";
@@ -29,8 +57,14 @@ export interface EcardPolicy {
   isAvailable: boolean;
   maxEcards: number;
   exchangeContactAccess: boolean;
+  // Full free-hex custom accent-color entry — independent of
+  // accentColorPresets below, which don't require this to be true.
+  accentColorCustomizationAvailable: boolean;
   componentAvailabilities: EcardComponentAvailability[];
   heroLayoutAvailabilities: EcardHeroLayoutAvailability[];
+  themeAvailabilities: EcardThemeAvailability[];
+  iconShapeAvailabilities: EcardIconShapeAvailability[];
+  accentColorPresets: EcardAccentColorPreset[];
 }
 
 export interface SmartCardPolicy {
@@ -118,6 +152,11 @@ export interface EffectiveEcardPolicy {
   components: Record<EcardComponentType, boolean>;
   galleryLimits: GalleryComponentLimits;
   heroLayouts: Record<ECardHeroLayout, boolean>;
+  // Same convention — DEFAULT_DARK/CIRCLE are unconditionally true.
+  themes: Record<ECardTheme, boolean>;
+  iconShapes: Record<ECardIconShape, boolean>;
+  accentColorCustomizationAvailable: boolean;
+  accentColorPresets: EcardAccentColorPreset[];
 }
 
 export interface EffectiveSmartCardPolicy {

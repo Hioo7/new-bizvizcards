@@ -1,4 +1,4 @@
-import { EMPLOYEE_ORGANISATIONS_BASE_PATH } from "@config/api";
+import { EMPLOYEE_ORGANISATIONS_BASE_PATH, ORGANISATIONS_BASE_PATH } from "@config/api";
 import { ECARD_MULTIPART_DATA_FIELD } from "@config/ecardFields";
 import { apiRequest } from "@services/apiClient";
 import type {
@@ -24,6 +24,17 @@ export function getOrganisationEcardTemplate(
 ): Promise<OrganisationEcardTemplate | null> {
   return apiRequest<OrganisationEcardTemplate | null>(
     `${EMPLOYEE_ORGANISATIONS_BASE_PATH}/${organisationId}/ecard-template`,
+    { method: "GET" },
+  );
+}
+
+// Member-read variant — used by the customer's own e-card builder to preview
+// which of its own accent colors (if any) the linked organisation locks.
+export function getMyOrganisationEcardTemplate(
+  organisationId: string,
+): Promise<OrganisationEcardTemplate | null> {
+  return apiRequest<OrganisationEcardTemplate | null>(
+    `${ORGANISATIONS_BASE_PATH}/${organisationId}/ecard-template`,
     { method: "GET" },
   );
 }

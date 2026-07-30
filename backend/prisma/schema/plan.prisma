@@ -71,13 +71,19 @@ model PlanPolicy {
 // service ever creates one — the same one-model-referenced-from-several-
 // independent-places pattern already used throughout this schema for Media.
 model EcardPolicy {
-  id                    String  @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
-  isAvailable           Boolean @default(true)
-  maxEcards             Int     @default(0)
-  exchangeContactAccess Boolean @default(false)
+  id                                String  @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable                       Boolean @default(true)
+  maxEcards                         Int     @default(0)
+  exchangeContactAccess             Boolean @default(false)
+  // Full free-hex custom accent-color entry — independent of
+  // accentColorPresets below, which don't require this to be true.
+  accentColorCustomizationAvailable Boolean @default(false)
 
   componentAvailabilities  EcardComponentAvailability[]
   heroLayoutAvailabilities EcardHeroLayoutAvailability[]
+  themeAvailabilities      EcardThemeAvailability[]
+  iconShapeAvailabilities  EcardIconShapeAvailability[]
+  accentColorPresets       EcardAccentColorPreset[]
 
   planPolicy                PlanPolicy?
   ownedByOrganisationPolicy OrganisationPolicy? @relation("OrganisationPolicyOrgEcardPolicy")
@@ -115,6 +121,62 @@ model EcardHeroLayoutAvailability {
 
   @@unique([ecardPolicyId, layout])
   @@map("EcardHeroLayoutAvailability")
+}
+
+// Same explicit-join-with-enum-column pattern as EcardHeroLayoutAvailability
+// above. DEFAULT_DARK is deliberately never given a row here — hard-coded as
+// always-available in PlanPolicyResolverService (see ECARD_GATED_THEMES in
+// ecards.constants.ts).
+model EcardThemeAvailability {
+  id            String      @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardPolicyId String      @db.Uuid
+  ecardPolicy   EcardPolicy @relation(fields: [ecardPolicyId], references: [id], onDelete: Cascade)
+  theme         ECardTheme
+  isAvailable   Boolean     @default(true)
+
+  @@unique([ecardPolicyId, theme])
+  @@map("EcardThemeAvailability")
+}
+
+// Same pattern again. CIRCLE is deliberately never given a row here (see
+// ECARD_GATED_ICON_SHAPES in ecards.constants.ts).
+model EcardIconShapeAvailability {
+  id            String         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardPolicyId String         @db.Uuid
+  ecardPolicy   EcardPolicy    @relation(fields: [ecardPolicyId], references: [id], onDelete: Cascade)
+  iconShape     ECardIconShape
+  isAvailable   Boolean        @default(true)
+
+  @@unique([ecardPolicyId, iconShape])
+  @@map("EcardIconShapeAvailability")
+}
+
+enum ECardAccentColorPresetThemeAffinity {
+  DARK
+  LIGHT
+
+  @@map("ECardAccentColorPresetThemeAffinity")
+}
+
+// Admin-authored preset accent-color pairs, scoped to one EcardPolicy (a
+// plan's own, or an org's boost policy — same shared-model composability as
+// everything else on EcardPolicy). An empty list = no presets offered, not
+// "unrestricted" — same explicit convention as
+// SmartCardPolicyTemplateWhitelist below. Available to a customer
+// independently of accentColorCustomizationAvailable: picking an offered
+// preset never requires full custom-color access, see
+// PlanEnforcementService.assertAccentColorCustomizationAllowedForCard.
+model EcardAccentColorPreset {
+  id             String                              @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardPolicyId  String                              @db.Uuid
+  ecardPolicy    EcardPolicy                         @relation(fields: [ecardPolicyId], references: [id], onDelete: Cascade)
+  themeAffinity  ECardAccentColorPresetThemeAffinity
+  primaryColor   String
+  secondaryColor String
+  order          Int                                 @default(0)
+
+  @@index([ecardPolicyId])
+  @@map("EcardAccentColorPreset")
 }
 
 model GalleryComponentLimits {

@@ -8,7 +8,12 @@ import {
   Video,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ECardHeroLayout, EcardComponentType } from "@app-types/ecard";
+import type {
+  ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
+  EcardComponentType,
+} from "@app-types/ecard";
 
 export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "ABOUT",
@@ -131,3 +136,78 @@ export const ECARD_HERO_BANNER_ASPECT = 21 / 9;
 export const ECARD_HERO_BANNER_ASPECT_CLASS = "aspect-[21/9]";
 
 export const ECARD_HERO_DEFAULT_FALLBACK_COLOR = "#e5e7eb";
+
+export const ECARD_HERO_THEMES: ECardTheme[] = [
+  "DEFAULT_DARK",
+  "LIGHT",
+  "NAVY_TEAL",
+];
+
+interface EcardThemeMeta {
+  label: string;
+  description: string;
+  /** The exact gradient stops used by the public renderer's page background
+   * (see EcardRenderer.tsx) — reused here so the picker's preview swatch is
+   * a real, accurate miniature of the actual theme, not an approximation. */
+  gradient: { from: string; via: string; to: string };
+  accent: string;
+}
+
+export const ECARD_HERO_THEME_META: Record<ECardTheme, EcardThemeMeta> = {
+  DEFAULT_DARK: {
+    label: "Dark",
+    description: "The classic near-black gradient with a sky-blue accent.",
+    gradient: { from: "#000000", via: "#171717", to: "#000000" },
+    accent: "#7dd3fc",
+  },
+  LIGHT: {
+    label: "Light",
+    description: "A clean white theme with a bold blue accent.",
+    gradient: { from: "#ffffff", via: "#e4e4e7", to: "#ffffff" },
+    accent: "#2563eb",
+  },
+  NAVY_TEAL: {
+    label: "Navy Teal",
+    description: "A deep navy-teal gradient with a bright teal accent.",
+    gradient: { from: "#050b0d", via: "#0e2a2e", to: "#050b0d" },
+    accent: "#2dd4bf",
+  },
+};
+
+export const ECARD_HERO_ICON_SHAPES: ECardIconShape[] = [
+  "CIRCLE",
+  "SQUIRCLE",
+  "ROUNDED_SQUARE",
+  "TEARDROP",
+];
+
+interface EcardIconShapeMeta {
+  label: string;
+  /** Tailwind classes for the shape LAYER only (background + border-radius,
+   * optionally a rotation) — shared verbatim between the picker's preview
+   * swatches and the public e-card's actual SOCIAL_LINKS icon containers.
+   * Applied to a dedicated absolutely-positioned layer, never to the icon
+   * glyph itself or its centering wrapper, since TEARDROP's rotation would
+   * otherwise turn the glyph sideways too. */
+  className: string;
+}
+
+export const ECARD_HERO_ICON_SHAPE_META: Record<
+  ECardIconShape,
+  EcardIconShapeMeta
+> = {
+  CIRCLE: { label: "Circle", className: "rounded-full" },
+  // Deliberately mid-way between ROUNDED_SQUARE's fixed radius and a full
+  // circle — a visibly-square silhouette with heavily softened corners, not
+  // "almost a circle" (45%+ reads as circle at these sizes) and not a plain
+  // rounded rect (30%- still shows a flat edge seam).
+  SQUIRCLE: { label: "Squircle", className: "rounded-[38%]" },
+  ROUNDED_SQUARE: { label: "Rounded square", className: "rounded-xl" },
+  // Android's own adaptive-icon "teardrop" mask: mostly circular, with ONE
+  // corner noticeably less rounded than the other three — a gentle
+  // asymmetry, not a sharp 45°-rotated point (that's a map-pin, not this).
+  TEARDROP: {
+    label: "Teardrop",
+    className: "rounded-[50%_50%_50%_15%]",
+  },
+};

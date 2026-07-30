@@ -5,7 +5,11 @@ import {
   URL_SLUG_MIN_LENGTH,
   URL_SLUG_REGEX,
 } from '../../../common/constants/slug.constants';
-import { ECardHeroLayout } from '../../../generated/prisma/client';
+import {
+  ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
+} from '../../../generated/prisma/client';
 import {
   ECARD_PHONE_DIAL_CODE_MAX_LENGTH,
   ECARD_PHONE_NUMBER_DIGITS_REGEX,
@@ -55,6 +59,11 @@ export const ecardCoreFields = {
   heroLayout: z.enum(ECardHeroLayout).default('DEFAULT'),
   heroBannerFallbackColor: z.string().trim().regex(HEX_COLOR_REGEX).optional(),
   heroBadgeFallbackColor: z.string().trim().regex(HEX_COLOR_REGEX).optional(),
+  heroTheme: z.enum(ECardTheme).default('DEFAULT_DARK'),
+  // null/unset = inherit from the active theme's own accent tokens.
+  heroPrimaryAccentColor: z.string().trim().regex(HEX_COLOR_REGEX).optional(),
+  heroSecondaryAccentColor: z.string().trim().regex(HEX_COLOR_REGEX).optional(),
+  heroIconShape: z.enum(ECardIconShape).default('CIRCLE'),
 };
 
 /** Enforces ECardComponent.@@unique([ecardId, type]) at the DTO level too — one instance of each component type per card. */

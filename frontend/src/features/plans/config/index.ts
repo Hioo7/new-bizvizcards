@@ -48,6 +48,53 @@ export const ECARD_HERO_LAYOUT_LABELS: Record<
   ORG_BADGE: "Org Badge",
 };
 
+// DEFAULT_DARK is never included — it's always available and never a toggle
+// in this grid, mirroring the backend's ECARD_GATED_THEMES.
+export const ECARD_GATED_THEMES = ["LIGHT", "NAVY_TEAL"] as const;
+
+export const ECARD_THEME_LABELS: Record<
+  (typeof ECARD_GATED_THEMES)[number],
+  string
+> = {
+  LIGHT: "Light",
+  NAVY_TEAL: "Navy Teal",
+};
+
+// CIRCLE is never included — same convention as ECARD_GATED_THEMES above,
+// mirroring the backend's ECARD_GATED_ICON_SHAPES.
+export const ECARD_GATED_ICON_SHAPES = [
+  "SQUIRCLE",
+  "ROUNDED_SQUARE",
+  "TEARDROP",
+] as const;
+
+export const ECARD_ICON_SHAPE_LABELS: Record<
+  (typeof ECARD_GATED_ICON_SHAPES)[number],
+  string
+> = {
+  SQUIRCLE: "Squircle",
+  ROUNDED_SQUARE: "Rounded square",
+  TEARDROP: "Teardrop",
+};
+
+// A sanity guardrail on the admin-authored preset list per plan, mirroring
+// the backend's ECARD_MAX_ACCENT_COLOR_PRESETS.
+export const ECARD_MAX_ACCENT_COLOR_PRESETS = 20;
+
+// Mirrors the backend's DEFAULT_ECARD_ACCENT_COLOR_PRESETS exactly — used to
+// pre-populate a brand-new plan's draft so it starts with sensible presets
+// out of the box (editable/removable, not hardcoded once saved).
+export const DEFAULT_ECARD_ACCENT_COLOR_PRESETS = [
+  { themeAffinity: "DARK", primaryColor: "#38bdf8", secondaryColor: "#818cf8" },
+  { themeAffinity: "DARK", primaryColor: "#34d399", secondaryColor: "#2dd4bf" },
+  { themeAffinity: "DARK", primaryColor: "#fbbf24", secondaryColor: "#fb923c" },
+  { themeAffinity: "DARK", primaryColor: "#fb7185", secondaryColor: "#f472b6" },
+  { themeAffinity: "LIGHT", primaryColor: "#2563eb", secondaryColor: "#4f46e5" },
+  { themeAffinity: "LIGHT", primaryColor: "#059669", secondaryColor: "#0d9488" },
+  { themeAffinity: "LIGHT", primaryColor: "#d97706", secondaryColor: "#ea580c" },
+  { themeAffinity: "LIGHT", primaryColor: "#e11d48", secondaryColor: "#db2777" },
+] as const;
+
 // Sensible starting point for a new component's gallery limits — an admin
 // building a new plan can adjust these before saving.
 export const DEFAULT_GALLERY_LIMITS = {

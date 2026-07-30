@@ -5,6 +5,8 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   ECardComponentType,
   ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
 } from '../../../generated/prisma/client';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import type {
@@ -183,6 +185,10 @@ export interface OrganisationEcardTemplateResponse {
     bannerUrl: string | null;
     bannerFallbackColor: string | null;
     badgeFallbackColor: string | null;
+    theme: ECardTheme | null;
+    primaryAccentColor: string | null;
+    secondaryAccentColor: string | null;
+    iconShape: ECardIconShape | null;
   };
   components: OrganisationEcardTemplateComponentResponse[];
 }
@@ -302,6 +308,27 @@ export class OrganisationEcardTemplateService {
         dto.heroLayout,
       );
     }
+    if (dto.heroTheme) {
+      await this.planEnforcementService.assertThemeAllowedForOrganisationTemplate(
+        organisationId,
+        dto.heroTheme,
+      );
+    }
+    if (dto.heroIconShape) {
+      await this.planEnforcementService.assertIconShapeAllowedForOrganisationTemplate(
+        organisationId,
+        dto.heroIconShape,
+      );
+    }
+    if (dto.heroPrimaryAccentColor || dto.heroSecondaryAccentColor) {
+      await this.planEnforcementService.assertAccentColorCustomizationAllowedForOrganisationTemplate(
+        organisationId,
+        {
+          primary: dto.heroPrimaryAccentColor ?? null,
+          secondary: dto.heroSecondaryAccentColor ?? null,
+        },
+      );
+    }
 
     const teamComponent = dto.components.find(
       (component) => component.type === 'TEAM',
@@ -376,6 +403,10 @@ export class OrganisationEcardTemplateService {
           heroBannerMediaId: bannerMediaId ?? null,
           heroBannerFallbackColor: dto.heroBannerFallbackColor ?? null,
           heroBadgeFallbackColor: dto.heroBadgeFallbackColor ?? null,
+          heroTheme: dto.heroTheme ?? null,
+          heroPrimaryAccentColor: dto.heroPrimaryAccentColor ?? null,
+          heroSecondaryAccentColor: dto.heroSecondaryAccentColor ?? null,
+          heroIconShape: dto.heroIconShape ?? null,
         },
         update: {
           heroName: dto.heroName ?? null,
@@ -388,6 +419,10 @@ export class OrganisationEcardTemplateService {
           heroBannerMediaId: bannerMediaId ?? null,
           heroBannerFallbackColor: dto.heroBannerFallbackColor ?? null,
           heroBadgeFallbackColor: dto.heroBadgeFallbackColor ?? null,
+          heroTheme: dto.heroTheme ?? null,
+          heroPrimaryAccentColor: dto.heroPrimaryAccentColor ?? null,
+          heroSecondaryAccentColor: dto.heroSecondaryAccentColor ?? null,
+          heroIconShape: dto.heroIconShape ?? null,
         },
       });
 
@@ -643,6 +678,10 @@ export class OrganisationEcardTemplateService {
           : null,
         bannerFallbackColor: template.heroBannerFallbackColor,
         badgeFallbackColor: template.heroBadgeFallbackColor,
+        theme: template.heroTheme,
+        primaryAccentColor: template.heroPrimaryAccentColor,
+        secondaryAccentColor: template.heroSecondaryAccentColor,
+        iconShape: template.heroIconShape,
       },
       components: template.components.map((component) =>
         this.componentToResponse(component, organisationId),

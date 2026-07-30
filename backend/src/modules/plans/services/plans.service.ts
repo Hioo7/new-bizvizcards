@@ -7,8 +7,14 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { Prisma } from '../../../generated/prisma/client';
 import {
   ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
   isGatedHeroLayout,
+  isGatedIconShape,
+  isGatedTheme,
   type GatedHeroLayout,
+  type GatedIconShape,
+  type GatedTheme,
 } from '../../ecards/ecards.constants';
 import type { CreatePlanDto } from '../dto/create-plan.dto';
 import type { EcardPolicyDto } from '../dto/ecard-policy.dto';
@@ -307,6 +313,7 @@ export class PlansService {
       isAvailable: dto.isAvailable,
       maxEcards: dto.maxEcards,
       exchangeContactAccess: dto.exchangeContactAccess,
+      accentColorCustomizationAvailable: dto.accentColorCustomizationAvailable,
       componentAvailabilities: {
         create: dto.componentAvailabilities.map((component) => ({
           type: component.type,
@@ -320,6 +327,26 @@ export class PlansService {
         create: dto.heroLayoutAvailabilities.map((heroLayout) => ({
           layout: heroLayout.layout,
           isAvailable: heroLayout.isAvailable,
+        })),
+      },
+      themeAvailabilities: {
+        create: dto.themeAvailabilities.map((theme) => ({
+          theme: theme.theme,
+          isAvailable: theme.isAvailable,
+        })),
+      },
+      iconShapeAvailabilities: {
+        create: dto.iconShapeAvailabilities.map((iconShape) => ({
+          iconShape: iconShape.iconShape,
+          isAvailable: iconShape.isAvailable,
+        })),
+      },
+      accentColorPresets: {
+        create: dto.accentColorPresets.map((preset, order) => ({
+          themeAffinity: preset.themeAffinity,
+          primaryColor: preset.primaryColor,
+          secondaryColor: preset.secondaryColor,
+          order,
         })),
       },
     };
@@ -351,6 +378,8 @@ export class PlansService {
         isAvailable: dto.isAvailable,
         maxEcards: dto.maxEcards,
         exchangeContactAccess: dto.exchangeContactAccess,
+        accentColorCustomizationAvailable:
+          dto.accentColorCustomizationAvailable,
       },
     });
     // Full-replace, mirroring EcardsService.update()'s existing convention
@@ -379,6 +408,44 @@ export class PlansService {
           ecardPolicyId,
           layout: heroLayout.layout,
           isAvailable: heroLayout.isAvailable,
+        },
+      });
+    }
+    await tx.ecardThemeAvailability.deleteMany({
+      where: { ecardPolicyId },
+    });
+    for (const theme of dto.themeAvailabilities) {
+      await tx.ecardThemeAvailability.create({
+        data: {
+          ecardPolicyId,
+          theme: theme.theme,
+          isAvailable: theme.isAvailable,
+        },
+      });
+    }
+    await tx.ecardIconShapeAvailability.deleteMany({
+      where: { ecardPolicyId },
+    });
+    for (const iconShape of dto.iconShapeAvailabilities) {
+      await tx.ecardIconShapeAvailability.create({
+        data: {
+          ecardPolicyId,
+          iconShape: iconShape.iconShape,
+          isAvailable: iconShape.isAvailable,
+        },
+      });
+    }
+    await tx.ecardAccentColorPreset.deleteMany({
+      where: { ecardPolicyId },
+    });
+    for (const [order, preset] of dto.accentColorPresets.entries()) {
+      await tx.ecardAccentColorPreset.create({
+        data: {
+          ecardPolicyId,
+          themeAffinity: preset.themeAffinity,
+          primaryColor: preset.primaryColor,
+          secondaryColor: preset.secondaryColor,
+          order,
         },
       });
     }
@@ -417,6 +484,8 @@ export class PlansService {
       isAvailable: ecardPolicy.isAvailable,
       maxEcards: ecardPolicy.maxEcards,
       exchangeContactAccess: ecardPolicy.exchangeContactAccess,
+      accentColorCustomizationAvailable:
+        ecardPolicy.accentColorCustomizationAvailable,
       componentAvailabilities: ecardPolicy.componentAvailabilities.map(
         (component) => ({
           type: component.type,
@@ -444,6 +513,29 @@ export class PlansService {
         );
         return { layout, isAvailable: stored?.isAvailable ?? false };
       }),
+      themeAvailabilities: ECARD_GATED_THEMES.map((theme) => {
+        const stored = ecardPolicy.themeAvailabilities.find(
+          (t): t is typeof t & { theme: GatedTheme } =>
+            isGatedTheme(t.theme) && t.theme === theme,
+        );
+        return { theme, isAvailable: stored?.isAvailable ?? false };
+      }),
+      iconShapeAvailabilities: ECARD_GATED_ICON_SHAPES.map((iconShape) => {
+        const stored = ecardPolicy.iconShapeAvailabilities.find(
+          (s): s is typeof s & { iconShape: GatedIconShape } =>
+            isGatedIconShape(s.iconShape) && s.iconShape === iconShape,
+        );
+        return { iconShape, isAvailable: stored?.isAvailable ?? false };
+      }),
+      // Free-form admin content, already ordered by the include's
+      // `orderBy: { order: 'asc' }` — no completeness backfill the way the
+      // fixed-enum availability lists above have (an empty list here is a
+      // valid, meaningful "no presets offered" state, not missing data).
+      accentColorPresets: ecardPolicy.accentColorPresets.map((preset) => ({
+        themeAffinity: preset.themeAffinity,
+        primaryColor: preset.primaryColor,
+        secondaryColor: preset.secondaryColor,
+      })),
     };
   }
 

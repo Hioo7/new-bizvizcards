@@ -114,6 +114,107 @@
   --noise: 0;
 }
 
+/* "Light" e-card theme — a clean white counterpart to ecard-legacy's dark
+   gradient, with a bold blue accent. Scoped via data-theme="ecard-light" on
+   the public eCard's root, selected when ECard.hero.theme === "LIGHT" (see
+   EcardRenderer.tsx). Palette hex values are shared verbatim with
+   ECARD_HERO_THEME_META (features/ecards/config/ecardBuilder.config.ts) so
+   the theme picker's preview swatch matches the real render exactly. */
+@plugin "daisyui/theme" {
+  name: "ecard-light";
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #f4f4f5;
+  --color-base-300: #d4d4d8;
+  --color-base-content: #18181b;
+
+  --color-primary: #2563eb;
+  --color-primary-content: #ffffff;
+
+  /* Page gradient middle stop */
+  --color-secondary: #e4e4e7;
+  --color-secondary-content: #18181b;
+
+  --color-accent: #3b82f6;
+  --color-accent-content: #ffffff;
+
+  /* Page gradient outer stops */
+  --color-neutral: #ffffff;
+  --color-neutral-content: #18181b;
+
+  --color-info: #60a5fa;
+  --color-info-content: #0f172a;
+
+  --color-success: #16a34a;
+  --color-success-content: #ffffff;
+
+  --color-warning: #fbbf24;
+  --color-warning-content: #78350f;
+
+  --color-error: #dc2626;
+  --color-error-content: #ffffff;
+
+  --radius-box: 1rem;
+  --radius-field: 0.75rem;
+  --radius-selector: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* "Navy Teal" e-card theme — a deep navy-teal gradient, same dark structure
+   as ecard-legacy but hue-shifted toward teal. Scoped via
+   data-theme="ecard-navy-teal", selected when ECard.hero.theme ===
+   "NAVY_TEAL". Palette hex values are shared verbatim with
+   ECARD_HERO_THEME_META, same reasoning as ecard-light above. */
+@plugin "daisyui/theme" {
+  name: "ecard-navy-teal";
+  color-scheme: dark;
+
+  --color-base-100: #0f1b1e;
+  --color-base-200: #081014;
+  --color-base-300: #3f5a5e;
+  --color-base-content: #e6fffa;
+
+  --color-primary: #2dd4bf;
+  --color-primary-content: #012a2e;
+
+  /* Page gradient middle stop */
+  --color-secondary: #0e2a2e;
+  --color-secondary-content: #e6fffa;
+
+  --color-accent: #14b8a6;
+  --color-accent-content: #012a2e;
+
+  /* Page gradient outer stops */
+  --color-neutral: #050b0d;
+  --color-neutral-content: #e6fffa;
+
+  --color-info: #60a5fa;
+  --color-info-content: #0f172a;
+
+  --color-success: #16a34a;
+  --color-success-content: #ffffff;
+
+  --color-warning: #fbbf24;
+  --color-warning-content: #78350f;
+
+  --color-error: #dc2626;
+  --color-error-content: #ffffff;
+
+  --radius-box: 1rem;
+  --radius-field: 0.75rem;
+  --radius-selector: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
 /* Legacy eCard "Intro Scroller" marquee (see cardone.template/template.tsx). */
 @keyframes ticker {
   0% {

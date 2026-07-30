@@ -2,11 +2,18 @@ import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
+  ECardAccentColorPresetThemeAffinity,
   ECardComponentType,
   ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
   PlanBusinessModelType,
 } from '../../../generated/prisma/client';
-import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
+} from '../../ecards/ecards.constants';
 import { PlanPolicyResolverService } from './plan-policy-resolver.service';
 
 interface PlanOverrides {
@@ -20,6 +27,14 @@ interface PlanOverrides {
   };
   componentAvailability?: Partial<Record<ECardComponentType, boolean>>;
   heroLayoutAvailability?: Partial<Record<ECardHeroLayout, boolean>>;
+  themeAvailability?: Partial<Record<ECardTheme, boolean>>;
+  iconShapeAvailability?: Partial<Record<ECardIconShape, boolean>>;
+  accentColorCustomizationAvailable?: boolean;
+  accentColorPresets?: {
+    themeAffinity: ECardAccentColorPresetThemeAffinity;
+    primaryColor: string;
+    secondaryColor: string;
+  }[];
   maxSmartCards?: number;
   smartCardExchangeContactAccess?: boolean;
   orgIsAvailable?: boolean;
@@ -28,6 +43,14 @@ interface PlanOverrides {
   orgEcardExchangeContactAccess?: boolean;
   orgEcardComponentAvailability?: Partial<Record<ECardComponentType, boolean>>;
   orgHeroLayoutAvailability?: Partial<Record<ECardHeroLayout, boolean>>;
+  orgThemeAvailability?: Partial<Record<ECardTheme, boolean>>;
+  orgIconShapeAvailability?: Partial<Record<ECardIconShape, boolean>>;
+  orgAccentColorCustomizationAvailable?: boolean;
+  orgAccentColorPresets?: {
+    themeAffinity: ECardAccentColorPresetThemeAffinity;
+    primaryColor: string;
+    secondaryColor: string;
+  }[];
   orgGalleryLimits?: {
     maxGalleries: number;
     maxImagesPerGallery: number;
@@ -120,6 +143,18 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
     const heroLayoutOverrides = isOrgBundle
       ? overrides.orgHeroLayoutAvailability
       : overrides.heroLayoutAvailability;
+    const themeOverrides = isOrgBundle
+      ? overrides.orgThemeAvailability
+      : overrides.themeAvailability;
+    const iconShapeOverrides = isOrgBundle
+      ? overrides.orgIconShapeAvailability
+      : overrides.iconShapeAvailability;
+    const accentColorCustomizationAvailable = isOrgBundle
+      ? (overrides.orgAccentColorCustomizationAvailable ?? false)
+      : (overrides.accentColorCustomizationAvailable ?? false);
+    const accentColorPresets = isOrgBundle
+      ? (overrides.orgAccentColorPresets ?? [])
+      : (overrides.accentColorPresets ?? []);
 
     return {
       isAvailable: true,
@@ -127,6 +162,7 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
       exchangeContactAccess: isOrgBundle
         ? (overrides.orgEcardExchangeContactAccess ?? false)
         : (overrides.ecardExchangeContactAccess ?? false),
+      accentColorCustomizationAvailable,
       componentAvailabilities: {
         create: Object.values(ECardComponentType).map((type) => ({
           type,
@@ -140,6 +176,24 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
         create: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
           layout,
           isAvailable: heroLayoutOverrides?.[layout] ?? false,
+        })),
+      },
+      themeAvailabilities: {
+        create: ECARD_GATED_THEMES.map((theme) => ({
+          theme,
+          isAvailable: themeOverrides?.[theme] ?? false,
+        })),
+      },
+      iconShapeAvailabilities: {
+        create: ECARD_GATED_ICON_SHAPES.map((iconShape) => ({
+          iconShape,
+          isAvailable: iconShapeOverrides?.[iconShape] ?? false,
+        })),
+      },
+      accentColorPresets: {
+        create: accentColorPresets.map((preset, order) => ({
+          ...preset,
+          order,
         })),
       },
     };
@@ -556,6 +610,154 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
 
       expect(effective.heroLayouts[ECardHeroLayout.ORG_BADGE]).toBe(true);
       expect(effective.heroLayouts[ECardHeroLayout.BANNER]).toBe(false);
+    });
+  });
+
+  describe('themes / iconShapes / accentColor resolution', () => {
+    it('DEFAULT_DARK and CIRCLE are always true, gated values default false with no stored rows', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan();
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.ecard.themes).toEqual({
+        [ECardTheme.DEFAULT_DARK]: true,
+        [ECardTheme.LIGHT]: false,
+        [ECardTheme.NAVY_TEAL]: false,
+      });
+      expect(effective.ecard.iconShapes).toEqual({
+        [ECardIconShape.CIRCLE]: true,
+        [ECardIconShape.SQUIRCLE]: false,
+        [ECardIconShape.ROUNDED_SQUARE]: false,
+        [ECardIconShape.TEARDROP]: false,
+      });
+      expect(effective.ecard.accentColorCustomizationAvailable).toBe(false);
+      expect(effective.ecard.accentColorPresets).toEqual([]);
+    });
+
+    it('reflects an explicitly-granted gated theme, icon shape, and accent-color toggle', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        themeAvailability: { [ECardTheme.LIGHT]: true },
+        iconShapeAvailability: { [ECardIconShape.TEARDROP]: true },
+        accentColorCustomizationAvailable: true,
+      });
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.ecard.themes[ECardTheme.LIGHT]).toBe(true);
+      expect(effective.ecard.themes[ECardTheme.NAVY_TEAL]).toBe(false);
+      expect(effective.ecard.iconShapes[ECardIconShape.TEARDROP]).toBe(true);
+      expect(effective.ecard.iconShapes[ECardIconShape.SQUIRCLE]).toBe(false);
+      expect(effective.ecard.accentColorCustomizationAvailable).toBe(true);
+    });
+
+    it('reflects stored accent-color presets', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        accentColorPresets: [
+          {
+            themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+            primaryColor: '#111111',
+            secondaryColor: '#222222',
+          },
+        ],
+      });
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.ecard.accentColorPresets).toEqual([
+        {
+          themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+          primaryColor: '#111111',
+          secondaryColor: '#222222',
+        },
+      ]);
+    });
+
+    it("ORs a theme, icon shape, and accent-color toggle granted only via the organisation's boost", async () => {
+      const owner = await seedCustomer();
+      const ownerPlan = await seedPlan();
+      await assignPlan(owner.id, ownerPlan.id);
+
+      const creator = await seedCustomer('Org Creator');
+      const creatorPlan = await seedPlan({
+        orgThemeAvailability: { [ECardTheme.NAVY_TEAL]: true },
+        orgIconShapeAvailability: { [ECardIconShape.ROUNDED_SQUARE]: true },
+        orgAccentColorCustomizationAvailable: true,
+      });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme Inc', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const effective = await service.getEffectiveEcardPolicyForCard({
+        customerId: owner.id,
+        organisationId: organisation.id,
+      });
+
+      expect(effective.themes[ECardTheme.NAVY_TEAL]).toBe(true);
+      expect(effective.themes[ECardTheme.LIGHT]).toBe(false);
+      expect(effective.iconShapes[ECardIconShape.ROUNDED_SQUARE]).toBe(true);
+      expect(effective.accentColorCustomizationAvailable).toBe(true);
+    });
+
+    it('union-merges accent-color presets from the personal plan and the org boost without duplicating shared ones', async () => {
+      const sharedPreset = {
+        themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+        primaryColor: '#111111',
+        secondaryColor: '#222222',
+      };
+      const personalOnlyPreset = {
+        themeAffinity: ECardAccentColorPresetThemeAffinity.LIGHT,
+        primaryColor: '#333333',
+        secondaryColor: '#444444',
+      };
+      const orgOnlyPreset = {
+        themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+        primaryColor: '#555555',
+        secondaryColor: '#666666',
+      };
+
+      const owner = await seedCustomer();
+      const ownerPlan = await seedPlan({
+        accentColorPresets: [sharedPreset, personalOnlyPreset],
+      });
+      await assignPlan(owner.id, ownerPlan.id);
+
+      const creator = await seedCustomer('Org Creator');
+      const creatorPlan = await seedPlan({
+        orgAccentColorPresets: [sharedPreset, orgOnlyPreset],
+      });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme Inc', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const effective = await service.getEffectiveEcardPolicyForCard({
+        customerId: owner.id,
+        organisationId: organisation.id,
+      });
+
+      expect(effective.accentColorPresets).toHaveLength(3);
+      expect(effective.accentColorPresets).toEqual(
+        expect.arrayContaining([
+          sharedPreset,
+          personalOnlyPreset,
+          orgOnlyPreset,
+        ]),
+      );
     });
   });
 

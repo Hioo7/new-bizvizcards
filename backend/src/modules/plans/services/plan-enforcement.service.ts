@@ -6,10 +6,13 @@ import {
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
   EventMemberRole,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
 import {
+  PLAN_ACCENT_COLOR_CUSTOMIZATION_NOT_ALLOWED_MESSAGE,
   PLAN_ECARD_LIMIT_REACHED_MESSAGE,
   PLAN_ECARD_NOT_AVAILABLE_MESSAGE,
   PLAN_EVENT_GUEST_LIMIT_REACHED_MESSAGE,
@@ -18,12 +21,14 @@ import {
   PLAN_EXCHANGE_CONTACT_NOT_ALLOWED_MESSAGE,
   PLAN_GALLERY_LIMIT_REACHED_MESSAGE,
   PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE,
+  PLAN_ICON_SHAPE_NOT_AVAILABLE_MESSAGE,
   PLAN_ORGANISATION_CREATE_LIMIT_MESSAGE,
   PLAN_ORGANISATION_JOIN_LIMIT_MESSAGE,
   PLAN_ORGANISATION_NOT_AVAILABLE_MESSAGE,
   PLAN_SMART_CARD_LIMIT_REACHED_MESSAGE,
   PLAN_SMART_CARD_NOT_AVAILABLE_MESSAGE,
   PLAN_SMART_CARD_TEMPLATE_NOT_ALLOWED_MESSAGE,
+  PLAN_THEME_NOT_AVAILABLE_MESSAGE,
 } from '../plans.constants';
 import { PlanPolicyResolverService } from './plan-policy-resolver.service';
 
@@ -37,6 +42,11 @@ export interface ExistingGalleryState {
 
 export interface IncomingGalleryContent {
   subGalleries: Array<{ images: unknown[] }>;
+}
+
+export interface AccentColorPair {
+  primary: string | null;
+  secondary: string | null;
 }
 
 /**
@@ -169,6 +179,145 @@ export class PlanEnforcementService {
     );
     if (!policy.organisation.orgEcardPolicy.heroLayouts[layout]) {
       throw new ForbiddenException(PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE);
+    }
+  }
+
+  async assertThemeAllowedForCard(
+    card: { customerId: string; organisationId: string | null },
+    theme: ECardTheme,
+  ): Promise<void> {
+    if (theme === ECardTheme.DEFAULT_DARK) {
+      return;
+    }
+    const policy =
+      await this.policyResolver.getEffectiveEcardPolicyForCard(card);
+    if (!policy.themes[theme]) {
+      throw new ForbiddenException(PLAN_THEME_NOT_AVAILABLE_MESSAGE);
+    }
+  }
+
+  // Same fail-closed-on-unresolvable-creator reasoning as
+  // assertHeroLayoutAllowedForOrganisationTemplate above.
+  async assertThemeAllowedForOrganisationTemplate(
+    organisationId: string,
+    theme: ECardTheme,
+  ): Promise<void> {
+    if (theme === ECardTheme.DEFAULT_DARK) {
+      return;
+    }
+    const organisation = await this.prisma.organisation.findUnique({
+      where: { id: organisationId },
+      select: { createdByCustomerId: true },
+    });
+    if (!organisation?.createdByCustomerId) {
+      throw new ForbiddenException(PLAN_THEME_NOT_AVAILABLE_MESSAGE);
+    }
+    const policy = await this.policyResolver.getEffectivePolicyForCustomer(
+      organisation.createdByCustomerId,
+    );
+    if (!policy.organisation.orgEcardPolicy.themes[theme]) {
+      throw new ForbiddenException(PLAN_THEME_NOT_AVAILABLE_MESSAGE);
+    }
+  }
+
+  async assertIconShapeAllowedForCard(
+    card: { customerId: string; organisationId: string | null },
+    iconShape: ECardIconShape,
+  ): Promise<void> {
+    if (iconShape === ECardIconShape.CIRCLE) {
+      return;
+    }
+    const policy =
+      await this.policyResolver.getEffectiveEcardPolicyForCard(card);
+    if (!policy.iconShapes[iconShape]) {
+      throw new ForbiddenException(PLAN_ICON_SHAPE_NOT_AVAILABLE_MESSAGE);
+    }
+  }
+
+  async assertIconShapeAllowedForOrganisationTemplate(
+    organisationId: string,
+    iconShape: ECardIconShape,
+  ): Promise<void> {
+    if (iconShape === ECardIconShape.CIRCLE) {
+      return;
+    }
+    const organisation = await this.prisma.organisation.findUnique({
+      where: { id: organisationId },
+      select: { createdByCustomerId: true },
+    });
+    if (!organisation?.createdByCustomerId) {
+      throw new ForbiddenException(PLAN_ICON_SHAPE_NOT_AVAILABLE_MESSAGE);
+    }
+    const policy = await this.policyResolver.getEffectivePolicyForCustomer(
+      organisation.createdByCustomerId,
+    );
+    if (!policy.organisation.orgEcardPolicy.iconShapes[iconShape]) {
+      throw new ForbiddenException(PLAN_ICON_SHAPE_NOT_AVAILABLE_MESSAGE);
+    }
+  }
+
+  // Picking one of the policy's own offered presets never requires full
+  // custom-color access — only an arbitrary (non-preset) pair does. An
+  // exact-pair match is required: setting only one of the two colors (which
+  // can't fully match any preset pair) always falls through to the
+  // accentColorCustomizationAvailable check, so a customer can't use a
+  // partial preset match to bypass the toggle.
+  async assertAccentColorCustomizationAllowedForCard(
+    card: { customerId: string; organisationId: string | null },
+    accents: AccentColorPair,
+  ): Promise<void> {
+    if (!accents.primary && !accents.secondary) {
+      return;
+    }
+    const policy =
+      await this.policyResolver.getEffectiveEcardPolicyForCard(card);
+    const matchesPreset = policy.accentColorPresets.some(
+      (preset) =>
+        preset.primaryColor === accents.primary &&
+        preset.secondaryColor === accents.secondary,
+    );
+    if (matchesPreset) {
+      return;
+    }
+    if (!policy.accentColorCustomizationAvailable) {
+      throw new ForbiddenException(
+        PLAN_ACCENT_COLOR_CUSTOMIZATION_NOT_ALLOWED_MESSAGE,
+      );
+    }
+  }
+
+  async assertAccentColorCustomizationAllowedForOrganisationTemplate(
+    organisationId: string,
+    accents: AccentColorPair,
+  ): Promise<void> {
+    if (!accents.primary && !accents.secondary) {
+      return;
+    }
+    const organisation = await this.prisma.organisation.findUnique({
+      where: { id: organisationId },
+      select: { createdByCustomerId: true },
+    });
+    if (!organisation?.createdByCustomerId) {
+      throw new ForbiddenException(
+        PLAN_ACCENT_COLOR_CUSTOMIZATION_NOT_ALLOWED_MESSAGE,
+      );
+    }
+    const policy = await this.policyResolver.getEffectivePolicyForCustomer(
+      organisation.createdByCustomerId,
+    );
+    const orgEcardPolicy = policy.organisation.orgEcardPolicy;
+    const matchesPreset = orgEcardPolicy.accentColorPresets.some(
+      (preset) =>
+        preset.primaryColor === accents.primary &&
+        preset.secondaryColor === accents.secondary,
+    );
+    if (matchesPreset) {
+      return;
+    }
+    if (!orgEcardPolicy.accentColorCustomizationAvailable) {
+      throw new ForbiddenException(
+        PLAN_ACCENT_COLOR_CUSTOMIZATION_NOT_ALLOWED_MESSAGE,
+      );
     }
   }
 

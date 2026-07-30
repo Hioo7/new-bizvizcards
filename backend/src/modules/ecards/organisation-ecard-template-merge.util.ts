@@ -66,6 +66,15 @@ export function mergeOrganisationEcardTemplateOntoCard(
         template.hero.bannerFallbackColor ?? card.hero.bannerFallbackColor,
       badgeFallbackColor:
         template.hero.badgeFallbackColor ?? card.hero.badgeFallbackColor,
+      // Same independent-field-by-field merge as every hero field above —
+      // a locked template value overrides the card's own unconditionally,
+      // regardless of whether it originated from a preset or custom entry.
+      theme: template.hero.theme ?? card.hero.theme,
+      primaryAccentColor:
+        template.hero.primaryAccentColor ?? card.hero.primaryAccentColor,
+      secondaryAccentColor:
+        template.hero.secondaryAccentColor ?? card.hero.secondaryAccentColor,
+      iconShape: template.hero.iconShape ?? card.hero.iconShape,
     },
     components: mergeComponents(card.components, template.components),
   };

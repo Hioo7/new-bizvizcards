@@ -1,6 +1,9 @@
 import type { EcardPolicy } from "@app-types/plan";
 import EcardComponentAvailabilityFields from "@features/plans/components/policy-fields/EcardComponentAvailabilityFields";
 import HeroLayoutAvailabilityFields from "@features/plans/components/policy-fields/HeroLayoutAvailabilityFields";
+import EcardThemeAvailabilityFields from "@features/plans/components/policy-fields/EcardThemeAvailabilityFields";
+import EcardIconShapeAvailabilityFields from "@features/plans/components/policy-fields/EcardIconShapeAvailabilityFields";
+import EcardAccentColorPresetsFields from "@features/plans/components/policy-fields/EcardAccentColorPresetsFields";
 
 interface EcardPolicyFieldsProps {
   value: EcardPolicy;
@@ -81,6 +84,59 @@ export default function EcardPolicyFields({
               value={value.heroLayoutAvailabilities}
               onChange={(heroLayoutAvailabilities) =>
                 onChange({ ...value, heroLayoutAvailabilities })
+              }
+            />
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+              Themes
+            </p>
+            <EcardThemeAvailabilityFields
+              value={value.themeAvailabilities}
+              onChange={(themeAvailabilities) =>
+                onChange({ ...value, themeAvailabilities })
+              }
+            />
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+              Icon shapes
+            </p>
+            <EcardIconShapeAvailabilityFields
+              value={value.iconShapeAvailabilities}
+              onChange={(iconShapeAvailabilities) =>
+                onChange({ ...value, iconShapeAvailabilities })
+              }
+            />
+          </div>
+
+          <label className="flex min-h-11 items-center justify-between gap-3 rounded-field border border-base-300 bg-base-200 px-4 py-2">
+            <span className="text-sm font-medium text-base-content">
+              Custom accent colors
+            </span>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary"
+              checked={value.accentColorCustomizationAvailable}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  accentColorCustomizationAvailable: event.target.checked,
+                })
+              }
+            />
+          </label>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+              Accent color presets
+            </p>
+            <EcardAccentColorPresetsFields
+              value={value.accentColorPresets}
+              onChange={(accentColorPresets) =>
+                onChange({ ...value, accentColorPresets })
               }
             />
           </div>

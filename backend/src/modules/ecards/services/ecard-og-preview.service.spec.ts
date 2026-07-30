@@ -8,7 +8,18 @@ import {
 } from '../ecard-og-preview.constants';
 
 function makeCard(
-  hero: PublicEcard['hero'],
+  hero: Partial<PublicEcard['hero']> &
+    Pick<
+      PublicEcard['hero'],
+      | 'name'
+      | 'email'
+      | 'companyName'
+      | 'profilePhotoMediaId'
+      | 'profilePhotoUrl'
+      | 'phoneCountryDialCode'
+      | 'phoneNumber'
+      | 'isExchangeContactEnabled'
+    >,
   endpoint = 'test-endpoint',
 ): PublicEcard {
   return {
@@ -19,7 +30,20 @@ function makeCard(
     createdByEmployeeId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
-    hero,
+    hero: {
+      autoDownloadContact: false,
+      layout: 'DEFAULT',
+      bannerMediaId: null,
+      bannerUrl: null,
+      bannerFallbackColor: null,
+      badgeFallbackColor: null,
+      theme: 'DEFAULT_DARK',
+      primaryAccentColor: null,
+      secondaryAccentColor: null,
+      iconShape: 'CIRCLE',
+      organisationLogoUrl: null,
+      ...hero,
+    },
     components: [],
   };
 }

@@ -20,7 +20,11 @@ import {
   PlanBusinessModelType,
   PrismaClient,
 } from '../../src/generated/prisma/client';
-import { ECARD_GATED_HERO_LAYOUTS } from '../../src/modules/ecards/ecards.constants';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
+} from '../../src/modules/ecards/ecards.constants';
 
 const GENEROUS_LIMIT = 1000;
 const GENEROUS_GALLERY_SIZE_BYTES = 100 * 1024 * 1024;
@@ -58,6 +62,19 @@ function permissiveEcardPolicyCreateData() {
         isAvailable: true,
       })),
     },
+    themeAvailabilities: {
+      create: ECARD_GATED_THEMES.map((theme) => ({
+        theme,
+        isAvailable: true,
+      })),
+    },
+    iconShapeAvailabilities: {
+      create: ECARD_GATED_ICON_SHAPES.map((iconShape) => ({
+        iconShape,
+        isAvailable: true,
+      })),
+    },
+    accentColorCustomizationAvailable: true,
   };
 }
 

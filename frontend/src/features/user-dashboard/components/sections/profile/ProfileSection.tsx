@@ -26,7 +26,10 @@ export default function ProfileSection({
 }: ProfileSectionProps) {
   const [user, setUser] = useState<AuthUser>(initialUser);
   const [openModal, setOpenModal] = useState<ModalType>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: "success" | "error";
+  } | null>(null);
   const [phone, setPhone] = useState<string | undefined>(undefined);
   const [dialCode, setDialCode] = useState<string | undefined>(undefined);
   const org = useOrganisation();
@@ -51,9 +54,9 @@ export default function ProfileSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function showToast(msg: string) {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+  function showToast(msg: string, variant: "success" | "error" = "success") {
+    setToast({ message: msg, variant });
+    setTimeout(() => setToast(null), 3000);
   }
 
   return (
@@ -102,6 +105,7 @@ export default function ProfileSection({
               setBuilderOpen(true);
             }}
             onDelete={customerEcards.remove}
+            onNotify={showToast}
           />
         </div>
       </div>
@@ -127,10 +131,12 @@ export default function ProfileSection({
         }}
       />
 
-      {toastMessage && (
+      {toast && (
         <div className="toast toast-top toast-center z-50">
-          <div className="alert alert-success">
-            <span>{toastMessage}</span>
+          <div
+            className={`alert ${toast.variant === "error" ? "alert-error" : "alert-success"}`}
+          >
+            <span>{toast.message}</span>
           </div>
         </div>
       )}

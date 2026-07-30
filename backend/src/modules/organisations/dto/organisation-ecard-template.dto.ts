@@ -2,7 +2,11 @@ import { z } from 'zod';
 import { HEX_COLOR_REGEX } from '../../../common/constants/color.constants';
 import { updateImageSlotSchema } from '../../../common/validators/image-slot.dto';
 import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
-import { ECardHeroLayout } from '../../../generated/prisma/client';
+import {
+  ECardHeroLayout,
+  ECardIconShape,
+  ECardTheme,
+} from '../../../generated/prisma/client';
 import { ecardAboutComponentSchema } from '../../ecards/dto/components/about.dto';
 import { updateEcardGalleryComponentSchema } from '../../ecards/dto/components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from '../../ecards/dto/components/social-links.dto';
@@ -112,6 +116,16 @@ export const organisationEcardTemplateSchema = z
       .regex(HEX_COLOR_REGEX)
       .optional(),
     heroBadgeFallbackColor: z.string().trim().regex(HEX_COLOR_REGEX).optional(),
+    // Same "unset = defer to the member's own card" rule as every other
+    // hero field here.
+    heroTheme: z.enum(ECardTheme).optional(),
+    heroPrimaryAccentColor: z.string().trim().regex(HEX_COLOR_REGEX).optional(),
+    heroSecondaryAccentColor: z
+      .string()
+      .trim()
+      .regex(HEX_COLOR_REGEX)
+      .optional(),
+    heroIconShape: z.enum(ECardIconShape).optional(),
     phoneCountryDialCode: z
       .string()
       .trim()

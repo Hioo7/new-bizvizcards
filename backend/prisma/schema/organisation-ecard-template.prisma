@@ -23,6 +23,13 @@ model OrganisationEcardTemplate {
   heroBannerFallbackColor String?
   heroBadgeFallbackColor  String?
 
+  // Same "unset = defer, set = force onto every linked member's card" rule
+  // as every other field here — see organisation-ecard-template-merge.util.ts.
+  heroTheme                ECardTheme?
+  heroPrimaryAccentColor   String?
+  heroSecondaryAccentColor String?
+  heroIconShape            ECardIconShape?
+
   phoneCountryDialCode String?
   phoneNumber          String?
 

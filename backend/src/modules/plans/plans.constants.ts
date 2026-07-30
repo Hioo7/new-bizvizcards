@@ -83,3 +83,9 @@ export const PLAN_EVENT_GUEST_LIMIT_REACHED_MESSAGE =
 // organisation's boosted policy (template save) call sites.
 export const PLAN_HERO_LAYOUT_NOT_AVAILABLE_MESSAGE =
   'This plan does not include this Hero layout';
+export const PLAN_THEME_NOT_AVAILABLE_MESSAGE =
+  'This plan does not include this theme';
+export const PLAN_ICON_SHAPE_NOT_AVAILABLE_MESSAGE =
+  'This plan does not include this icon shape';
+export const PLAN_ACCENT_COLOR_CUSTOMIZATION_NOT_ALLOWED_MESSAGE =
+  "This customer's plan does not allow custom accent colors";

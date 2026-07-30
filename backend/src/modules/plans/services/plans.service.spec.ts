@@ -2,10 +2,15 @@ import { randomUUID } from 'crypto';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
+  ECardAccentColorPresetThemeAffinity,
   ECardComponentType,
   PlanBusinessModelType,
 } from '../../../generated/prisma/client';
-import { ECARD_GATED_HERO_LAYOUTS } from '../../ecards/ecards.constants';
+import {
+  ECARD_GATED_HERO_LAYOUTS,
+  ECARD_GATED_ICON_SHAPES,
+  ECARD_GATED_THEMES,
+} from '../../ecards/ecards.constants';
 import type { CreatePlanDto } from '../dto/create-plan.dto';
 import type { EcardPolicyDto } from '../dto/ecard-policy.dto';
 import type { EventPolicyDto } from '../dto/event-policy.dto';
@@ -79,6 +84,16 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
         layout,
         isAvailable: true,
       })),
+      accentColorCustomizationAvailable: false,
+      themeAvailabilities: ECARD_GATED_THEMES.map((theme) => ({
+        theme,
+        isAvailable: true,
+      })),
+      iconShapeAvailabilities: ECARD_GATED_ICON_SHAPES.map((iconShape) => ({
+        iconShape,
+        isAvailable: true,
+      })),
+      accentColorPresets: [],
       ...overrides,
     };
   }
@@ -199,6 +214,71 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
       ).toBe(true);
     });
 
+    it('creates a plan with theme/icon-shape availabilities, the accent-color toggle, and accent-color presets', async () => {
+      const plan = await createPlan({
+        ecardPolicy: buildEcardPolicyDto({
+          accentColorCustomizationAvailable: true,
+          themeAvailabilities: [{ theme: 'LIGHT', isAvailable: true }],
+          iconShapeAvailabilities: [
+            { iconShape: 'SQUIRCLE', isAvailable: true },
+          ],
+          accentColorPresets: [
+            {
+              themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+              primaryColor: '#111111',
+              secondaryColor: '#222222',
+            },
+          ],
+        }),
+      });
+
+      expect(plan.ecardPolicy.accentColorCustomizationAvailable).toBe(true);
+      expect(plan.ecardPolicy.themeAvailabilities).toContainEqual({
+        theme: 'LIGHT',
+        isAvailable: true,
+      });
+      expect(plan.ecardPolicy.iconShapeAvailabilities).toContainEqual({
+        iconShape: 'SQUIRCLE',
+        isAvailable: true,
+      });
+      expect(plan.ecardPolicy.accentColorPresets).toEqual([
+        {
+          themeAffinity: 'DARK',
+          primaryColor: '#111111',
+          secondaryColor: '#222222',
+        },
+      ]);
+    });
+
+    it('backfills every gated theme and icon shape as unavailable for a plan whose EcardPolicy predates this feature (zero stored rows)', async () => {
+      const plan = await createPlan();
+      await prisma.ecardThemeAvailability.deleteMany({
+        where: { ecardPolicy: { planPolicy: { planId: plan.id } } },
+      });
+      await prisma.ecardIconShapeAvailability.deleteMany({
+        where: { ecardPolicy: { planPolicy: { planId: plan.id } } },
+      });
+
+      const refreshed = await service.getByIdOrThrow(plan.id);
+
+      expect(refreshed.ecardPolicy.themeAvailabilities).toHaveLength(
+        ECARD_GATED_THEMES.length,
+      );
+      expect(
+        refreshed.ecardPolicy.themeAvailabilities.every(
+          (t) => t.isAvailable === false,
+        ),
+      ).toBe(true);
+      expect(refreshed.ecardPolicy.iconShapeAvailabilities).toHaveLength(
+        ECARD_GATED_ICON_SHAPES.length,
+      );
+      expect(
+        refreshed.ecardPolicy.iconShapeAvailabilities.every(
+          (s) => s.isAvailable === false,
+        ),
+      ).toBe(true);
+    });
+
     it('requires subscriptionDurationMonths to round-trip for SUBSCRIPTION plans', async () => {
       const plan = await createPlan({
         businessModelType: PlanBusinessModelType.SUBSCRIPTION,
@@ -280,6 +360,60 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
         (c) => c.type === ECardComponentType.WHATSAPP,
       );
       expect(whatsapp?.isAvailable).toBe(false);
+    });
+
+    it('fully replaces theme/icon-shape availabilities and accent-color presets, not merges', async () => {
+      const plan = await createPlan({
+        ecardPolicy: buildEcardPolicyDto({
+          accentColorPresets: [
+            {
+              themeAffinity: ECardAccentColorPresetThemeAffinity.DARK,
+              primaryColor: '#111111',
+              secondaryColor: '#222222',
+            },
+          ],
+        }),
+      });
+
+      const updated = await service.update(plan.id, {
+        ecardPolicy: buildEcardPolicyDto({
+          accentColorCustomizationAvailable: true,
+          themeAvailabilities: [
+            { theme: 'LIGHT', isAvailable: false },
+            { theme: 'NAVY_TEAL', isAvailable: true },
+          ],
+          iconShapeAvailabilities: [
+            { iconShape: 'SQUIRCLE', isAvailable: false },
+            { iconShape: 'ROUNDED_SQUARE', isAvailable: false },
+            { iconShape: 'TEARDROP', isAvailable: true },
+          ],
+          accentColorPresets: [
+            {
+              themeAffinity: ECardAccentColorPresetThemeAffinity.LIGHT,
+              primaryColor: '#333333',
+              secondaryColor: '#444444',
+            },
+          ],
+        }),
+      });
+
+      expect(updated.ecardPolicy.accentColorCustomizationAvailable).toBe(true);
+      expect(updated.ecardPolicy.themeAvailabilities).toContainEqual({
+        theme: 'NAVY_TEAL',
+        isAvailable: true,
+      });
+      expect(updated.ecardPolicy.iconShapeAvailabilities).toContainEqual({
+        iconShape: 'TEARDROP',
+        isAvailable: true,
+      });
+      // Full replace, not a merge — the original preset must be gone.
+      expect(updated.ecardPolicy.accentColorPresets).toEqual([
+        {
+          themeAffinity: 'LIGHT',
+          primaryColor: '#333333',
+          secondaryColor: '#444444',
+        },
+      ]);
     });
 
     it('replaces the organisation policy bundle', async () => {
