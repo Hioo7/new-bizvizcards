@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, User, UserCheck, X } from "lucide-react";
 import { useCustomerSearch } from "@hooks/useCustomerSearch";
+import Pagination from "@components/Pagination";
 import type { Customer } from "@app-types/customer";
 
 interface CustomerPickerFieldProps {
@@ -19,7 +20,8 @@ export default function CustomerPickerField({
   label = "Linked customer",
 }: CustomerPickerFieldProps) {
   const [isPicking, setIsPicking] = useState(!selectedCustomerId);
-  const { search, setSearch, customers, isLoading } = useCustomerSearch();
+  const { search, setSearch, customers, isLoading, page, pageSize, total, setPage } =
+    useCustomerSearch();
 
   if (!isPicking && selectedCustomerId) {
     return (
@@ -118,6 +120,14 @@ export default function CustomerPickerField({
               </div>
             </button>
           ))}
+      </div>
+      <div className="mt-1">
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+        />
       </div>
       {error && <p className="mt-1.5 text-xs text-error">{error}</p>}
     </div>

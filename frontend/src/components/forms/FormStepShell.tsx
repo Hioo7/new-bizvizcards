@@ -11,7 +11,7 @@ export interface FormStepDefinition {
 interface FormStepShellProps {
   icon: LucideIcon;
   title: string;
-  accentColor: "primary" | "secondary";
+  accentColor: "primary" | "secondary" | "accent";
   steps: FormStepDefinition[];
   currentIndex: number;
   isSubmitting: boolean;
@@ -35,6 +35,11 @@ const ACCENT_CLASSES: Record<
     bar: "bg-secondary",
     badge: "bg-secondary/10 text-secondary",
     button: "bg-secondary text-secondary-content hover:bg-secondary/90",
+  },
+  accent: {
+    bar: "bg-accent",
+    badge: "bg-accent/10 text-accent",
+    button: "bg-accent text-accent-content hover:bg-accent/90",
   },
 };
 

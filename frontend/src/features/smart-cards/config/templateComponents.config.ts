@@ -1,5 +1,6 @@
 import InteriorDesignListItem from "@features/smart-cards/components/interior-design-template/SmartCardListItem";
 import InteriorDesignTemplate2ListItem from "@features/smart-cards/components/interior-design-template-2/SmartCardListItem";
+import InteriorDesignTemplate3ListItem from "@features/smart-cards/components/interior-design-template-3/SmartCardListItem";
 import type { SmartCardTemplateKey } from "@app-types/smartCard";
 
 // Each template owns its own list-item component (differing content per
@@ -13,4 +14,5 @@ export const SMART_CARD_LIST_ITEM_REGISTRY: Record<
 > = {
   INTERIOR_DESIGN_TEMPLATE: InteriorDesignListItem,
   INTERIOR_DESIGN_TEMPLATE_2: InteriorDesignTemplate2ListItem,
+  INTERIOR_DESIGN_TEMPLATE_3: InteriorDesignTemplate3ListItem,
 };

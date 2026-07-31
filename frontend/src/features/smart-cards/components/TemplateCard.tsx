@@ -22,6 +22,12 @@ const ACCENT_CLASSES: Record<
     badge: "bg-secondary/10 text-secondary",
     icon: "bg-secondary/10 text-secondary",
   },
+  accent: {
+    bar: "bg-accent",
+    chip: "from-accent/80 to-accent",
+    badge: "bg-accent/10 text-accent",
+    icon: "bg-accent/10 text-accent",
+  },
 };
 
 export default function TemplateCard({ template, onActivate }: TemplateCardProps) {

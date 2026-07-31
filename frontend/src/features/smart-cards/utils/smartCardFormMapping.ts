@@ -120,7 +120,8 @@ export function buildSmartCardSubmission(
   const payload: CreateSmartCardPayload = {
     endpoint: values.profile.endpoint.trim(),
     customerId:
-      templateKey === "INTERIOR_DESIGN_TEMPLATE_2"
+      templateKey === "INTERIOR_DESIGN_TEMPLATE_2" ||
+      templateKey === "INTERIOR_DESIGN_TEMPLATE_3"
         ? values.customer.customerId
         : undefined,
     profile: {

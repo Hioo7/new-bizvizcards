@@ -133,6 +133,33 @@ describe('SmartCardMigrator', () => {
     );
   });
 
+  it('creates a SmartCard for the interior.design.template3 slug and records success', async () => {
+    const { migrator, recordSuccess } = createMigrator({
+      findMany: () =>
+        Promise.resolve([
+          legacySmartCard({
+            template: {
+              id: 'legacy-template-3',
+              slug: 'interior.design.template3',
+              name: 'Interior Design Template 3',
+            },
+          }),
+        ]),
+    });
+
+    await migrator.migrate('job-1');
+
+    expect(recordSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceTable: 'SmartCard',
+        sourceId: 'legacy-smart-card-1',
+        targetTable: 'SmartCard',
+        targetId: 'smart-card-1',
+        note: undefined,
+      }),
+    );
+  });
+
   it('rejects as UNRECOGNIZED_TEMPLATE_SLUG for an unknown legacy template slug', async () => {
     const { migrator, recordRejected, recordSuccess } = createMigrator({
       findMany: () =>

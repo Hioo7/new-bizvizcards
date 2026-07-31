@@ -27,10 +27,8 @@ export const MIGRATION_SOURCE_TABLE = {
   SMART_CARD_GALLERY_IMAGE: 'SmartCardGalleryImage.url',
 } as const;
 
-// Legacy SmartCardTemplate.slug -> new SmartCardTemplateKey. Only two slugs
-// existed in legacy production at research time (interior.design.template,
-// interior.design.template2) — INTERIOR_DESIGN_TEMPLATE_3 is new-app-only,
-// no legacy source. Any other/unrecognized slug is rejected, see
+// Legacy SmartCardTemplate.slug -> new SmartCardTemplateKey. Any
+// other/unrecognized slug is rejected, see
 // MIGRATION_REJECTION_REASON.UNRECOGNIZED_TEMPLATE_SLUG.
 export const SMART_CARD_TEMPLATE_SLUG_MAP: Record<
   string,
@@ -38,6 +36,7 @@ export const SMART_CARD_TEMPLATE_SLUG_MAP: Record<
 > = {
   'interior.design.template': SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE,
   'interior.design.template2': SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE_2,
+  'interior.design.template3': SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE_3,
 };
 
 // India is the only dial code ever observed in the legacy ECard dataset —

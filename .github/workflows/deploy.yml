@@ -160,21 +160,31 @@ jobs:
             export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
             export IMAGE_TAG=latest
 
-            # Pull new images and recreate only changed containers
+            # Pull new images first (while the old stack is still serving
+            # traffic) to keep the down/up downtime window as short as
+            # possible.
             docker compose --env-file backend/.env pull
 
-            docker compose --env-file backend/.env up -d --remove-orphans
-
+            # Full down + up on every deploy, not a selective recreate.
             # Compose only recreates a container when its *service
             # definition* changes (image, env, volume list, ...) — it has no
-            # way to detect that a bind-mounted file's *contents* changed, so
-            # editing nginx/default.conf and pushing never restarts nginx on
-            # its own. Reload it explicitly on every deploy so it always
-            # picks up the latest config/upstream resolution instead of
-            # silently continuing to run whatever it loaded at its last
-            # actual start (which is what caused backend/frontend recreates
-            # to 502 until nginx was manually restarted).
-            docker compose --env-file backend/.env exec -T nginx nginx -s reload
+            # way to detect that a bind-mounted file's *contents* changed
+            # (e.g. nginx/default.conf), so a selective `up -d` can leave a
+            # container running against a stale bind mount (a single-file
+            # bind mount is tied to the inode present at container start;
+            # `git pull` replaces that inode via atomic rename, so the
+            # running container keeps seeing the old content until it's
+            # actually recreated) — this caused a real production incident
+            # where nginx kept serving a stale /media/ proxy config across
+            # several deploys despite the file on disk being correct, and
+            # `nginx -s reload` couldn't fix it because reload re-reads
+            # config from the same stale mount. `down` + `up` recreates
+            # every container from scratch every time, so this class of bug
+            # can't happen — traded off against a brief full-stack restart
+            # (postgres/minio data are on named volumes, not removed by
+            # `down` without -v, so nothing is lost).
+            docker compose --env-file backend/.env down
+            docker compose --env-file backend/.env up -d
 
             # Remove dangling images to reclaim disk
             docker image prune -f

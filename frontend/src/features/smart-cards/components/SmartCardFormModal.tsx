@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAsyncAction } from "@hooks/useAsyncAction";
 import InteriorDesignForm from "@features/smart-cards/components/interior-design-template/SmartCardForm";
 import InteriorDesignTemplate2Form from "@features/smart-cards/components/interior-design-template-2/SmartCardForm";
+import InteriorDesignTemplate3Form from "@features/smart-cards/components/interior-design-template-3/SmartCardForm";
 import { useSmartCardMutations } from "@features/smart-cards/hooks/useSmartCardMutations";
 import {
   buildSmartCardSubmission,
@@ -71,6 +72,15 @@ export default function SmartCardFormModal({
       <div className="modal-box flex h-[92vh] w-full flex-col overflow-hidden p-0 sm:h-[85vh] sm:max-w-2xl">
         {templateKey === "INTERIOR_DESIGN_TEMPLATE_2" ? (
           <InteriorDesignTemplate2Form
+            key={remountKey}
+            initialValues={initialValues}
+            isSubmitting={submitAction.isSubmitting}
+            error={submitAction.error}
+            onSubmit={handleSubmit}
+            onCancel={onClose}
+          />
+        ) : templateKey === "INTERIOR_DESIGN_TEMPLATE_3" ? (
+          <InteriorDesignTemplate3Form
             key={remountKey}
             initialValues={initialValues}
             isSubmitting={submitAction.isSubmitting}

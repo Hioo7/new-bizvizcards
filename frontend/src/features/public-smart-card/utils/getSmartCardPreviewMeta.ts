@@ -32,6 +32,7 @@ const previewMetaRegistry: Record<
 > = {
   INTERIOR_DESIGN_TEMPLATE: extractInteriorDesignPreviewMeta,
   INTERIOR_DESIGN_TEMPLATE_2: extractInteriorDesignPreviewMeta,
+  INTERIOR_DESIGN_TEMPLATE_3: extractInteriorDesignPreviewMeta,
 };
 
 export function getSmartCardPreviewMeta(

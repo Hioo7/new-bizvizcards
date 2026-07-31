@@ -2,7 +2,7 @@ import { Handshake, QrCode } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { SmartCardTemplateKey } from "@app-types/smartCard";
 
-export type SmartCardTemplateColor = "primary" | "secondary";
+export type SmartCardTemplateColor = "primary" | "secondary" | "accent";
 
 export interface SmartCardTemplateDefinition {
   key: SmartCardTemplateKey;
@@ -27,6 +27,14 @@ export const SMART_CARD_TEMPLATES: SmartCardTemplateDefinition[] = [
     description:
       "Same interior-design layout, linked to a customer, with a QR-ready popup that lets visitors exchange contact details.",
     color: "secondary",
+    featureIcons: [QrCode, Handshake],
+  },
+  {
+    key: "INTERIOR_DESIGN_TEMPLATE_3",
+    name: "Interior Design — Noir",
+    description:
+      "Same interior-design layout as Template 2 with a bold solid-black brand block, linked to a customer, with a QR-ready popup that lets visitors exchange contact details.",
+    color: "accent",
     featureIcons: [QrCode, Handshake],
   },
 ];

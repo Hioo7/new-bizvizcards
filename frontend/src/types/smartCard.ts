@@ -1,6 +1,7 @@
 export type SmartCardTemplateKey =
   | "INTERIOR_DESIGN_TEMPLATE"
-  | "INTERIOR_DESIGN_TEMPLATE_2";
+  | "INTERIOR_DESIGN_TEMPLATE_2"
+  | "INTERIOR_DESIGN_TEMPLATE_3";
 
 export type ImageSlot =
   | { action: "upload" }
