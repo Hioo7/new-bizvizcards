@@ -17,6 +17,10 @@ enum OrganisationInviteStatus {
   ACCEPTED
   EXPIRED
   REVOKED
+  // Manually resolved by an admin (linked to an existing account or a newly
+  // created one) rather than the invitee self-serving via the email link —
+  // distinct from ACCEPTED, which always means the invitee's own accept call.
+  RESOLVED
 
   @@map("OrganisationInviteStatus")
 }
@@ -76,6 +80,11 @@ model OrganisationInvite {
   invitedByCustomer    Customer                 @relation("OrganisationInvitesSent", fields: [invitedByCustomerId], references: [id], onDelete: Cascade)
   acceptedByCustomerId String?                  @db.Uuid
   acceptedByCustomer   Customer?                @relation("OrganisationInvitesAccepted", fields: [acceptedByCustomerId], references: [id], onDelete: SetNull)
+  // Set only when an admin resolves this invite manually (link-existing or
+  // create-and-link) — null for self-serve accepts. acceptedByCustomerId is
+  // still set in both cases, to whichever customer the invite resulted in.
+  resolvedByEmployeeId String?                  @db.Uuid
+  resolvedByEmployee   Employee?                @relation(fields: [resolvedByEmployeeId], references: [id], onDelete: SetNull)
   expiresAt            DateTime
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt

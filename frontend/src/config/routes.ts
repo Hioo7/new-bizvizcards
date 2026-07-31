@@ -2,6 +2,7 @@ export const ROUTES = {
   landing: "/",
   login: "/login",
   signup: "/signup",
+  invite: "/invite/:token",
   userDashboard: "/user/dashboard",
   orgDashboard: "/org/dashboard",
   adminLogin: "/admin/login",
@@ -32,6 +33,11 @@ export const ROUTES = {
 } as const;
 
 export const LANDING_CONTACT_ANCHOR = `${ROUTES.landing}#contact`;
+
+/** Query param carrying an organisation invite token through /login or
+ * /signup when reached via the invite landing page's "Log in"/"Sign up"
+ * buttons — see features/organisation-invite. */
+export const INVITE_TOKEN_QUERY_PARAM = "invite";
 
 /** Literal `:ecardId` segment used in place of a real id when creating a new
  * e-card — the builder page branches on this to know it's in create mode. */
@@ -81,4 +87,8 @@ export function adminProductDetailPath(productId: string): string {
 
 export function adminOrderDetailPath(orderId: string): string {
   return `/admin/orders/${orderId}`;
+}
+
+export function invitePath(token: string): string {
+  return `/invite/${token}`;
 }

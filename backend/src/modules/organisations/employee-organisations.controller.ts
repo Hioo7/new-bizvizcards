@@ -12,6 +12,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UnsupportedMediaTypeException,
   UploadedFile,
   UploadedFiles,
@@ -20,14 +21,19 @@ import {
 } from '@nestjs/common';
 import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { EmployeeAuthGuard } from '../../common/guards/employee-auth.guard';
+import type { EmployeeAuthenticatedRequest } from '../../common/guards/employee-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { parseMultipartJson } from '../../common/validators/parse-multipart-json';
+import { createCustomerSchema } from '../customers/dto/create-customer.dto';
+import type { CreateCustomerDto } from '../customers/dto/create-customer.dto';
 import { addOrganisationMemberAsEmployeeSchema } from './dto/add-organisation-member-as-employee.dto';
 import type { AddOrganisationMemberAsEmployeeDto } from './dto/add-organisation-member-as-employee.dto';
 import { createOrganisationAsEmployeeSchema } from './dto/create-organisation-as-employee.dto';
 import type { CreateOrganisationAsEmployeeDto } from './dto/create-organisation-as-employee.dto';
+import { linkExistingInviteMemberSchema } from './dto/link-existing-invite-member.dto';
+import type { LinkExistingInviteMemberDto } from './dto/link-existing-invite-member.dto';
 import { listOrganisationsQuerySchema } from './dto/list-organisations-query.dto';
 import type { ListOrganisationsQueryDto } from './dto/list-organisations-query.dto';
 import { organisationEcardTemplateSchema } from './dto/organisation-ecard-template.dto';
@@ -43,6 +49,7 @@ import {
   ORGANISATION_LOGO_MAX_SIZE_BYTES,
 } from './organisations.constants';
 import { OrganisationEcardTemplateService } from './services/organisation-ecard-template.service';
+import { OrganisationInvitesService } from './services/organisation-invites.service';
 import { OrganisationMembersService } from './services/organisation-members.service';
 import { OrganisationsService } from './services/organisations.service';
 import { assertValidOrganisationEcardTemplateFiles } from './utils/assert-valid-organisation-ecard-template-files';
@@ -58,6 +65,7 @@ export class EmployeeOrganisationsController {
     private readonly organisationsService: OrganisationsService,
     private readonly organisationMembersService: OrganisationMembersService,
     private readonly organisationEcardTemplateService: OrganisationEcardTemplateService,
+    private readonly organisationInvitesService: OrganisationInvitesService,
   ) {}
 
   @Get()
@@ -168,6 +176,59 @@ export class EmployeeOrganisationsController {
   @RequirePermissions({ organisation: ['update'] })
   async removeMember(@Param('id') id: string): Promise<void> {
     await this.organisationMembersService.removeForEmployee(id);
+  }
+
+  @Get(':organisationId/invites')
+  @RequirePermissions({ organisation: ['get'] })
+  listInvites(@Param('organisationId') organisationId: string) {
+    return this.organisationInvitesService.listForEmployee(organisationId);
+  }
+
+  @Post(':organisationId/invites/:inviteId/link-existing-customer')
+  @RequirePermissions({ organisation: ['update'] })
+  async linkExistingCustomerToInvite(
+    @Req() request: EmployeeAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
+    @Param('inviteId') inviteId: string,
+    @Body(new ZodValidationPipe(linkExistingInviteMemberSchema))
+    dto: LinkExistingInviteMemberDto,
+  ): Promise<void> {
+    await this.organisationInvitesService.linkExistingCustomerForEmployee(
+      request.employeeSession.user.id,
+      organisationId,
+      inviteId,
+      dto.customerId,
+    );
+  }
+
+  @Post(':organisationId/invites/:inviteId/create-and-link-customer')
+  @RequirePermissions({ organisation: ['update'] })
+  async createAndLinkCustomerToInvite(
+    @Req() request: EmployeeAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
+    @Param('inviteId') inviteId: string,
+    @Body(new ZodValidationPipe(createCustomerSchema)) dto: CreateCustomerDto,
+  ): Promise<void> {
+    await this.organisationInvitesService.createAndLinkCustomerForEmployee(
+      request.employeeSession.user.id,
+      organisationId,
+      inviteId,
+      dto,
+    );
+  }
+
+  @Delete(':organisationId/invites/:inviteId')
+  @RequirePermissions({ organisation: ['update'] })
+  async revokeInvite(
+    @Req() request: EmployeeAuthenticatedRequest,
+    @Param('organisationId') organisationId: string,
+    @Param('inviteId') inviteId: string,
+  ): Promise<void> {
+    await this.organisationInvitesService.revokeForEmployee(
+      request.employeeSession.user.id,
+      organisationId,
+      inviteId,
+    );
   }
 
   @Get(':id')

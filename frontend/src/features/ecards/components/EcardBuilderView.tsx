@@ -422,6 +422,7 @@ export default function EcardBuilderView() {
         <TeamEditSheet
           open
           organisationId={builder.state.hero.organisationId}
+          scope="employee"
           draft={editingComponent.draft}
           isSubmitting={false}
           error={null}

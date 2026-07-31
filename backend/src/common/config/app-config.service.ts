@@ -71,6 +71,10 @@ export class AppConfigService {
     return this.env.SMTP_FROM;
   }
 
+  get organisationEmailInvitesEnabled(): boolean {
+    return this.env.ORGANISATION_EMAIL_INVITES_ENABLED;
+  }
+
   get minioEndpoint(): string {
     return this.env.MINIO_ENDPOINT;
   }

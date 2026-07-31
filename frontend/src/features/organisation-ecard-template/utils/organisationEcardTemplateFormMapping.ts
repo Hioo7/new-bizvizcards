@@ -17,7 +17,7 @@ import {
   emptyOrganisationEcardTemplateBuilderState,
   emptyOrganisationEcardTemplateHeroDraft,
   type OrganisationEcardTemplateBuilderState,
-} from "@features/customer-organisation-management/types/organisationEcardTemplateBuilder.types";
+} from "@features/organisation-ecard-template/types/organisationEcardTemplateBuilder.types";
 
 export function organisationEcardTemplateToBuilderState(
   template: OrganisationEcardTemplate | null,

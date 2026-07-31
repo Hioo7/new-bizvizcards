@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, User, Users } from "lucide-react";
-import { useOrganisationMembers } from "@features/ecards/hooks/useOrganisationMembers";
+import {
+  useOrganisationMembers,
+  type OrganisationMembersScope,
+} from "@features/ecards/hooks/useOrganisationMembers";
 import { ECARD_MAX_TEAM_MEMBERS } from "@features/ecards/config/ecardBuilder.config";
 
 interface TeamMemberPickerModalProps {
   open: boolean;
   organisationId: string | null;
+  scope: OrganisationMembersScope;
   selectedIds: string[];
   onClose: () => void;
   onConfirm: (memberIds: string[]) => void;
@@ -14,12 +18,16 @@ interface TeamMemberPickerModalProps {
 export default function TeamMemberPickerModal({
   open,
   organisationId,
+  scope,
   selectedIds,
   onClose,
   onConfirm,
 }: TeamMemberPickerModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const { members, isLoading, error } = useOrganisationMembers(organisationId);
+  const { members, isLoading, error } = useOrganisationMembers(
+    organisationId,
+    scope,
+  );
   const [picked, setPicked] = useState<string[]>(selectedIds);
   const [prevOpen, setPrevOpen] = useState(open);
 

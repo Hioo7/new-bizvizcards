@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { OrganisationMemberRole } from '../../../generated/prisma/client';
+import {
+  OrganisationInviteStatus,
+  OrganisationMemberRole,
+} from '../../../generated/prisma/client';
 import type {
   OrganisationMemberModel,
   OrganisationModel,
@@ -50,6 +53,9 @@ export interface OrganisationSummary {
   createdByCustomerId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  // Lets the admin org list surface a "needs attention" badge without a
+  // separate round-trip per organisation.
+  pendingInvitesCount: number;
 }
 
 export interface OrganisationListResult {
@@ -259,8 +265,14 @@ export class OrganisationsService {
       this.prisma.organisation.count({ where }),
     ]);
 
+    const pendingInvitesCountByOrgId = await this.countPendingInvitesByOrgId(
+      organisations.map((o) => o.id),
+    );
+
     return {
-      organisations: organisations.map((o) => this.toSummary(o)),
+      organisations: organisations.map((o) =>
+        this.toSummary(o, pendingInvitesCountByOrgId.get(o.id) ?? 0),
+      ),
       total,
       page,
       pageSize,
@@ -275,7 +287,10 @@ export class OrganisationsService {
     if (!organisation) {
       throw new NotFoundException('Organisation not found');
     }
-    return this.toSummary(organisation);
+    const pendingInvitesCount = await this.prisma.organisationInvite.count({
+      where: { organisationId: id, status: OrganisationInviteStatus.PENDING },
+    });
+    return this.toSummary(organisation, pendingInvitesCount);
   }
 
   async updateForEmployee(
@@ -344,6 +359,7 @@ export class OrganisationsService {
     organisation: OrganisationModel & {
       logo: Parameters<MediaService['getPublicUrl']>[0] | null;
     },
+    pendingInvitesCount: number,
   ): OrganisationSummary {
     return {
       id: organisation.id,
@@ -355,6 +371,24 @@ export class OrganisationsService {
       createdByCustomerId: organisation.createdByCustomerId,
       createdAt: organisation.createdAt,
       updatedAt: organisation.updatedAt,
+      pendingInvitesCount,
     };
+  }
+
+  private async countPendingInvitesByOrgId(
+    organisationIds: string[],
+  ): Promise<Map<string, number>> {
+    if (organisationIds.length === 0) {
+      return new Map();
+    }
+    const grouped = await this.prisma.organisationInvite.groupBy({
+      by: ['organisationId'],
+      where: {
+        organisationId: { in: organisationIds },
+        status: OrganisationInviteStatus.PENDING,
+      },
+      _count: { _all: true },
+    });
+    return new Map(grouped.map((g) => [g.organisationId, g._count._all]));
   }
 }

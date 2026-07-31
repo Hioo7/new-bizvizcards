@@ -1,13 +1,15 @@
-import { EMPLOYEE_ORGANISATIONS_BASE_PATH } from "@config/api";
+import { EMPLOYEE_ORGANISATIONS_BASE_PATH, ORGANISATIONS_BASE_PATH } from "@config/api";
 import { apiRequest } from "@services/apiClient";
 import type { Ecard, OrganisationMemberSummary } from "@app-types/ecard";
 import type {
   AddedOrganisationMember,
   AddOrganisationMemberPayload,
+  CreateAndLinkInviteMemberPayload,
   CreateOrganisationPayload,
   CreateOrganisationResponse,
   CustomerOrganisationMembership,
   ListOrganisationsQuery,
+  OrganisationInviteAdminItem,
   OrganisationListResponse,
   OrganisationSummary,
   UpdateOrganisationLogoResponse,
@@ -29,6 +31,18 @@ export function listOrganisationMembers(
 ): Promise<OrganisationMemberSummary[]> {
   return apiRequest<OrganisationMemberSummary[]>(
     `${EMPLOYEE_ORGANISATIONS_BASE_PATH}/${organisationId}/members`,
+    { method: "GET" },
+  );
+}
+
+// Customer/SPOC-scoped variant — used by the Team component's member picker
+// when it's opened from a customer-authenticated context (that context can't
+// authenticate against the admin-only endpoint above).
+export function listMyOrganisationMembers(
+  organisationId: string,
+): Promise<OrganisationMemberSummary[]> {
+  return apiRequest<OrganisationMemberSummary[]>(
+    `${ORGANISATIONS_BASE_PATH}/members/${organisationId}`,
     { method: "GET" },
   );
 }
@@ -136,5 +150,48 @@ export function linkMemberEcard(
   return apiRequest<Ecard>(
     `${EMPLOYEE_ORGANISATIONS_BASE_PATH}/${organisationId}/members/${memberId}/ecard`,
     { method: "PATCH", body: JSON.stringify({ ecardId }) },
+  );
+}
+
+// ── Invites (admin manual resolution) ────────────────────────────────────
+
+export function listOrganisationInvites(
+  organisationId: string,
+): Promise<OrganisationInviteAdminItem[]> {
+  return apiRequest<OrganisationInviteAdminItem[]>(
+    `${EMPLOYEE_ORGANISATIONS_BASE_PATH}/${organisationId}/invites`,
+    { method: "GET" },
+  );
+}
+
+export function linkExistingInviteMember(
+  organisationId: string,
+  inviteId: string,
+  customerId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `${EMPLOYEE_ORGANISATIONS_BASE_PATH}/${organisationId}/invites/${inviteId}/link-existing-customer`,
+    { method: "POST", body: JSON.stringify({ customerId }) },
+  );
+}
+
+export function createAndLinkInviteMember(
+  organisationId: string,
+  inviteId: string,
+  payload: CreateAndLinkInviteMemberPayload,
+): Promise<void> {
+  return apiRequest<void>(
+    `${EMPLOYEE_ORGANISATIONS_BASE_PATH}/${organisationId}/invites/${inviteId}/create-and-link-customer`,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export function revokeOrganisationInviteAsEmployee(
+  organisationId: string,
+  inviteId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `${EMPLOYEE_ORGANISATIONS_BASE_PATH}/${organisationId}/invites/${inviteId}`,
+    { method: "DELETE" },
   );
 }

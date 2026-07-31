@@ -12,6 +12,7 @@ import type {
   CreateOrganisationPayload,
   OrgMemberListItem,
   OrgInvite,
+  OrgInviteLookup,
   InviteMemberPayload,
   UpdateMemberPayload,
   LeadReferenceNote,
@@ -182,6 +183,12 @@ export class UserDashboardService {
 
   async revokeOrgInvite(id: string): Promise<void> {
     await apiRequest<void>(DASHBOARD_API.orgInvite(id), { method: "DELETE" });
+  }
+
+  // Public, pre-auth lookup — used by the /invite/:token landing page before
+  // the visitor has logged in or signed up.
+  async lookupOrgInvite(token: string): Promise<OrgInviteLookup> {
+    return apiRequest<OrgInviteLookup>(DASHBOARD_API.orgInviteLookup(token));
   }
 
   async acceptOrgInvite(token: string): Promise<OrgInvite> {

@@ -1,5 +1,7 @@
+import type { EmployeeAuthenticatedRequest } from '../../common/guards/employee-auth.guard';
 import { EmployeeOrganisationsController } from './employee-organisations.controller';
 import type { OrganisationEcardTemplateService } from './services/organisation-ecard-template.service';
+import type { OrganisationInvitesService } from './services/organisation-invites.service';
 import type { OrganisationMembersService } from './services/organisation-members.service';
 import type { OrganisationsService } from './services/organisations.service';
 
@@ -7,12 +9,20 @@ function makeController(
   organisationsService: Partial<OrganisationsService> = {},
   organisationMembersService: Partial<OrganisationMembersService> = {},
   organisationEcardTemplateService: Partial<OrganisationEcardTemplateService> = {},
+  organisationInvitesService: Partial<OrganisationInvitesService> = {},
 ) {
   return new EmployeeOrganisationsController(
     organisationsService as OrganisationsService,
     organisationMembersService as OrganisationMembersService,
     organisationEcardTemplateService as OrganisationEcardTemplateService,
+    organisationInvitesService as OrganisationInvitesService,
   );
+}
+
+function makeRequest(accountId: string): EmployeeAuthenticatedRequest {
+  return {
+    employeeSession: { user: { id: accountId } },
+  } as EmployeeAuthenticatedRequest;
 }
 
 describe('EmployeeOrganisationsController', () => {
@@ -160,5 +170,89 @@ describe('EmployeeOrganisationsController', () => {
     await controller.deleteEcardTemplate('org-1');
 
     expect(deleteForEmployee).toHaveBeenCalledWith('org-1');
+  });
+
+  it('listInvites forwards the organisationId', async () => {
+    const listForEmployee = jest.fn().mockResolvedValue([{ id: 'invite-1' }]);
+    const controller = makeController({}, {}, {}, { listForEmployee });
+
+    const result = await controller.listInvites('org-1');
+
+    expect(listForEmployee).toHaveBeenCalledWith('org-1');
+    expect(result).toEqual([{ id: 'invite-1' }]);
+  });
+
+  it('linkExistingCustomerToInvite forwards the actor account id, ids, and customerId', async () => {
+    const linkExistingCustomerForEmployee = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    const controller = makeController(
+      {},
+      {},
+      {},
+      { linkExistingCustomerForEmployee },
+    );
+
+    await controller.linkExistingCustomerToInvite(
+      makeRequest('account-1'),
+      'org-1',
+      'invite-1',
+      { customerId: 'customer-1' },
+    );
+
+    expect(linkExistingCustomerForEmployee).toHaveBeenCalledWith(
+      'account-1',
+      'org-1',
+      'invite-1',
+      'customer-1',
+    );
+  });
+
+  it('createAndLinkCustomerToInvite forwards the actor account id, ids, and dto', async () => {
+    const createAndLinkCustomerForEmployee = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    const controller = makeController(
+      {},
+      {},
+      {},
+      { createAndLinkCustomerForEmployee },
+    );
+    const dto = {
+      name: 'New Member',
+      email: 'new-member@example.com',
+      password: 'a-strong-password',
+    };
+
+    await controller.createAndLinkCustomerToInvite(
+      makeRequest('account-1'),
+      'org-1',
+      'invite-1',
+      dto,
+    );
+
+    expect(createAndLinkCustomerForEmployee).toHaveBeenCalledWith(
+      'account-1',
+      'org-1',
+      'invite-1',
+      dto,
+    );
+  });
+
+  it('revokeInvite forwards the actor account id and ids', async () => {
+    const revokeForEmployee = jest.fn().mockResolvedValue(undefined);
+    const controller = makeController({}, {}, {}, { revokeForEmployee });
+
+    await controller.revokeInvite(
+      makeRequest('account-1'),
+      'org-1',
+      'invite-1',
+    );
+
+    expect(revokeForEmployee).toHaveBeenCalledWith(
+      'account-1',
+      'org-1',
+      'invite-1',
+    );
   });
 });

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import {
   DndContext,
   PointerSensor,
@@ -14,22 +13,11 @@ import {
 } from "@dnd-kit/sortable";
 import { ArrowLeft, Check, Plus, Trash2 } from "lucide-react";
 import EmptyStepState from "@components/EmptyStepState";
-import { getOrganisation } from "@services/organisationService";
-import { getCustomerEffectivePolicy } from "@services/planService";
-import { adminOrganisationDetailPath } from "@config/routes";
-import type {
-  ECardHeroLayout,
-  ECardIconShape,
-  ECardTheme,
-  EcardComponentType,
-} from "@app-types/ecard";
-import type { EcardAccentColorPreset } from "@app-types/plan";
-import type { OrganisationSummary } from "@app-types/organisation";
+import type { EcardComponentType } from "@app-types/ecard";
 import {
   AboutEditSheet,
   BrochureEditSheet,
   ComponentTypePickerModal,
-  ECARD_COMPONENT_TYPES,
   ECARD_MAX_COMPONENTS,
   GalleryEditSheet,
   SocialLinksEditSheet,
@@ -38,84 +26,61 @@ import {
   VideoEditSheet,
   WhatsAppEditSheet,
   emptyDraftForType,
+  type OrganisationMembersScope,
 } from "@features/ecards";
-import { useOrganisationEcardTemplateBuilder } from "@features/customer-organisation-management/hooks/useOrganisationEcardTemplateBuilder";
-import OrganisationEcardTemplateHeroCard from "@features/customer-organisation-management/components/organisations/OrganisationEcardTemplateHeroCard";
-import OrganisationEcardTemplateHeroEditSheet from "@features/customer-organisation-management/components/organisations/OrganisationEcardTemplateHeroEditSheet";
-import RemoveOrganisationEcardTemplateModal from "@features/customer-organisation-management/components/organisations/RemoveOrganisationEcardTemplateModal";
+import { useOrganisationEcardTemplateBuilder } from "@features/organisation-ecard-template/hooks/useOrganisationEcardTemplateBuilder";
+import OrganisationEcardTemplateHeroCard from "@features/organisation-ecard-template/components/organisations/OrganisationEcardTemplateHeroCard";
+import OrganisationEcardTemplateHeroEditSheet from "@features/organisation-ecard-template/components/organisations/OrganisationEcardTemplateHeroEditSheet";
+import RemoveOrganisationEcardTemplateModal from "@features/organisation-ecard-template/components/organisations/RemoveOrganisationEcardTemplateModal";
 import {
   organisationEcardTemplateVideoSheetSchema,
   organisationEcardTemplateWhatsappSheetSchema,
-} from "@features/customer-organisation-management/schemas/organisationEcardTemplateComponentSchemas";
+} from "@features/organisation-ecard-template/schemas/organisationEcardTemplateComponentSchemas";
+import { EMPTY_ORGANISATION_ECARD_TEMPLATE_POLICY_SELECTION } from "@features/organisation-ecard-template/utils/deriveOrganisationEcardTemplatePolicySelection";
+import type {
+  OrganisationEcardTemplateBuilderApi,
+  OrganisationEcardTemplatePolicySelection,
+} from "@features/organisation-ecard-template/types/organisationEcardTemplateBuilder.types";
 
 type EditingTarget = { kind: "hero" } | { kind: "component"; key: string } | null;
 
-export default function OrganisationEcardTemplateBuilderView() {
-  const { organisationId } = useParams<{ organisationId: string }>();
-  const navigate = useNavigate();
+export interface OrganisationEcardTemplateBuilderViewProps {
+  organisationId: string;
+  organisationName: string;
+  api: OrganisationEcardTemplateBuilderApi;
+  /** Resolves which layouts/themes/icon shapes/components the organisation's
+   * plan allows. Must be a stable (e.g. useCallback'd) reference. */
+  loadPolicy: () => Promise<OrganisationEcardTemplatePolicySelection>;
+  /** Omit to hide the back button (e.g. when embedded as a dashboard tab). */
+  onBack?: () => void;
+  /** Which auth scope the Team component's member picker should call. */
+  teamPickerScope: OrganisationMembersScope;
+}
 
-  const [organisation, setOrganisation] = useState<OrganisationSummary | null>(
-    null,
-  );
-  const [planUnavailableTypes, setPlanUnavailableTypes] = useState<
-    EcardComponentType[]
-  >([]);
-  const [availableHeroLayouts, setAvailableHeroLayouts] = useState<Record<
-    ECardHeroLayout,
-    boolean
-  > | null>(null);
-  const [availableThemes, setAvailableThemes] = useState<Record<
-    ECardTheme,
-    boolean
-  > | null>(null);
-  const [availableIconShapes, setAvailableIconShapes] = useState<Record<
-    ECardIconShape,
-    boolean
-  > | null>(null);
-  const [accentColorCustomizationAvailable, setAccentColorCustomizationAvailable] =
-    useState(false);
-  const [accentColorPresets, setAccentColorPresets] = useState<
-    EcardAccentColorPreset[]
-  >([]);
+export default function OrganisationEcardTemplateBuilderView({
+  organisationId,
+  organisationName,
+  api,
+  loadPolicy,
+  onBack,
+  teamPickerScope,
+}: OrganisationEcardTemplateBuilderViewProps) {
+  const [policySelection, setPolicySelection] =
+    useState<OrganisationEcardTemplatePolicySelection>(
+      EMPTY_ORGANISATION_ECARD_TEMPLATE_POLICY_SELECTION,
+    );
 
   useEffect(() => {
-    if (!organisationId) return;
     let cancelled = false;
-
-    async function loadOrgAndPolicy() {
-      const org = await getOrganisation(organisationId as string);
-      if (cancelled) return;
-      setOrganisation(org);
-
-      if (!org.createdByCustomerId) return;
-      // The "guiding hand" requirement: only component types/layouts the
-      // org's own plan boost allows are offered here — the same effective
-      // policy already resolved for individual e-cards, just reused read-only.
-      const policy = await getCustomerEffectivePolicy(org.createdByCustomerId);
-      if (cancelled) return;
-      setPlanUnavailableTypes(
-        ECARD_COMPONENT_TYPES.filter(
-          (type) => !policy.organisation.orgEcardPolicy.components[type],
-        ),
-      );
-      setAvailableHeroLayouts(policy.organisation.orgEcardPolicy.heroLayouts);
-      setAvailableThemes(policy.organisation.orgEcardPolicy.themes);
-      setAvailableIconShapes(policy.organisation.orgEcardPolicy.iconShapes);
-      setAccentColorCustomizationAvailable(
-        policy.organisation.orgEcardPolicy.accentColorCustomizationAvailable,
-      );
-      setAccentColorPresets(
-        policy.organisation.orgEcardPolicy.accentColorPresets,
-      );
-    }
-
-    void loadOrgAndPolicy();
+    void loadPolicy().then((selection) => {
+      if (!cancelled) setPolicySelection(selection);
+    });
     return () => {
       cancelled = true;
     };
-  }, [organisationId]);
+  }, [loadPolicy]);
 
-  const builder = useOrganisationEcardTemplateBuilder(organisationId ?? "");
+  const builder = useOrganisationEcardTemplateBuilder(organisationId, api);
   const [editing, setEditing] = useState<EditingTarget>(null);
   const [isPickingType, setIsPickingType] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -123,14 +88,6 @@ export default function OrganisationEcardTemplateBuilderView() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
-
-  if (!organisationId) {
-    return (
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 py-8 text-center sm:px-6">
-        <p className="text-sm text-base-content/60">Missing organisation.</p>
-      </div>
-    );
-  }
 
   const editingComponent =
     editing?.kind === "component"
@@ -187,17 +144,19 @@ export default function OrganisationEcardTemplateBuilderView() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(adminOrganisationDetailPath(organisationId))}
-          aria-label="Back to organisation"
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-field text-base-content/60 hover:bg-base-200"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to organisation"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-field text-base-content/60 hover:bg-base-200"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-extrabold text-base-content">
-            {organisation?.name ?? "Organisation"}&rsquo;s E-card Policy
+            {organisationName}&rsquo;s E-card Policy
           </h1>
           <p className="text-sm text-base-content/60">
             Applied to every e-card linked to this organisation
@@ -294,11 +253,13 @@ export default function OrganisationEcardTemplateBuilderView() {
           draft={builder.state.hero}
           isSubmitting={false}
           error={null}
-          availableHeroLayouts={availableHeroLayouts}
-          availableThemes={availableThemes}
-          availableIconShapes={availableIconShapes}
-          accentColorCustomizationAvailable={accentColorCustomizationAvailable}
-          accentColorPresets={accentColorPresets}
+          availableHeroLayouts={policySelection.availableHeroLayouts}
+          availableThemes={policySelection.availableThemes}
+          availableIconShapes={policySelection.availableIconShapes}
+          accentColorCustomizationAvailable={
+            policySelection.accentColorCustomizationAvailable
+          }
+          accentColorPresets={policySelection.accentColorPresets}
           onClose={() => setEditing(null)}
           onSave={(hero) => {
             builder.setState((state) => ({ ...state, hero }));
@@ -388,6 +349,7 @@ export default function OrganisationEcardTemplateBuilderView() {
         <TeamEditSheet
           open
           organisationId={organisationId}
+          scope={teamPickerScope}
           draft={editingComponent.draft}
           isSubmitting={false}
           error={null}
@@ -448,7 +410,7 @@ export default function OrganisationEcardTemplateBuilderView() {
         open={isPickingType}
         addedTypes={addedTypes}
         isTeamDisabled={false}
-        planUnavailableTypes={planUnavailableTypes}
+        planUnavailableTypes={policySelection.planUnavailableTypes}
         onClose={() => setIsPickingType(false)}
         onPick={handlePickType}
       />

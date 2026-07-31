@@ -2,13 +2,17 @@ import { useState } from "react";
 import { User, UserPlus, Users, X } from "lucide-react";
 import EditSheetShell from "@components/EditSheetShell";
 import TeamMemberPickerModal from "@features/ecards/components/TeamMemberPickerModal";
-import { useOrganisationMembers } from "@features/ecards/hooks/useOrganisationMembers";
+import {
+  useOrganisationMembers,
+  type OrganisationMembersScope,
+} from "@features/ecards/hooks/useOrganisationMembers";
 import { ECARD_TEXT_SHORT_MAX_LENGTH } from "@features/ecards/config/ecardBuilder.config";
 import type { TeamComponentDraft } from "@features/ecards/types/ecardBuilder.types";
 
 interface TeamEditSheetProps {
   open: boolean;
   organisationId: string | null;
+  scope: OrganisationMembersScope;
   draft: TeamComponentDraft;
   isSubmitting: boolean;
   error: string | null;
@@ -19,6 +23,7 @@ interface TeamEditSheetProps {
 export default function TeamEditSheet({
   open,
   organisationId,
+  scope,
   draft,
   isSubmitting,
   error,
@@ -28,7 +33,7 @@ export default function TeamEditSheet({
   const [title, setTitle] = useState(draft.title);
   const [memberIds, setMemberIds] = useState(draft.memberIds);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const { members } = useOrganisationMembers(organisationId);
+  const { members } = useOrganisationMembers(organisationId, scope);
 
   const selectedMembers = memberIds
     .map((id) => members.find((member) => member.id === id))
@@ -114,6 +119,7 @@ export default function TeamEditSheet({
       <TeamMemberPickerModal
         open={isPickerOpen}
         organisationId={organisationId}
+        scope={scope}
         selectedIds={memberIds}
         onClose={() => setIsPickerOpen(false)}
         onConfirm={(ids) => {

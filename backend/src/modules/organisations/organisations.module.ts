@@ -5,6 +5,7 @@ import { PlansModule } from '../plans/plans.module';
 import { AcceptOrganisationInviteController } from './accept-organisation-invite.controller';
 import { EmployeeOrganisationsController } from './employee-organisations.controller';
 import { OrganisationEcardTemplateController } from './organisation-ecard-template.controller';
+import { OrganisationInviteLookupController } from './organisation-invite-lookup.controller';
 import { OrganisationInvitesController } from './organisation-invites.controller';
 import { OrganisationMembersController } from './organisation-members.controller';
 import { OrganisationsController } from './organisations.controller';
@@ -19,6 +20,7 @@ import { OrganisationsService } from './services/organisations.service';
     OrganisationsController,
     OrganisationMembersController,
     OrganisationInvitesController,
+    OrganisationInviteLookupController,
     AcceptOrganisationInviteController,
     EmployeeOrganisationsController,
     OrganisationEcardTemplateController,

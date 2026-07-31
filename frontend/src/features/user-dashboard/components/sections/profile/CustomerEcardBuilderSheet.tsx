@@ -386,6 +386,7 @@ export default function CustomerEcardBuilderSheet({
         <TeamEditSheet
           open
           organisationId={builder.state.hero.organisationId}
+          scope="customer"
           draft={editingComponent.draft}
           isSubmitting={false}
           error={null}

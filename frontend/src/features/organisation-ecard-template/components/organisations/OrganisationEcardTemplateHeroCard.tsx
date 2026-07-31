@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Pencil, Sparkles } from "lucide-react";
-import type { OrganisationEcardTemplateHeroDraft } from "@features/customer-organisation-management/types/organisationEcardTemplateBuilder.types";
+import type { OrganisationEcardTemplateHeroDraft } from "@features/organisation-ecard-template/types/organisationEcardTemplateBuilder.types";
 
 interface OrganisationEcardTemplateHeroCardProps {
   draft: OrganisationEcardTemplateHeroDraft;

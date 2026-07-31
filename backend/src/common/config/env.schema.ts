@@ -30,6 +30,17 @@ export const envSchema = z.object({
   SMTP_PASSWORD: z.string().min(1),
   SMTP_FROM: z.string().email(),
 
+  // Gates the organisation invite EMAIL self-serve flow (invite email sent +
+  // token-based accept page) — off by default since this app has no email
+  // verification, so many accounts use unreachable/made-up emails. While
+  // off, organisation invites are still created (and visible to admins for
+  // manual resolution) — only the outbound email and the self-serve accept
+  // endpoint are gated. See OrganisationInvitesService.
+  ORGANISATION_EMAIL_INVITES_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+
   MINIO_ENDPOINT: z.string().url(),
   MINIO_REGION: z.string().min(1).default('us-east-1'),
   MINIO_ACCESS_KEY_ID: z.string().min(1),

@@ -315,6 +315,7 @@ export default function MemberEcardEditModal({
         <TeamEditSheet
           open
           organisationId={builder.state.hero.organisationId}
+          scope="customer"
           draft={editingComponent.draft}
           isSubmitting={false}
           error={null}

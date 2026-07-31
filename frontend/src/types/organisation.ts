@@ -14,6 +14,7 @@ export interface OrganisationSummary {
   createdByCustomerId: string | null;
   createdAt: string;
   updatedAt: string;
+  pendingInvitesCount: number;
 }
 
 export interface OrganisationListResponse {
@@ -72,4 +73,29 @@ export interface AddedOrganisationMember {
 export interface UpdateOrganisationMemberPayload {
   role?: "SPOC" | "MEMBER";
   status?: "ACTIVE" | "SUSPENDED";
+}
+
+export type OrganisationInviteStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "EXPIRED"
+  | "REVOKED"
+  | "RESOLVED";
+
+export interface OrganisationInviteAdminItem {
+  id: string;
+  email: string;
+  role: "SPOC" | "MEMBER";
+  status: OrganisationInviteStatus;
+  invitedByName: string;
+  acceptedByCustomerName: string | null;
+  resolvedByEmployeeName: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface CreateAndLinkInviteMemberPayload {
+  name: string;
+  email: string;
+  password: string;
 }

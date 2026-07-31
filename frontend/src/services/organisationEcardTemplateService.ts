@@ -58,3 +58,26 @@ export function deleteOrganisationEcardTemplate(
     { method: "DELETE" },
   );
 }
+
+// SPOC-side (customer-authenticated) write variants — same endpoint shape as
+// the admin ones above, scoped to ORGANISATIONS_BASE_PATH. The backend
+// enforces the actual SPOC-only check (organisationsService.assertIsSpoc).
+export function updateMyOrganisationEcardTemplate(
+  organisationId: string,
+  payload: OrganisationEcardTemplatePayload,
+  files: OrganisationEcardTemplateImageUpload[],
+): Promise<OrganisationEcardTemplate> {
+  return apiRequest<OrganisationEcardTemplate>(
+    `${ORGANISATIONS_BASE_PATH}/${organisationId}/ecard-template`,
+    { method: "PUT", body: buildFormData(payload, files) },
+  );
+}
+
+export function deleteMyOrganisationEcardTemplate(
+  organisationId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `${ORGANISATIONS_BASE_PATH}/${organisationId}/ecard-template`,
+    { method: "DELETE" },
+  );
+}

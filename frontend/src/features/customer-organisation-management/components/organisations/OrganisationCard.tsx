@@ -1,5 +1,6 @@
 import { Building2, ChevronRight } from "lucide-react";
 import type { OrganisationSummary } from "@app-types/organisation";
+import OrganisationPendingInvitesBadge from "@features/customer-organisation-management/components/organisations/OrganisationPendingInvitesBadge";
 
 interface OrganisationCardProps {
   organisation: OrganisationSummary;
@@ -16,16 +17,21 @@ export default function OrganisationCard({
       onClick={onOpen}
       className="flex items-center gap-3 rounded-box border border-base-300 bg-base-100 p-4 text-left"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-300 text-base-content/60">
-        {organisation.logoUrl ? (
-          <img
-            src={organisation.logoUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <Building2 className="h-4 w-4" />
-        )}
+      <span className="relative flex h-9 w-9 shrink-0">
+        <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-base-300 text-base-content/60">
+          {organisation.logoUrl ? (
+            <img
+              src={organisation.logoUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <Building2 className="h-4 w-4" />
+          )}
+        </span>
+        <OrganisationPendingInvitesBadge
+          count={organisation.pendingInvitesCount}
+        />
       </span>
       <p className="flex-1 font-semibold text-base-content">
         {organisation.name}

@@ -10,6 +10,7 @@ export const DASHBOARD_API = {
   orgMember: (id: string) => `/api/organisations/members/${id}`,
   orgInvites: (organisationId: string) => `/api/organisations/invites/${organisationId}`,
   orgInvite: (id: string) => `/api/organisations/invites/${id}`,
+  orgInviteLookup: (token: string) => `/api/organisation-invites/${token}`,
   acceptOrgInvite: (token: string) => `/api/organisation-invites/${token}/accept`,
   leadReferenceNotes: (leadId: string) => `/api/leads/${leadId}/reference-notes`,
   leadReferenceNote: (leadId: string, noteId: string) =>

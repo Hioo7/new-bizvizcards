@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import LandingPage from "@pages/LandingPage";
 import LoginPage from "@pages/LoginPage";
 import SignupPage from "@pages/SignupPage";
+import InvitePage from "@pages/InvitePage";
 import AdminLoginPage from "@pages/AdminLoginPage";
 import AdminHomePage from "@pages/AdminHomePage";
 import StaffManagementPage from "@pages/StaffManagementPage";
@@ -39,6 +40,7 @@ function App() {
       <Route path={ROUTES.landing} element={<LandingPage />} />
       <Route path={ROUTES.login} element={<LoginPage />} />
       <Route path={ROUTES.signup} element={<SignupPage />} />
+      <Route path={ROUTES.invite} element={<InvitePage />} />
       <Route path={ROUTES.adminLogin} element={<AdminLoginPage />} />
       <Route path={ROUTES.smartCardPublic} element={<SmartCardPublicPage />} />
       <Route path={ROUTES.ecardPublic} element={<EcardPublicPage />} />

@@ -13,7 +13,24 @@ import { useAuth } from "@hooks/useAuth";
 import { ROUTES } from "@config/routes";
 import { ERROR_RIBBON_DURATION_MS, GENERIC_SIGNUP_ERROR_MESSAGE } from "@features/auth/config";
 
-export default function SignupForm() {
+interface SignupFormProps {
+  /** Pre-fills and locks the email field — used when arriving via an
+   * organisation invite link, so the invitee can't sign up under a
+   * different email than the one that was invited. */
+  lockedEmail?: string;
+  /** Awaited right after signUp() succeeds, before navigating — e.g. to
+   * accept a pending organisation invite. Thrown errors surface inline
+   * instead of navigating away. */
+  onAfterSignup?: () => Promise<void>;
+  /** Defaults to ROUTES.landing. */
+  redirectTo?: string;
+}
+
+export default function SignupForm({
+  lockedEmail,
+  onAfterSignup,
+  redirectTo,
+}: SignupFormProps = {}) {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,6 +43,7 @@ export default function SignupForm() {
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     mode: "onChange",
+    defaultValues: lockedEmail ? { email: lockedEmail } : undefined,
   });
 
   const passwordRegistration = register("password", {
@@ -50,10 +68,13 @@ export default function SignupForm() {
         email: values.email.trim(),
         password: values.password,
       });
+      if (onAfterSignup) {
+        await onAfterSignup();
+      }
       // TODO: redirect to the customer's real post-signup destination
       // (dashboard/eshop) once those pages are migrated — for now we send
       // everyone back to the landing page.
-      navigate(ROUTES.landing);
+      navigate(redirectTo ?? ROUTES.landing);
     } catch (err) {
       setErrorMessage(
         err instanceof Error ? err.message : GENERIC_SIGNUP_ERROR_MESSAGE,
@@ -122,9 +143,15 @@ export default function SignupForm() {
             label="Email Address"
             icon={Mail}
             autoComplete="email"
+            readOnly={lockedEmail !== undefined}
             registration={register("email")}
             error={errors.email?.message}
           />
+          {lockedEmail !== undefined && (
+            <p className="mt-1.5 text-xs text-base-content/50">
+              This is the email your invite was sent to.
+            </p>
+          )}
         </motion.div>
 
         <motion.div

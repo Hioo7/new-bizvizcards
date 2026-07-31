@@ -12,7 +12,7 @@ interface UseOrgMembersReturn {
   invites: OrgInvite[];
   loading: boolean;
   error: string | null;
-  load: (organisationId: string) => Promise<void>;
+  load: (organisationId: string, isSpoc: boolean) => Promise<void>;
   updateMember: (id: string, payload: UpdateMemberPayload) => Promise<void>;
   removeMember: (id: string) => Promise<void>;
   invite: (organisationId: string, payload: InviteMemberPayload) => Promise<void>;
@@ -25,13 +25,17 @@ export function useOrgMembers(): UseOrgMembersReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (organisationId: string) => {
+  const load = useCallback(async (organisationId: string, isSpoc: boolean) => {
     setLoading(true);
     setError(null);
     try {
+      // Invites are SPOC-only server-side — a plain member fetching them
+      // would 403 and (via Promise.all) fail the members fetch too.
       const [fetchedMembers, fetchedInvites] = await Promise.all([
         userDashboardService.listOrgMembers(organisationId),
-        userDashboardService.listOrgInvites(organisationId),
+        isSpoc
+          ? userDashboardService.listOrgInvites(organisationId)
+          : Promise.resolve([]),
       ]);
       setMembers(fetchedMembers);
       setInvites(fetchedInvites);

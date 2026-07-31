@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Palette } from "lucide-react";
 import { useAuth } from "@hooks/useAuth";
 import { ROUTES } from "@config/routes";
 import { useOrgMembers } from "@features/user-dashboard/hooks/useOrgMembers";
 import { useOrganisation } from "@features/user-dashboard/hooks/useOrganisation";
 import OrgMembersTab from "@features/user-dashboard/components/org/OrgMembersTab";
 import OrgRequestsTab from "@features/user-dashboard/components/org/OrgRequestsTab";
+import OrgBrandingTab from "@features/user-dashboard/components/org/OrgBrandingTab";
 import MemberEcardEditModal from "@features/user-dashboard/components/org/MemberEcardEditModal";
 import MemberEcardsSheet from "@features/user-dashboard/components/org/MemberEcardsSheet";
 import type { OrgMemberListItem } from "@features/user-dashboard/types";
 
-type OrgTab = "members" | "requests" | "contacts";
+type OrgTab = "members" | "requests" | "contacts" | "branding";
 
 export default function OrgDashboardLayout() {
   useAuth();
@@ -32,14 +34,14 @@ export default function OrgDashboardLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const isSpoc = org.data?.membership.role === "SPOC";
+
   useEffect(() => {
     if (org.data) {
-      void orgMembers.load(org.data.organisation.id);
+      void orgMembers.load(org.data.organisation.id, isSpoc);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org.data]);
-
-  const isSpoc = org.data?.membership.role === "SPOC";
   const currentCustomerId = org.data?.membership.customerId ?? "";
 
   function handleEditEcard(member: OrgMemberListItem) {
@@ -126,66 +128,78 @@ export default function OrgDashboardLayout() {
 
       {/* Content */}
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-2xl px-4 pt-4 pb-28">
-          {org.loading || orgMembers.loading ? (
-            <div className="flex flex-col gap-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-2xl bg-base-100 border border-base-200 p-4 flex items-center gap-4">
-                  <div className="skeleton h-14 w-14 shrink-0 rounded-full" />
-                  <div className="flex flex-1 flex-col gap-2">
-                    <div className="skeleton h-4 w-32 rounded" />
-                    <div className="skeleton h-3 w-40 rounded" />
+        {org.data && activeTab === "branding" ? (
+          // The shared builder view supplies its own max-width/padding (it's
+          // also used standalone as a full admin page) — only bottom padding
+          // is added here, to clear the fixed bottom nav below.
+          <div className="pb-24">
+            <OrgBrandingTab
+              organisationId={org.data.organisation.id}
+              organisationName={org.data.organisation.name}
+            />
+          </div>
+        ) : (
+          <div className="mx-auto max-w-2xl px-4 pt-4 pb-28">
+            {org.loading || orgMembers.loading ? (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-2xl bg-base-100 border border-base-200 p-4 flex items-center gap-4">
+                    <div className="skeleton h-14 w-14 shrink-0 rounded-full" />
+                    <div className="flex flex-1 flex-col gap-2">
+                      <div className="skeleton h-4 w-32 rounded" />
+                      <div className="skeleton h-3 w-40 rounded" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : org.error ? (
-            <div className="rounded-2xl bg-error/10 px-4 py-3 text-sm text-error">
-              {org.error}
-            </div>
-          ) : !org.data ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-sm text-base-content/60">
-                You are not part of any organisation
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.userDashboard)}
-                className="mt-4 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-content"
-              >
-                Go to Dashboard
-              </button>
-            </div>
-          ) : activeTab === "members" ? (
-            <OrgMembersTab
-              members={orgMembers.members}
-              search={search}
-              isSpoc={isSpoc}
-              currentCustomerId={currentCustomerId}
-              onUpdate={orgMembers.updateMember}
-              onRemove={orgMembers.removeMember}
-              onShowEcards={setSheetMember}
-            />
-          ) : activeTab === "requests" ? (
-            <OrgRequestsTab
-              isSpoc={isSpoc}
-              invites={orgMembers.invites}
-              onInvite={(payload) => orgMembers.invite(org.data!.organisation.id, payload)}
-              onRevoke={orgMembers.revokeInvite}
-            />
-          ) : (
-            /* Contacts placeholder */
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
-                <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-base-content/30" aria-hidden="true">
-                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.6" />
-                </svg>
+                ))}
               </div>
-              <p className="text-sm font-medium text-base-content/60">Contacts coming soon</p>
-            </div>
-          )}
-        </div>
+            ) : org.error ? (
+              <div className="rounded-2xl bg-error/10 px-4 py-3 text-sm text-error">
+                {org.error}
+              </div>
+            ) : !org.data ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <p className="text-sm text-base-content/60">
+                  You are not part of any organisation
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate(ROUTES.userDashboard)}
+                  className="mt-4 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-content"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+            ) : activeTab === "members" ? (
+              <OrgMembersTab
+                members={orgMembers.members}
+                search={search}
+                isSpoc={isSpoc}
+                currentCustomerId={currentCustomerId}
+                onUpdate={orgMembers.updateMember}
+                onRemove={orgMembers.removeMember}
+                onShowEcards={setSheetMember}
+              />
+            ) : activeTab === "requests" ? (
+              <OrgRequestsTab
+                isSpoc={isSpoc}
+                invites={orgMembers.invites}
+                onInvite={(payload) => orgMembers.invite(org.data!.organisation.id, payload)}
+                onRevoke={orgMembers.revokeInvite}
+              />
+            ) : (
+              /* Contacts placeholder */
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-base-content/30" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.6" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-base-content/60">Contacts coming soon</p>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Per-member ecard sheet */}
@@ -206,7 +220,7 @@ export default function OrgDashboardLayout() {
           memberEmail={editingMember.email}
           memberProfilePicture={editingMember.profilePicture}
           onClose={() => setEditingMember(null)}
-          onSaved={() => void orgMembers.load(org.data!.organisation.id)}
+          onSaved={() => void orgMembers.load(org.data!.organisation.id, isSpoc)}
         />
       )}
 
@@ -258,6 +272,24 @@ export default function OrgDashboardLayout() {
             </svg>
             Contacts
           </button>
+
+          {/* Branding Guidelines — SPOC only */}
+          {isSpoc && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("branding")}
+              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                activeTab === "branding" ? "text-primary" : "text-base-content/40"
+              }`}
+            >
+              <Palette
+                className="h-6 w-6"
+                strokeWidth={activeTab === "branding" ? 2 : 1.6}
+                aria-hidden="true"
+              />
+              Branding
+            </button>
+          )}
         </div>
       </nav>
     </div>

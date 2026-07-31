@@ -17,8 +17,8 @@ import {
 import {
   organisationEcardTemplateHeroSheetSchema,
   type OrganisationEcardTemplateHeroSheetValues,
-} from "@features/customer-organisation-management/schemas/organisationEcardTemplateHeroSchema";
-import type { OrganisationEcardTemplateHeroDraft } from "@features/customer-organisation-management/types/organisationEcardTemplateBuilder.types";
+} from "@features/organisation-ecard-template/schemas/organisationEcardTemplateHeroSchema";
+import type { OrganisationEcardTemplateHeroDraft } from "@features/organisation-ecard-template/types/organisationEcardTemplateBuilder.types";
 import type { ImageFieldValue } from "@app-types/media.types";
 import type { ECardHeroLayout, ECardIconShape, ECardTheme } from "@app-types/ecard";
 import type { EcardAccentColorPreset } from "@app-types/plan";

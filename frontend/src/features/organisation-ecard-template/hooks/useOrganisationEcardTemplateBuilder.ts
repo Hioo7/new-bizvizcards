@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  deleteOrganisationEcardTemplate,
-  getOrganisationEcardTemplate,
-  updateOrganisationEcardTemplate,
-} from "@services/organisationEcardTemplateService";
 import type { OrganisationEcardTemplate } from "@app-types/organisationEcardTemplate";
 import {
   buildOrganisationEcardTemplateSubmission,
   organisationEcardTemplateToBuilderState,
-} from "@features/customer-organisation-management/utils/organisationEcardTemplateFormMapping";
+} from "@features/organisation-ecard-template/utils/organisationEcardTemplateFormMapping";
 import {
   emptyOrganisationEcardTemplateBuilderState,
+  type OrganisationEcardTemplateBuilderApi,
   type OrganisationEcardTemplateBuilderState,
-} from "@features/customer-organisation-management/types/organisationEcardTemplateBuilder.types";
+} from "@features/organisation-ecard-template/types/organisationEcardTemplateBuilder.types";
 
 export interface UseOrganisationEcardTemplateBuilderResult {
   state: OrganisationEcardTemplateBuilderState;
@@ -32,8 +28,12 @@ export interface UseOrganisationEcardTemplateBuilderResult {
   remove: () => Promise<boolean>;
 }
 
+// `api` is expected to be a stable reference (a module-level constant, not an
+// object literal recreated per render) — its identity drives the load effect
+// below, same as `organisationId`.
 export function useOrganisationEcardTemplateBuilder(
   organisationId: string,
+  api: OrganisationEcardTemplateBuilderApi,
 ): UseOrganisationEcardTemplateBuilderResult {
   const [state, setStateInternal] = useState<OrganisationEcardTemplateBuilderState>(
     emptyOrganisationEcardTemplateBuilderState,
@@ -53,7 +53,7 @@ export function useOrganisationEcardTemplateBuilder(
       setIsLoading(true);
       setLoadError(null);
       try {
-        const template = await getOrganisationEcardTemplate(organisationId);
+        const template = await api.get(organisationId);
         if (cancelled) return;
         setStateInternal(organisationEcardTemplateToBuilderState(template));
         setTemplateExists(template !== null);
@@ -74,7 +74,7 @@ export function useOrganisationEcardTemplateBuilder(
     return () => {
       cancelled = true;
     };
-  }, [organisationId]);
+  }, [organisationId, api]);
 
   const setState = useCallback(
     (
@@ -92,11 +92,7 @@ export function useOrganisationEcardTemplateBuilder(
     setSaveError(null);
     try {
       const { payload, files } = buildOrganisationEcardTemplateSubmission(state);
-      const saved = await updateOrganisationEcardTemplate(
-        organisationId,
-        payload,
-        files,
-      );
+      const saved = await api.update(organisationId, payload, files);
       setStateInternal(organisationEcardTemplateToBuilderState(saved));
       setTemplateExists(true);
       return saved;
@@ -110,13 +106,13 @@ export function useOrganisationEcardTemplateBuilder(
     } finally {
       setIsSaving(false);
     }
-  }, [organisationId, state]);
+  }, [organisationId, api, state]);
 
   const remove = useCallback(async (): Promise<boolean> => {
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      await deleteOrganisationEcardTemplate(organisationId);
+      await api.delete(organisationId);
       setStateInternal(emptyOrganisationEcardTemplateBuilderState());
       setTemplateExists(false);
       return true;
@@ -130,7 +126,7 @@ export function useOrganisationEcardTemplateBuilder(
     } finally {
       setIsDeleting(false);
     }
-  }, [organisationId]);
+  }, [organisationId, api]);
 
   return {
     state,

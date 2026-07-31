@@ -251,12 +251,19 @@ export interface UpdateOrgEcardPayload {
   >;
 }
 
+export type OrgInviteStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "EXPIRED"
+  | "REVOKED"
+  | "RESOLVED";
+
 export interface OrgInvite {
   id: string;
   organisationId: string;
   email: string;
   role: "SPOC" | "MEMBER";
-  status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
+  status: OrgInviteStatus;
   expiresAt: string;
   createdAt: string;
 }
@@ -264,6 +271,16 @@ export interface OrgInvite {
 export interface InviteMemberPayload {
   email: string;
   role?: "SPOC" | "MEMBER";
+}
+
+// Public, pre-auth lookup for the /invite/:token landing page.
+export interface OrgInviteLookup {
+  organisationName: string;
+  email: string;
+  role: "SPOC" | "MEMBER";
+  status: OrgInviteStatus;
+  expiresAt: string;
+  emailFlowEnabled: boolean;
 }
 
 export interface UpdateMemberPayload {

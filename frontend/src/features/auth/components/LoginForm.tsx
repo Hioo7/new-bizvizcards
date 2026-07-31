@@ -18,7 +18,24 @@ import {
   INVALID_CREDENTIALS_MESSAGE,
 } from "@features/auth/config";
 
-export default function LoginForm() {
+interface LoginFormProps {
+  /** Pre-fills (but does not lock — the invitee may have a different
+   * existing account) the email field — used when arriving via an
+   * organisation invite link. */
+  prefillEmail?: string;
+  /** Awaited right after signIn() succeeds, before navigating — e.g. to
+   * accept a pending organisation invite. Thrown errors surface inline
+   * instead of navigating away. */
+  onAfterSignIn?: () => Promise<void>;
+  /** Defaults to ROUTES.userDashboard. */
+  redirectTo?: string;
+}
+
+export default function LoginForm({
+  prefillEmail,
+  onAfterSignIn,
+  redirectTo,
+}: LoginFormProps = {}) {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -30,6 +47,7 @@ export default function LoginForm() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: "onChange",
+    defaultValues: prefillEmail ? { email: prefillEmail } : undefined,
   });
 
   useEffect(() => {
@@ -45,7 +63,10 @@ export default function LoginForm() {
     setErrorMessage(null);
     try {
       await signIn(values);
-      navigate(ROUTES.userDashboard);
+      if (onAfterSignIn) {
+        await onAfterSignIn();
+      }
+      navigate(redirectTo ?? ROUTES.userDashboard);
     } catch (err) {
       if (err instanceof ApiError && [401, 403, 404].includes(err.status)) {
         setErrorMessage(INVALID_CREDENTIALS_MESSAGE);

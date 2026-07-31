@@ -304,6 +304,57 @@ describe('OrganisationsService (integration, TEST_DATABASE_URL only)', () => {
       );
     });
 
+    it('surfaces the pending invites count, excluding non-pending statuses', async () => {
+      const customer = await seedCustomer();
+      const { organisation } = await service.create(customer.id, {
+        name: `Invite Count Org ${randomUUID()}`,
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await prisma.organisationInvite.createMany({
+        data: [
+          {
+            organisationId: organisation.id,
+            email: `pending-a-${randomUUID()}@example.com`,
+            token: randomUUID(),
+            invitedByCustomerId: customer.id,
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+            status: 'PENDING',
+          },
+          {
+            organisationId: organisation.id,
+            email: `pending-b-${randomUUID()}@example.com`,
+            token: randomUUID(),
+            invitedByCustomerId: customer.id,
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+            status: 'PENDING',
+          },
+          {
+            organisationId: organisation.id,
+            email: `revoked-${randomUUID()}@example.com`,
+            token: randomUUID(),
+            invitedByCustomerId: customer.id,
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+            status: 'REVOKED',
+          },
+        ],
+      });
+
+      await expect(
+        service.getByIdForEmployee(organisation.id),
+      ).resolves.toMatchObject({ pendingInvitesCount: 2 });
+
+      const listed = await service.listAllForEmployee({
+        search: `Invite Count Org`,
+        page: 1,
+        pageSize: 20,
+      });
+      const listedOrg = listed.organisations.find(
+        (o) => o.id === organisation.id,
+      );
+      expect(listedOrg?.pendingInvitesCount).toBe(2);
+    });
+
     it('removes an organisation', async () => {
       const customer = await seedCustomer();
       const { organisation } = await service.create(customer.id, {

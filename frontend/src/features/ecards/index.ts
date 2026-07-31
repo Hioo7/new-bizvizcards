@@ -28,6 +28,7 @@ export type {
   ComponentDraft,
   EcardHeroDraft,
 } from "@features/ecards/types/ecardBuilder.types";
+export type { OrganisationMembersScope } from "@features/ecards/hooks/useOrganisationMembers";
 export {
   emptyDraftForType,
 } from "@features/ecards/types/ecardBuilder.types";

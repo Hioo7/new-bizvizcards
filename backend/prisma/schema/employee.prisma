@@ -5,15 +5,16 @@ model Employee {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  createdSmartCards        SmartCard[]
-  createdInternalRedirects InternalRedirectRoute[]
-  createdExternalRedirects ExternalRedirectRoute[]
-  createdEcards            ECard[]
-  assignedPlans            PlanPurchaseHistory[]
-  createdBusinessEvents    BusinessEvent[]
-  createdProducts          Product[]
-  orderStatusChanges       OrderStatusHistory[]
-  createdMigrationJobs     MigrationJob[]
+  createdSmartCards           SmartCard[]
+  createdInternalRedirects    InternalRedirectRoute[]
+  createdExternalRedirects    ExternalRedirectRoute[]
+  createdEcards               ECard[]
+  assignedPlans               PlanPurchaseHistory[]
+  createdBusinessEvents       BusinessEvent[]
+  createdProducts             Product[]
+  orderStatusChanges          OrderStatusHistory[]
+  createdMigrationJobs        MigrationJob[]
+  resolvedOrganisationInvites OrganisationInvite[]
 
   @@map("Employee")
 }

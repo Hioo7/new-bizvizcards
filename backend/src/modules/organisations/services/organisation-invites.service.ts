@@ -8,9 +8,14 @@ import {
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { MailerService } from '../../../common/mailer/mailer.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { OrganisationInviteStatus } from '../../../generated/prisma/client';
+import {
+  OrganisationInviteStatus,
+  OrganisationMemberRole,
+} from '../../../generated/prisma/client';
 import type { OrganisationInviteModel } from '../../../generated/prisma/models';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
+import { CustomersService } from '../../customers/services/customers.service';
+import type { CreateCustomerDto } from '../../customers/dto/create-customer.dto';
 import type { InviteMemberDto } from '../dto/invite-member.dto';
 import {
   ORGANISATION_INVITE_EMAIL_SUBJECT,
@@ -18,15 +23,42 @@ import {
   ORGANISATION_INVITE_TOKEN_BYTES,
   ORGANISATION_MAX_MEMBERS,
 } from '../organisations.constants';
+import { OrganisationMembersService } from './organisation-members.service';
 import { OrganisationsService } from './organisations.service';
 
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
+
+export interface OrganisationInvitePublicLookup {
+  organisationName: string;
+  email: string;
+  role: OrganisationMemberRole;
+  // Effective status — a still-PENDING-in-the-DB row past its expiresAt is
+  // reported as EXPIRED here without writing the lazy-expiry update that
+  // only `accept()` performs; this is a read-only lookup.
+  status: OrganisationInviteStatus;
+  expiresAt: Date;
+  emailFlowEnabled: boolean;
+}
+
+export interface OrganisationInviteAdminItem {
+  id: string;
+  email: string;
+  role: OrganisationMemberRole;
+  status: OrganisationInviteStatus;
+  invitedByName: string;
+  acceptedByCustomerName: string | null;
+  resolvedByEmployeeName: string | null;
+  expiresAt: Date;
+  createdAt: Date;
+}
 
 @Injectable()
 export class OrganisationInvitesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly organisationsService: OrganisationsService,
+    private readonly organisationMembersService: OrganisationMembersService,
+    private readonly customersService: CustomersService,
     private readonly mailer: MailerService,
     private readonly appConfig: AppConfigService,
     private readonly planEnforcementService: PlanEnforcementService,
@@ -79,11 +111,17 @@ export class OrganisationInvitesService {
       },
     });
 
-    await this.mailer.sendMail({
-      to: dto.email,
-      subject: ORGANISATION_INVITE_EMAIL_SUBJECT,
-      text: `You've been invited to join "${organisation.name}". Accept your invite: ${this.appConfig.publicAppBaseUrl}/invite/${token}`,
-    });
+    // The invite row is always created (it's what feeds the admin's manual
+    // resolution queue) — only the outbound email is gated behind the
+    // self-serve flow toggle, since a disabled toggle means the token-based
+    // accept link wouldn't work anyway even if the email arrived.
+    if (this.appConfig.organisationEmailInvitesEnabled) {
+      await this.mailer.sendMail({
+        to: dto.email,
+        subject: ORGANISATION_INVITE_EMAIL_SUBJECT,
+        text: `You've been invited to join "${organisation.name}". Accept your invite: ${this.appConfig.publicAppBaseUrl}/invite/${token}`,
+      });
+    }
 
     return invite;
   }
@@ -121,11 +159,40 @@ export class OrganisationInvitesService {
     });
   }
 
+  async lookupPublic(token: string): Promise<OrganisationInvitePublicLookup> {
+    const invite = await this.prisma.organisationInvite.findUnique({
+      where: { token },
+      include: { organisation: { select: { name: true } } },
+    });
+    if (!invite) {
+      throw new NotFoundException('Invite not found');
+    }
+
+    const isExpired =
+      invite.status === OrganisationInviteStatus.PENDING &&
+      invite.expiresAt.getTime() < Date.now();
+
+    return {
+      organisationName: invite.organisation.name,
+      email: invite.email,
+      role: invite.role,
+      status: isExpired ? OrganisationInviteStatus.EXPIRED : invite.status,
+      expiresAt: invite.expiresAt,
+      emailFlowEnabled: this.appConfig.organisationEmailInvitesEnabled,
+    };
+  }
+
   async accept(
     customerId: string,
     customerEmail: string,
     token: string,
   ): Promise<OrganisationInviteModel> {
+    if (!this.appConfig.organisationEmailInvitesEnabled) {
+      throw new ForbiddenException(
+        'Self-serve invite acceptance is currently disabled',
+      );
+    }
+
     const invite = await this.prisma.organisationInvite.findUnique({
       where: { token },
     });
@@ -182,6 +249,144 @@ export class OrganisationInvitesService {
 
     return this.prisma.organisationInvite.findUniqueOrThrow({
       where: { id: invite.id },
+    });
+  }
+
+  // ── Employee (admin manual resolution) ──────────────────────────────────
+
+  async listForEmployee(
+    organisationId: string,
+  ): Promise<OrganisationInviteAdminItem[]> {
+    await this.organisationsService.getByIdForEmployee(organisationId);
+
+    const invites = await this.prisma.organisationInvite.findMany({
+      where: { organisationId },
+      include: {
+        invitedByCustomer: { include: { account: true } },
+        acceptedByCustomer: { include: { account: true } },
+        resolvedByEmployee: { include: { account: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return invites.map((invite) => ({
+      id: invite.id,
+      email: invite.email,
+      role: invite.role,
+      status: invite.status,
+      invitedByName: invite.invitedByCustomer.account.name,
+      acceptedByCustomerName: invite.acceptedByCustomer?.account.name ?? null,
+      resolvedByEmployeeName: invite.resolvedByEmployee?.account.name ?? null,
+      expiresAt: invite.expiresAt,
+      createdAt: invite.createdAt,
+    }));
+  }
+
+  async linkExistingCustomerForEmployee(
+    actorAccountId: string,
+    organisationId: string,
+    inviteId: string,
+    customerId: string,
+  ): Promise<void> {
+    const employee = await this.getEmployeeByAccountIdOrThrow(actorAccountId);
+    const invite = await this.getPendingInviteForOrgOrThrow(
+      organisationId,
+      inviteId,
+    );
+
+    // Reuses the exact same bulk-add validation (existence, already-member,
+    // member cap, plan enforcement) the admin's regular "Add member" flow
+    // already goes through — no need to duplicate those checks here.
+    await this.organisationMembersService.addMembersForEmployee(
+      organisationId,
+      { customerIds: [customerId], role: invite.role },
+    );
+
+    await this.resolveInvite(invite.id, customerId, employee.id);
+  }
+
+  async createAndLinkCustomerForEmployee(
+    actorAccountId: string,
+    organisationId: string,
+    inviteId: string,
+    dto: CreateCustomerDto,
+  ): Promise<void> {
+    const employee = await this.getEmployeeByAccountIdOrThrow(actorAccountId);
+    const invite = await this.getPendingInviteForOrgOrThrow(
+      organisationId,
+      inviteId,
+    );
+
+    const customer = await this.customersService.create(dto);
+    await this.organisationMembersService.addMembersForEmployee(
+      organisationId,
+      { customerIds: [customer.id], role: invite.role },
+    );
+
+    await this.resolveInvite(invite.id, customer.id, employee.id);
+  }
+
+  async revokeForEmployee(
+    actorAccountId: string,
+    organisationId: string,
+    inviteId: string,
+  ): Promise<void> {
+    const employee = await this.getEmployeeByAccountIdOrThrow(actorAccountId);
+    const invite = await this.getPendingInviteForOrgOrThrow(
+      organisationId,
+      inviteId,
+    );
+
+    await this.prisma.organisationInvite.update({
+      where: { id: invite.id },
+      data: {
+        status: OrganisationInviteStatus.REVOKED,
+        resolvedByEmployeeId: employee.id,
+      },
+    });
+  }
+
+  private async getPendingInviteForOrgOrThrow(
+    organisationId: string,
+    inviteId: string,
+  ): Promise<OrganisationInviteModel> {
+    await this.organisationsService.getByIdForEmployee(organisationId);
+
+    const invite = await this.prisma.organisationInvite.findUnique({
+      where: { id: inviteId },
+    });
+    if (!invite || invite.organisationId !== organisationId) {
+      throw new NotFoundException('Invite not found');
+    }
+    if (invite.status !== OrganisationInviteStatus.PENDING) {
+      throw new ConflictException('This invite has already been resolved');
+    }
+    return invite;
+  }
+
+  private async resolveInvite(
+    inviteId: string,
+    acceptedByCustomerId: string,
+    resolvedByEmployeeId: string,
+  ): Promise<void> {
+    await this.prisma.organisationInvite.update({
+      where: { id: inviteId },
+      data: {
+        status: OrganisationInviteStatus.RESOLVED,
+        acceptedByCustomerId,
+        resolvedByEmployeeId,
+      },
+    });
+  }
+
+  // Same pattern as PlanAssignmentsService.getEmployeeByAccountIdOrThrow /
+  // EventsService's equivalent — no shared EmployeesService exists yet.
+  private async getEmployeeByAccountIdOrThrow(
+    accountId: string,
+  ): Promise<{ id: string }> {
+    return this.prisma.employee.findUniqueOrThrow({
+      where: { accountId },
+      select: { id: true },
     });
   }
 }

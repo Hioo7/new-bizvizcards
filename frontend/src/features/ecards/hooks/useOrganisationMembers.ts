@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
-import { listOrganisationMembers } from "@services/organisationService";
+import {
+  listMyOrganisationMembers,
+  listOrganisationMembers,
+} from "@services/organisationService";
 import type { OrganisationMemberSummary } from "@app-types/ecard";
+
+// "employee" hits the admin-only members endpoint (used from the admin
+// e-card policy builder); "customer" hits the customer/SPOC-scoped endpoint
+// (used from every customer-authenticated Team component — the customer's
+// own e-card builder, the org member e-card edit modal, and the customer's
+// own e-card policy tab). Getting this wrong 401s, since the two auth scopes
+// don't share sessions — see useOrganisationMembers.ts's callers.
+export type OrganisationMembersScope = "employee" | "customer";
 
 export interface UseOrganisationMembersResult {
   members: OrganisationMemberSummary[];
@@ -10,6 +21,7 @@ export interface UseOrganisationMembersResult {
 
 export function useOrganisationMembers(
   organisationId: string | null,
+  scope: OrganisationMembersScope,
 ): UseOrganisationMembersResult {
   const [members, setMembers] = useState<OrganisationMemberSummary[]>([]);
   const [isLoading, setIsLoading] = useState(organisationId !== null);
@@ -37,9 +49,10 @@ export function useOrganisationMembers(
       setIsLoading(true);
       setError(null);
       try {
-        const response = await listOrganisationMembers(
-          organisationId as string,
-        );
+        const response =
+          scope === "employee"
+            ? await listOrganisationMembers(organisationId as string)
+            : await listMyOrganisationMembers(organisationId as string);
         if (cancelled) return;
         setMembers(response);
       } catch (err) {
@@ -57,7 +70,7 @@ export function useOrganisationMembers(
     return () => {
       cancelled = true;
     };
-  }, [organisationId]);
+  }, [organisationId, scope]);
 
   return { members, isLoading, error };
 }

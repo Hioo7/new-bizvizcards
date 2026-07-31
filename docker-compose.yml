@@ -54,11 +54,23 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+    # One `mc anonymous set download` per storage key prefix the app actually
+    # uploads under (see each module's `*_STORAGE_KEY_PREFIX` constant —
+    # customers.constants.ts, ecards.constants.ts, organisations.constants.ts,
+    # smart-cards.constants.ts, products.constants.ts) — every one of these is
+    # rendered on a public page (e-card, smart card, shop, org branding), so
+    # all need anonymous read; nothing in this bucket is meant to be private.
+    # Adding a new upload feature means adding its prefix here too.
     entrypoint: >
       sh -c "
       mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" &&
       mc mb --ignore-existing local/$$MINIO_BUCKET &&
-      mc anonymous set download local/$$MINIO_BUCKET/pfp
+      mc anonymous set download local/$$MINIO_BUCKET/pfp &&
+      mc anonymous set download local/$$MINIO_BUCKET/ecards &&
+      mc anonymous set download local/$$MINIO_BUCKET/organisation-logo &&
+      mc anonymous set download local/$$MINIO_BUCKET/organisation-ecard-templates &&
+      mc anonymous set download local/$$MINIO_BUCKET/smart-cards &&
+      mc anonymous set download local/$$MINIO_BUCKET/products
       "
     networks:
       - app-network

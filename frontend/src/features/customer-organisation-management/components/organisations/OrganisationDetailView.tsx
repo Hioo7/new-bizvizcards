@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Building2,
   IdCard,
+  Mail,
   Pencil,
   Trash2,
   UserPlus,
@@ -19,8 +20,10 @@ import {
   ROUTES,
 } from "@config/routes";
 import type { OrganisationMemberSummary } from "@app-types/ecard";
+import type { OrganisationInviteAdminItem } from "@app-types/organisation";
 import { useOrganisationDetail } from "@features/customer-organisation-management/hooks/useOrganisationDetail";
 import { useOrganisationDetailMutations } from "@features/customer-organisation-management/hooks/useOrganisationDetailMutations";
+import { useOrganisationInvites } from "@features/customer-organisation-management/hooks/useOrganisationInvites";
 import { isAdminTier } from "@utils/isAdminTier";
 import { memberToCustomerShim } from "@features/customer-organisation-management/utils/memberToCustomerShim";
 import OrganisationLogoField from "@features/customer-organisation-management/components/organisations/OrganisationLogoField";
@@ -29,15 +32,21 @@ import AddOrganisationMemberModal from "@features/customer-organisation-manageme
 import OrganisationMemberRow from "@features/customer-organisation-management/components/organisations/OrganisationMemberRow";
 import OrganisationMemberCard from "@features/customer-organisation-management/components/organisations/OrganisationMemberCard";
 import LinkMemberEcardModal from "@features/customer-organisation-management/components/organisations/LinkMemberEcardModal";
+import LinkExistingInviteMemberModal from "@features/customer-organisation-management/components/organisations/LinkExistingInviteMemberModal";
+import CreateAndLinkInviteMemberModal from "@features/customer-organisation-management/components/organisations/CreateAndLinkInviteMemberModal";
+import OrganisationInviteRow from "@features/customer-organisation-management/components/organisations/OrganisationInviteRow";
+import OrganisationInviteCard from "@features/customer-organisation-management/components/organisations/OrganisationInviteCard";
 import type { EditOrganisationNameValues } from "@features/customer-organisation-management/schemas/editOrganisationNameSchema";
 import type { AddOrganisationMemberValues } from "@features/customer-organisation-management/schemas/addOrganisationMemberSchema";
+import type { CreateCustomerValues } from "@features/customer-organisation-management/schemas/createCustomerSchema";
 
 type ConfirmAction =
   | {
       type: "promote" | "demote" | "suspend" | "reactivate" | "removeMember";
       member: OrganisationMemberSummary;
     }
-  | { type: "deleteOrganisation" };
+  | { type: "deleteOrganisation" }
+  | { type: "revokeInvite"; invite: OrganisationInviteAdminItem };
 
 export default function OrganisationDetailView() {
   const { organisationId } = useParams<{ organisationId: string }>();
@@ -45,6 +54,10 @@ export default function OrganisationDetailView() {
   const { staffUser } = useStaffAuth();
   const detail = useOrganisationDetail(organisationId ?? "");
   const mutations = useOrganisationDetailMutations(detail.refetch);
+  const invitesState = useOrganisationInvites(
+    organisationId ?? "",
+    detail.refetch,
+  );
 
   const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
@@ -53,11 +66,17 @@ export default function OrganisationDetailView() {
   );
   const [linkingMember, setLinkingMember] =
     useState<OrganisationMemberSummary | null>(null);
+  const [linkingInvite, setLinkingInvite] =
+    useState<OrganisationInviteAdminItem | null>(null);
+  const [creatingForInvite, setCreatingForInvite] =
+    useState<OrganisationInviteAdminItem | null>(null);
 
   const editNameAction = useAsyncAction();
   const addMemberAction = useAsyncAction();
   const confirmActionState = useAsyncAction();
   const linkEcardAction = useAsyncAction();
+  const linkExistingInviteAction = useAsyncAction();
+  const createAndLinkInviteAction = useAsyncAction();
 
   if (!staffUser || !organisationId) return null;
 
@@ -83,6 +102,22 @@ export default function OrganisationDetailView() {
       () =>
         mutations.linkMemberEcard(organisationId, linkingMember.id, ecardId),
       () => setLinkingMember(null),
+    );
+  };
+
+  const handleLinkExistingInvite = (customerId: string) => {
+    if (!linkingInvite) return;
+    void linkExistingInviteAction.run(
+      () => invitesState.linkExisting(linkingInvite.id, customerId),
+      () => setLinkingInvite(null),
+    );
+  };
+
+  const handleCreateAndLinkInvite = (values: CreateCustomerValues) => {
+    if (!creatingForInvite) return;
+    void createAndLinkInviteAction.run(
+      () => invitesState.createAndLink(creatingForInvite.id, values),
+      () => setCreatingForInvite(null),
     );
   };
 
@@ -121,6 +156,9 @@ export default function OrganisationDetailView() {
           case "deleteOrganisation":
             await mutations.deleteOrganisation(organisationId);
             navigate(ROUTES.adminCustomerOrganisations);
+            return;
+          case "revokeInvite":
+            await invitesState.revoke(confirmAction.invite.id);
             return;
         }
       },
@@ -365,6 +403,84 @@ export default function OrganisationDetailView() {
         )}
       </div>
 
+      <h2 className="text-sm font-semibold text-base-content/70">
+        Invites (
+        {invitesState.invites.filter((invite) => invite.status === "PENDING").length}
+        )
+      </h2>
+
+      <div className="rounded-box border border-base-300 bg-base-100 p-2 sm:p-4">
+        {invitesState.isLoading ? (
+          <div className="flex justify-center py-10">
+            <span className="loading loading-spinner text-primary" />
+          </div>
+        ) : invitesState.invites.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-16 text-center">
+            <Mail className="h-8 w-8 text-base-content/30" />
+            <p className="text-sm text-base-content/60">No invites yet.</p>
+          </div>
+        ) : (
+          <>
+            <table className="hidden w-full text-left text-sm md:table">
+              <thead>
+                <tr className="border-b border-base-300 text-xs uppercase tracking-wide text-base-content/50">
+                  <th className="py-2 pl-4 pr-3 font-semibold">Invite</th>
+                  <th className="px-3 py-2 font-semibold">Role</th>
+                  <th className="px-3 py-2 font-semibold">Status</th>
+                  <th className="py-2 pl-3 pr-4 font-semibold">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {invitesState.invites.map((invite) => (
+                  <OrganisationInviteRow
+                    key={invite.id}
+                    invite={invite}
+                    onLinkExisting={() => {
+                      linkExistingInviteAction.reset();
+                      setLinkingInvite(invite);
+                    }}
+                    onCreateAndLink={() => {
+                      createAndLinkInviteAction.reset();
+                      setCreatingForInvite(invite);
+                    }}
+                    onRevoke={() => {
+                      confirmActionState.reset();
+                      setConfirmAction({ type: "revokeInvite", invite });
+                    }}
+                  />
+                ))}
+              </tbody>
+            </table>
+
+            <div className="flex flex-col gap-3 md:hidden">
+              {invitesState.invites.map((invite) => (
+                <OrganisationInviteCard
+                  key={invite.id}
+                  invite={invite}
+                  onLinkExisting={() => {
+                    linkExistingInviteAction.reset();
+                    setLinkingInvite(invite);
+                  }}
+                  onCreateAndLink={() => {
+                    createAndLinkInviteAction.reset();
+                    setCreatingForInvite(invite);
+                  }}
+                  onRevoke={() => {
+                    confirmActionState.reset();
+                    setConfirmAction({ type: "revokeInvite", invite });
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        {invitesState.error && (
+          <p className="mt-2 text-sm text-error">{invitesState.error}</p>
+        )}
+      </div>
+
       <EditOrganisationNameModal
         open={isEditNameOpen}
         currentName={organisation.name}
@@ -393,11 +509,30 @@ export default function OrganisationDetailView() {
         onLink={handleLinkEcard}
       />
 
+      <LinkExistingInviteMemberModal
+        open={linkingInvite !== null}
+        inviteEmail={linkingInvite?.email ?? ""}
+        isSubmitting={linkExistingInviteAction.isSubmitting}
+        error={linkExistingInviteAction.error}
+        onCancel={() => setLinkingInvite(null)}
+        onSubmit={handleLinkExistingInvite}
+      />
+
+      <CreateAndLinkInviteMemberModal
+        open={creatingForInvite !== null}
+        inviteEmail={creatingForInvite?.email ?? ""}
+        isSubmitting={createAndLinkInviteAction.isSubmitting}
+        error={createAndLinkInviteAction.error}
+        onCancel={() => setCreatingForInvite(null)}
+        onSubmit={handleCreateAndLinkInvite}
+      />
+
       <ConfirmActionModal
         open={confirmAction !== null}
         icon={
           confirmAction?.type === "deleteOrganisation" ||
-          confirmAction?.type === "removeMember"
+          confirmAction?.type === "removeMember" ||
+          confirmAction?.type === "revokeInvite"
             ? Trash2
             : Pencil
         }
@@ -406,7 +541,8 @@ export default function OrganisationDetailView() {
         confirmLabel={confirmActionLabel(confirmAction)}
         isDestructive={
           confirmAction?.type === "deleteOrganisation" ||
-          confirmAction?.type === "removeMember"
+          confirmAction?.type === "removeMember" ||
+          confirmAction?.type === "revokeInvite"
         }
         isSubmitting={confirmActionState.isSubmitting}
         error={confirmActionState.error}
@@ -432,6 +568,8 @@ function confirmActionTitle(action: ConfirmAction | null): string {
       return `Remove ${action.member.name}?`;
     case "deleteOrganisation":
       return "Delete this organisation?";
+    case "revokeInvite":
+      return `Revoke the invite for ${action.invite.email}?`;
   }
 }
 
@@ -450,6 +588,8 @@ function confirmActionDescription(action: ConfirmAction | null): string {
       return "This removes their membership and unlinks their e-card from this organisation. This can't be undone.";
     case "deleteOrganisation":
       return "This permanently removes the organisation and its membership records. This can't be undone.";
+    case "revokeInvite":
+      return "This invite link will no longer work. This can't be undone.";
   }
 }
 
@@ -468,5 +608,7 @@ function confirmActionLabel(action: ConfirmAction | null): string {
       return "Remove";
     case "deleteOrganisation":
       return "Delete";
+    case "revokeInvite":
+      return "Revoke";
   }
 }
