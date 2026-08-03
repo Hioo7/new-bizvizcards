@@ -62,7 +62,7 @@ function VideoSubGalleryItem({
         onClick={() => setIsOpen((prev) => !prev)}
         className="w-full text-left font-semibold hover:text-primary transition-colors flex items-center justify-between"
       >
-        <span className="text-lg">{subGallery.title || "Video Gallery"}</span>
+        <span className="min-w-0 truncate text-lg">{subGallery.title || "Video Gallery"}</span>
         <span>{isOpen ? "▼" : "▶"}</span>
       </button>
       {isOpen && <VideoSubGalleryCarousel subGallery={subGallery} />}

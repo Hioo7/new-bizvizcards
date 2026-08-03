@@ -53,9 +53,9 @@ export function OrgBadgeHeroSection({
           </div>
 
           <div className="mt-6 space-y-1 md:ml-8 md:mt-0">
-            <h1 className="text-3xl font-bold text-primary">{hero.name}</h1>
+            <h1 className="text-3xl font-bold text-primary break-words">{hero.name}</h1>
             {hero.companyName && (
-              <p className="text-sm text-base-content/70">{hero.companyName}</p>
+              <p className="text-sm text-base-content/70 break-words">{hero.companyName}</p>
             )}
           </div>
         </div>

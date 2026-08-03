@@ -71,7 +71,7 @@ export function MediaCarousel<T extends MediaCarouselItem>({
       </div>
 
       {current.caption && (
-        <p className="text-sm text-base-content/70">{current.caption}</p>
+        <p className="text-sm text-base-content/70 break-words">{current.caption}</p>
       )}
 
       {items.length > 1 && (

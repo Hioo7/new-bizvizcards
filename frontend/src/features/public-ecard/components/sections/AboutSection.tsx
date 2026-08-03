@@ -30,10 +30,14 @@ export function AboutSection({ component }: AboutSectionProps) {
       <div className="w-full rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
         <h2 className="text-2xl font-bold">About Me</h2>
         {component.profession && (
-          <p className="mt-2 text-sm font-medium text-primary">{component.profession}</p>
+          <p className="mt-2 text-sm font-medium text-primary break-words">
+            {component.profession}
+          </p>
         )}
         {component.shortNote && (
-          <p className="mt-1 text-sm italic text-base-content/70">{component.shortNote}</p>
+          <p className="mt-1 text-sm italic text-base-content/70 break-words">
+            {component.shortNote}
+          </p>
         )}
         {bodyText && (
           <div className="mt-3 text-sm break-words">

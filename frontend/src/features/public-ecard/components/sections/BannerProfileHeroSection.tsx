@@ -50,9 +50,9 @@ export function BannerProfileHeroSection({
               </span>
             )}
           </div>
-          <h1 className="mt-3 text-3xl font-bold text-primary">{hero.name}</h1>
+          <h1 className="mt-3 text-3xl font-bold text-primary break-words">{hero.name}</h1>
           {hero.companyName && (
-            <p className="text-sm text-base-content/70">{hero.companyName}</p>
+            <p className="text-sm text-base-content/70 break-words">{hero.companyName}</p>
           )}
         </div>
       </div>

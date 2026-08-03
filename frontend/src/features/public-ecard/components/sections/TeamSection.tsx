@@ -58,7 +58,7 @@ export function TeamSection({ component }: TeamSectionProps) {
 
   return (
     <div className="w-full rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
-      <h3 className="mb-2 text-xl font-semibold">{component.title || "Team"}</h3>
+      <h3 className="mb-2 text-xl font-semibold break-words">{component.title || "Team"}</h3>
       <div>
         {component.members.map((member) => (
           <TeamMemberRow key={member.organisationMemberId} member={member} />

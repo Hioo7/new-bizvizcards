@@ -46,7 +46,7 @@ function SubGalleryItem({ subGallery }: { subGallery: EcardSubGallery }) {
         onClick={() => setIsOpen((prev) => !prev)}
         className="w-full text-left font-semibold hover:text-primary transition-colors flex items-center justify-between"
       >
-        <span className="text-lg">{subGallery.title || "Gallery"}</span>
+        <span className="min-w-0 truncate text-lg">{subGallery.title || "Gallery"}</span>
         <span>{isOpen ? "▼" : "▶"}</span>
       </button>
       {isOpen && <SubGalleryCarousel subGallery={subGallery} />}
