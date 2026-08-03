@@ -50,13 +50,14 @@ model OrganisationEcardTemplateComponent {
   createdAt  DateTime                  @default(now())
   updatedAt  DateTime                  @updatedAt
 
-  about       OrganisationEcardTemplateAboutComponent?
-  socialLinks OrganisationEcardTemplateSocialLinksComponent?
-  gallery     OrganisationEcardTemplateGalleryComponent?
-  video       OrganisationEcardTemplateVideoComponent?
-  team        OrganisationEcardTemplateTeamComponent?
-  whatsapp    OrganisationEcardTemplateWhatsAppComponent?
-  brochure    OrganisationEcardTemplateBrochureComponent?
+  about        OrganisationEcardTemplateAboutComponent?
+  socialLinks  OrganisationEcardTemplateSocialLinksComponent?
+  gallery      OrganisationEcardTemplateGalleryComponent?
+  video        OrganisationEcardTemplateVideoComponent?
+  videoGallery OrganisationEcardTemplateVideoGalleryComponent?
+  team         OrganisationEcardTemplateTeamComponent?
+  whatsapp     OrganisationEcardTemplateWhatsAppComponent?
+  brochure     OrganisationEcardTemplateBrochureComponent?
 
   @@unique([templateId, type])
   @@index([templateId, order])
@@ -140,9 +141,44 @@ model OrganisationEcardTemplateGalleryImage {
   imageMediaId String                              @unique @db.Uuid
   image        Media                               @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
   order        Int                                 @default(0)
+  caption      String?                             @db.VarChar(100)
 
   @@index([subGalleryId])
   @@map("OrganisationEcardTemplateGalleryImage")
+}
+
+model OrganisationEcardTemplateVideoGalleryComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  subGalleries OrganisationEcardTemplateVideoSubGallery[]
+
+  @@map("OrganisationEcardTemplateVideoGalleryComponent")
+}
+
+model OrganisationEcardTemplateVideoSubGallery {
+  id                      String                                         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  videoGalleryComponentId String                                         @db.Uuid
+  videoGalleryComponent   OrganisationEcardTemplateVideoGalleryComponent @relation(fields: [videoGalleryComponentId], references: [templateComponentId], onDelete: Cascade)
+  title                   String?
+  order                   Int                                            @default(0)
+
+  videos OrganisationEcardTemplateVideoGalleryVideo[]
+
+  @@index([videoGalleryComponentId])
+  @@map("OrganisationEcardTemplateVideoSubGallery")
+}
+
+model OrganisationEcardTemplateVideoGalleryVideo {
+  id           String                                   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  subGalleryId String                                   @db.Uuid
+  subGallery   OrganisationEcardTemplateVideoSubGallery @relation(fields: [subGalleryId], references: [id], onDelete: Cascade)
+  videoUrl     String
+  caption      String?                                  @db.VarChar(100)
+  order        Int                                      @default(0)
+
+  @@index([subGalleryId])
+  @@map("OrganisationEcardTemplateVideoGalleryVideo")
 }
 
 model OrganisationEcardTemplateBrochureComponent {

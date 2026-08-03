@@ -28,6 +28,8 @@ import {
   PLAN_FALLBACK_MAX_ORGS_CAN_CREATE,
   PLAN_FALLBACK_MAX_ORGS_CAN_JOIN,
   PLAN_FALLBACK_MAX_SMART_CARDS,
+  PLAN_FALLBACK_MAX_VIDEO_GALLERIES,
+  PLAN_FALLBACK_MAX_VIDEOS_PER_GALLERY,
   PLAN_FALLBACK_NAME,
 } from '../../src/modules/plans/plans.constants';
 
@@ -50,6 +52,14 @@ function ecardPolicyCreateData(maxEcards: number) {
               maxGalleries: PLAN_FALLBACK_MAX_GALLERIES,
               maxImagesPerGallery: PLAN_FALLBACK_MAX_IMAGES_PER_GALLERY,
               maxGallerySizeBytes: PLAN_FALLBACK_MAX_GALLERY_SIZE_BYTES,
+            },
+          },
+        }),
+        ...(type === ECardComponentType.VIDEO_GALLERY && {
+          videoGalleryLimits: {
+            create: {
+              maxVideoGalleries: PLAN_FALLBACK_MAX_VIDEO_GALLERIES,
+              maxVideosPerGallery: PLAN_FALLBACK_MAX_VIDEOS_PER_GALLERY,
             },
           },
         }),

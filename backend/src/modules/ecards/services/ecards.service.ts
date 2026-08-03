@@ -71,6 +71,16 @@ const FULL_INCLUDE = {
           },
         },
       },
+      videoGallery: {
+        include: {
+          subGalleries: {
+            orderBy: { order: 'asc' as const },
+            include: {
+              videos: { orderBy: { order: 'asc' as const } },
+            },
+          },
+        },
+      },
       team: {
         include: {
           members: {
@@ -145,6 +155,7 @@ export interface EcardVideoComponentResponse extends EcardComponentResponseBase 
 export interface EcardGalleryImageResponse {
   imageMediaId: string;
   imageUrl: string;
+  caption: string | null;
 }
 
 export interface EcardSubGalleryResponse {
@@ -156,6 +167,22 @@ export interface EcardSubGalleryResponse {
 export interface EcardGalleryComponentResponse extends EcardComponentResponseBase {
   type: typeof ECardComponentType.GALLERY;
   subGalleries: EcardSubGalleryResponse[];
+}
+
+export interface EcardVideoGalleryVideoResponse {
+  videoUrl: string;
+  caption: string | null;
+}
+
+export interface EcardVideoSubGalleryResponse {
+  id: string;
+  title: string | null;
+  videos: EcardVideoGalleryVideoResponse[];
+}
+
+export interface EcardVideoGalleryComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.VIDEO_GALLERY;
+  subGalleries: EcardVideoSubGalleryResponse[];
 }
 
 export interface EcardTeamMemberResponse {
@@ -192,6 +219,7 @@ export type EcardComponentResponse =
   | EcardSocialLinksComponentResponse
   | EcardVideoComponentResponse
   | EcardGalleryComponentResponse
+  | EcardVideoGalleryComponentResponse
   | EcardTeamComponentResponse
   | EcardWhatsAppComponentResponse
   | EcardBrochureComponentResponse;
@@ -477,6 +505,17 @@ export class EcardsService {
         : undefined,
     );
 
+    const videoGalleryComponent = dto.components.find(
+      (component) => component.type === 'VIDEO_GALLERY',
+    );
+    await this.planEnforcementService.assertCanAddVideoGalleryContent(
+      customerId,
+      null,
+      videoGalleryComponent
+        ? { subGalleries: videoGalleryComponent.subGalleries }
+        : undefined,
+    );
+
     const card = await this.prisma.eCard.create({
       data: {
         customerId,
@@ -647,6 +686,29 @@ export class EcardsService {
       },
       incomingGalleryComponent
         ? { subGalleries: incomingGalleryComponent.subGalleries }
+        : undefined,
+    );
+
+    const existingVideoGalleryComponent = existing.components.find(
+      (component) => component.type === 'VIDEO_GALLERY',
+    );
+    const incomingVideoGalleryComponent = dto.components.find(
+      (component) => component.type === 'VIDEO_GALLERY',
+    );
+    await this.planEnforcementService.assertCanAddVideoGalleryContent(
+      existing.customerId,
+      {
+        organisationId: dto.organisationId ?? existing.organisationId,
+        existingVideoSubGalleryCount:
+          existingVideoGalleryComponent?.videoGallery?.subGalleries.length ?? 0,
+        existingTotalVideoCount:
+          existingVideoGalleryComponent?.videoGallery?.subGalleries.reduce(
+            (sum, subGallery) => sum + subGallery.videos.length,
+            0,
+          ) ?? 0,
+      },
+      incomingVideoGalleryComponent
+        ? { subGalleries: incomingVideoGalleryComponent.subGalleries }
         : undefined,
     );
 
@@ -832,6 +894,34 @@ export class EcardsService {
                 subGalleryId: subGalleryRow.id,
                 imageMediaId: mediaId,
                 order: j,
+                caption: subGallery.images[j].caption,
+              },
+            });
+          }
+        }
+        return;
+      }
+      case 'VIDEO_GALLERY': {
+        const videoGalleryRow = await tx.eCardVideoGalleryComponent.create({
+          data: { ecardComponentId },
+        });
+        for (let g = 0; g < component.subGalleries.length; g++) {
+          const subGallery = component.subGalleries[g];
+          const subGalleryRow = await tx.eCardVideoSubGallery.create({
+            data: {
+              videoGalleryComponentId: videoGalleryRow.ecardComponentId,
+              title: subGallery.title,
+              order: g,
+            },
+          });
+          for (let j = 0; j < subGallery.videos.length; j++) {
+            const video = subGallery.videos[j];
+            await tx.eCardVideoGalleryVideo.create({
+              data: {
+                subGalleryId: subGalleryRow.id,
+                videoUrl: video.videoUrl,
+                caption: video.caption,
+                order: j,
               },
             });
           }
@@ -882,9 +972,9 @@ export class EcardsService {
     return Promise.all(
       galleryComponent.subGalleries.map((subGallery, g) =>
         Promise.all(
-          subGallery.images.map((slot, j) =>
+          subGallery.images.map((entry, j) =>
             this.mediaSlotResolver.resolveUploadSlot(
-              slot,
+              entry.image,
               ecardGalleryImageField(g, j),
               fileMap,
               `${keyPrefix}/gallery/${g}`,
@@ -910,9 +1000,9 @@ export class EcardsService {
     return Promise.all(
       galleryComponent.subGalleries.map((subGallery, g) =>
         Promise.all(
-          subGallery.images.map((slot, j) =>
+          subGallery.images.map((entry, j) =>
             this.mediaSlotResolver.resolveUpdateSlot(
-              slot,
+              entry.image,
               ecardGalleryImageField(g, j),
               fileMap,
               `${keyPrefix}/gallery/${g}`,
@@ -1154,6 +1244,22 @@ export class EcardsService {
               images: subGallery.images.map((image) => ({
                 imageMediaId: image.imageMediaId,
                 imageUrl: this.mediaService.getPublicUrl(image.image),
+                caption: image.caption ?? null,
+              })),
+            }),
+          ),
+        };
+      case ECardComponentType.VIDEO_GALLERY:
+        return {
+          ...base,
+          type: ECardComponentType.VIDEO_GALLERY,
+          subGalleries: (component.videoGallery?.subGalleries ?? []).map(
+            (subGallery) => ({
+              id: subGallery.id,
+              title: subGallery.title,
+              videos: subGallery.videos.map((video) => ({
+                videoUrl: video.videoUrl,
+                caption: video.caption ?? null,
               })),
             }),
           ),

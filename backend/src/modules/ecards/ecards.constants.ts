@@ -15,12 +15,17 @@ export const ECARD_PHONE_NUMBER_MAX_DIGITS = 15;
 export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
 
 // One instance of each ECardComponentType per card (ABOUT, SOCIAL_LINKS,
-// GALLERY, VIDEO, TEAM, WHATSAPP, BROCHURE) — see
+// GALLERY, VIDEO, VIDEO_GALLERY, TEAM, WHATSAPP, BROCHURE) — see
 // ECardComponent.@@unique([ecardId, type]).
-export const ECARD_MAX_COMPONENTS = 7;
+export const ECARD_MAX_COMPONENTS = 8;
 export const ECARD_MAX_SUB_GALLERIES = 10;
 export const ECARD_MAX_GALLERY_IMAGES = 30;
+export const ECARD_MAX_VIDEO_SUB_GALLERIES = 10;
+export const ECARD_MAX_VIDEOS_PER_GALLERY = 30;
 export const ECARD_MAX_TEAM_MEMBERS = 50;
+
+// Shared by Gallery image captions and Video Gallery video captions.
+export const ECARD_CAPTION_MAX_LENGTH = 100;
 
 export const ECARD_VIDEO_URL_MAX_LENGTH = 2048;
 

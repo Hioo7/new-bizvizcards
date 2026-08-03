@@ -260,7 +260,9 @@ describe('mergeOrganisationEcardTemplateOntoCard', () => {
               {
                 id: 'sg2',
                 title: 'Org gallery',
-                images: [{ imageMediaId: 'm1', imageUrl: '/m1.png' }],
+                images: [
+                  { imageMediaId: 'm1', imageUrl: '/m1.png', caption: null },
+                ],
               },
             ],
           },
@@ -292,6 +294,72 @@ describe('mergeOrganisationEcardTemplateOntoCard', () => {
       const gallery = merged.components[0];
       if (gallery.type !== 'GALLERY') throw new Error('unreachable');
       expect(gallery.subGalleries[0].title).toBe('Card gallery');
+    });
+
+    it('replaces the card video gallery with the template video gallery when the template has content', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'VIDEO_GALLERY',
+            subGalleries: [
+              { id: 'sg1', title: 'Card video gallery', videos: [] },
+            ],
+          },
+        ],
+      });
+      const template = makeTemplate({
+        components: [
+          {
+            id: 't1',
+            order: 0,
+            type: 'VIDEO_GALLERY',
+            subGalleries: [
+              {
+                id: 'sg2',
+                title: 'Org video gallery',
+                videos: [
+                  {
+                    videoUrl: 'https://www.youtube.com/embed/abc123',
+                    caption: null,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+      const videoGallery = merged.components[0];
+      if (videoGallery.type !== 'VIDEO_GALLERY') throw new Error('unreachable');
+      expect(videoGallery.subGalleries[0].title).toBe('Org video gallery');
+    });
+
+    it('falls through to the card video gallery entirely when the template component is empty', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'VIDEO_GALLERY',
+            subGalleries: [
+              { id: 'sg1', title: 'Card video gallery', videos: [] },
+            ],
+          },
+        ],
+      });
+      const template = makeTemplate({
+        components: [
+          { id: 't1', order: 0, type: 'VIDEO_GALLERY', subGalleries: [] },
+        ],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+      const videoGallery = merged.components[0];
+      if (videoGallery.type !== 'VIDEO_GALLERY') throw new Error('unreachable');
+      expect(videoGallery.subGalleries[0].title).toBe('Card video gallery');
     });
 
     it('falls through to the card brochure when the template brochure has no pdf set', () => {
@@ -389,6 +457,55 @@ describe('mergeOrganisationEcardTemplateOntoCard', () => {
       // include it — it must not render, mirroring the exact scenario of
       // a SPOC removing a section from the org policy.
       expect(merged.components.map((c) => c.type)).toEqual(['ABOUT']);
+    });
+
+    it('injects a template-only VIDEO_GALLERY the card never had', () => {
+      const card = makeCard({ components: [] });
+      const template = makeTemplate({
+        components: [
+          {
+            id: 't1',
+            order: 0,
+            type: 'VIDEO_GALLERY',
+            subGalleries: [
+              {
+                id: 'sg1',
+                title: 'Org video gallery',
+                videos: [
+                  {
+                    videoUrl: 'https://www.youtube.com/embed/abc123',
+                    caption: null,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+
+      expect(merged.components.map((c) => c.type)).toEqual(['VIDEO_GALLERY']);
+    });
+
+    it('excludes a card-only VIDEO_GALLERY the template does not include, even though the card has data for it', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'VIDEO_GALLERY',
+            subGalleries: [
+              { id: 'sg1', title: 'Card video gallery', videos: [] },
+            ],
+          },
+        ],
+      });
+      const template = makeTemplate({ components: [] });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+
+      expect(merged.components).toEqual([]);
     });
 
     it('renders no components at all when the template defines none, even if the card has its own', () => {

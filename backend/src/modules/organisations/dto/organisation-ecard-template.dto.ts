@@ -11,6 +11,7 @@ import { ecardAboutComponentSchema } from '../../ecards/dto/components/about.dto
 import { updateEcardGalleryComponentSchema } from '../../ecards/dto/components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from '../../ecards/dto/components/social-links.dto';
 import { ecardTeamComponentSchema } from '../../ecards/dto/components/team-member-pick.dto';
+import { ecardVideoGalleryComponentSchema } from '../../ecards/dto/components/video-gallery.dto';
 import { hasUniqueComponentTypes } from '../../ecards/dto/ecard-core.dto';
 import {
   ECARD_MAX_COMPONENTS,
@@ -23,12 +24,13 @@ import {
 } from '../../ecards/ecards.constants';
 import { normalizeEcardVideoUrl } from '../../ecards/utils/normalize-video-url.util';
 
-// ABOUT, SOCIAL_LINKS, GALLERY (update variant), and TEAM are already fully
-// optional/defaulted on the customer's own e-card — reused verbatim here.
-// Only WHATSAPP (normally a required phone pair), VIDEO (normally a required
-// url), and BROCHURE (normally a required pdf) need org-template-specific
-// variants with those fields relaxed to optional — a field left unset here
-// means "defer to the customer's own e-card", not "invalid".
+// ABOUT, SOCIAL_LINKS, GALLERY (update variant), VIDEO_GALLERY, and TEAM are
+// already fully optional/defaulted on the customer's own e-card — reused
+// verbatim here. Only WHATSAPP (normally a required phone pair), VIDEO
+// (normally a required url), and BROCHURE (normally a required pdf) need
+// org-template-specific variants with those fields relaxed to optional — a
+// field left unset here means "defer to the customer's own e-card", not
+// "invalid".
 const organisationEcardTemplateWhatsAppComponentSchema = z
   .object({
     type: z.literal('WHATSAPP'),
@@ -83,6 +85,7 @@ const organisationEcardTemplateComponentSchema = z.discriminatedUnion('type', [
   ecardSocialLinksComponentSchema,
   updateEcardGalleryComponentSchema,
   organisationEcardTemplateVideoComponentSchema,
+  ecardVideoGalleryComponentSchema,
   ecardTeamComponentSchema,
   organisationEcardTemplateWhatsAppComponentSchema,
   organisationEcardTemplateBrochureComponentSchema,

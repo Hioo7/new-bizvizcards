@@ -24,6 +24,7 @@ import {
   SortableComponentRow,
   TeamEditSheet,
   VideoEditSheet,
+  VideoGalleryEditSheet,
   WhatsAppEditSheet,
   emptyDraftForType,
   type OrganisationMembersScope,
@@ -328,6 +329,25 @@ export default function OrganisationEcardTemplateBuilderView({
 
       {editingComponent?.draft.type === "GALLERY" && (
         <GalleryEditSheet
+          open
+          draft={editingComponent.draft}
+          isSubmitting={false}
+          error={null}
+          onClose={() => setEditing(null)}
+          onSave={(draft) => {
+            builder.setState((state) => ({
+              ...state,
+              components: state.components.map((c) =>
+                c.key === editingComponent.key ? { ...c, draft } : c,
+              ),
+            }));
+            setEditing(null);
+          }}
+        />
+      )}
+
+      {editingComponent?.draft.type === "VIDEO_GALLERY" && (
+        <VideoGalleryEditSheet
           open
           draft={editingComponent.draft}
           isSubmitting={false}

@@ -217,6 +217,78 @@ describe('OrganisationEcardTemplateService (integration, TEST_DATABASE_URL only)
         service.upsertForEmployee(randomUUID(), { components: [] }, []),
       ).rejects.toThrow('Organisation not found');
     });
+
+    it('persists a GALLERY image caption, returning null when omitted', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+
+      const created = await service.upsertForEmployee(
+        organisation.id,
+        {
+          components: [
+            {
+              type: 'GALLERY',
+              subGalleries: [
+                {
+                  images: [
+                    {
+                      image: { action: 'upload' },
+                      caption: 'Team outing',
+                    },
+                    { image: { action: 'upload' } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        [makeFile('galleryImage_0_0'), makeFile('galleryImage_0_1')],
+      );
+
+      const gallery = created.components.find((c) => c.type === 'GALLERY');
+      expect(gallery?.subGalleries[0].images[0].caption).toBe('Team outing');
+      expect(gallery?.subGalleries[0].images[1].caption).toBeNull();
+    });
+
+    it('creates a template with a VIDEO_GALLERY component, preserving sub-gallery/video order and captions', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+
+      const created = await service.upsertForEmployee(
+        organisation.id,
+        {
+          components: [
+            {
+              type: 'VIDEO_GALLERY',
+              subGalleries: [
+                {
+                  title: 'Highlights',
+                  videos: [
+                    {
+                      videoUrl: 'https://www.youtube.com/embed/abc123',
+                      caption: 'Launch event',
+                    },
+                    { videoUrl: 'https://player.vimeo.com/video/76979871' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const videoGallery = created.components.find(
+        (c) => c.type === 'VIDEO_GALLERY',
+      );
+      expect(videoGallery?.subGalleries).toHaveLength(1);
+      expect(videoGallery?.subGalleries[0].title).toBe('Highlights');
+      expect(videoGallery?.subGalleries[0].videos).toEqual([
+        {
+          videoUrl: 'https://www.youtube.com/embed/abc123',
+          caption: 'Launch event',
+        },
+        { videoUrl: 'https://player.vimeo.com/video/76979871', caption: null },
+      ]);
+    });
   });
 
   describe('upsertForSpoc', () => {

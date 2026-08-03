@@ -25,6 +25,10 @@ interface PlanOverrides {
     maxImagesPerGallery: number;
     maxGallerySizeBytes: number;
   };
+  videoGalleryLimits?: {
+    maxVideoGalleries: number;
+    maxVideosPerGallery: number;
+  };
   componentAvailability?: Partial<Record<ECardComponentType, boolean>>;
   heroLayoutAvailability?: Partial<Record<ECardHeroLayout, boolean>>;
   themeAvailability?: Partial<Record<ECardTheme, boolean>>;
@@ -55,6 +59,10 @@ interface PlanOverrides {
     maxGalleries: number;
     maxImagesPerGallery: number;
     maxGallerySizeBytes: number;
+  };
+  orgVideoGalleryLimits?: {
+    maxVideoGalleries: number;
+    maxVideosPerGallery: number;
   };
   eventIsAvailable?: boolean;
   maxEvents?: number;
@@ -139,6 +147,15 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
           maxImagesPerGallery: 10,
           maxGallerySizeBytes: 1024,
         });
+    const videoLimits = isOrgBundle
+      ? (overrides.orgVideoGalleryLimits ?? {
+          maxVideoGalleries: 0,
+          maxVideosPerGallery: 0,
+        })
+      : (overrides.videoGalleryLimits ?? {
+          maxVideoGalleries: 3,
+          maxVideosPerGallery: 10,
+        });
 
     const heroLayoutOverrides = isOrgBundle
       ? overrides.orgHeroLayoutAvailability
@@ -169,6 +186,9 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
           isAvailable: availabilityOverrides?.[type] ?? true,
           ...(type === ECardComponentType.GALLERY && {
             galleryLimits: { create: limits },
+          }),
+          ...(type === ECardComponentType.VIDEO_GALLERY && {
+            videoGalleryLimits: { create: videoLimits },
           }),
         })),
       },
@@ -550,6 +570,74 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
       });
 
       expect(effective.exchangeContactAccess).toBe(false);
+    });
+
+    it('MAXes numeric video gallery caps between personal and org boost', async () => {
+      const owner = await seedCustomer();
+      const ownerPlan = await seedPlan({
+        videoGalleryLimits: { maxVideoGalleries: 1, maxVideosPerGallery: 2 },
+      });
+      await assignPlan(owner.id, ownerPlan.id);
+
+      const organisation = await seedOrgWithCreatorPlan({
+        orgVideoGalleryLimits: {
+          maxVideoGalleries: 9,
+          maxVideosPerGallery: 20,
+        },
+      });
+
+      const effective = await service.getEffectiveEcardPolicyForCard({
+        customerId: owner.id,
+        organisationId: organisation.id,
+      });
+
+      expect(effective.videoGalleryLimits).toEqual({
+        maxVideoGalleries: 9,
+        maxVideosPerGallery: 20,
+      });
+    });
+  });
+
+  describe('videoGalleryLimits resolution', () => {
+    it('defaults to zero limits when no videoGalleryLimits row exists for the VIDEO_GALLERY component', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan();
+      await assignPlan(customer.id, plan.id);
+
+      await prisma.videoGalleryComponentLimits.deleteMany({
+        where: {
+          ecardComponentAvailability: {
+            type: ECardComponentType.VIDEO_GALLERY,
+            ecardPolicy: { planPolicy: { planId: plan.id } },
+          },
+        },
+      });
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.ecard.videoGalleryLimits).toEqual({
+        maxVideoGalleries: 0,
+        maxVideosPerGallery: 0,
+      });
+    });
+
+    it('populates videoGalleryLimits correctly from a stored row', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        videoGalleryLimits: { maxVideoGalleries: 7, maxVideosPerGallery: 15 },
+      });
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.ecard.videoGalleryLimits).toEqual({
+        maxVideoGalleries: 7,
+        maxVideosPerGallery: 15,
+      });
     });
   });
 

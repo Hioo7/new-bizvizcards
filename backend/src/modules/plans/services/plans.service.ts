@@ -321,6 +321,9 @@ export class PlansService {
           ...(component.galleryLimits && {
             galleryLimits: { create: component.galleryLimits },
           }),
+          ...(component.videoGalleryLimits && {
+            videoGalleryLimits: { create: component.videoGalleryLimits },
+          }),
         })),
       },
       heroLayoutAvailabilities: {
@@ -395,6 +398,9 @@ export class PlansService {
           isAvailable: component.isAvailable,
           ...(component.galleryLimits && {
             galleryLimits: { create: component.galleryLimits },
+          }),
+          ...(component.videoGalleryLimits && {
+            videoGalleryLimits: { create: component.videoGalleryLimits },
           }),
         },
       });
@@ -495,6 +501,13 @@ export class PlansService {
               maxGalleries: component.galleryLimits.maxGalleries,
               maxImagesPerGallery: component.galleryLimits.maxImagesPerGallery,
               maxGallerySizeBytes: component.galleryLimits.maxGallerySizeBytes,
+            },
+          }),
+          ...(component.videoGalleryLimits && {
+            videoGalleryLimits: {
+              maxVideoGalleries: component.videoGalleryLimits.maxVideoGalleries,
+              maxVideosPerGallery:
+                component.videoGalleryLimits.maxVideosPerGallery,
             },
           }),
         }),

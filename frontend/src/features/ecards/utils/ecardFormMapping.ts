@@ -9,6 +9,7 @@ import type {
   Ecard,
   EcardComponent,
   EcardComponentPayload,
+  EcardGalleryImageEntryPayload,
   EcardImageUpload,
   EcardPayload,
   ImageSlotPayload,
@@ -215,9 +216,23 @@ export function componentToDraft(component: EcardComponent): ComponentDraft {
         subGalleries: component.subGalleries.map((subGallery) => ({
           title: subGallery.title ?? "",
           images: subGallery.images.map((image) => ({
-            file: null,
-            existingMediaId: image.imageMediaId,
-            existingUrl: image.imageUrl,
+            image: {
+              file: null,
+              existingMediaId: image.imageMediaId,
+              existingUrl: image.imageUrl,
+            },
+            caption: image.caption ?? "",
+          })),
+        })),
+      };
+    case "VIDEO_GALLERY":
+      return {
+        type: "VIDEO_GALLERY",
+        subGalleries: component.subGalleries.map((subGallery) => ({
+          title: subGallery.title ?? "",
+          videos: subGallery.videos.map((video) => ({
+            videoUrl: video.videoUrl,
+            caption: video.caption ?? "",
           })),
         })),
       };
@@ -298,11 +313,30 @@ function componentDraftToPayload(
         type: "GALLERY",
         subGalleries: draft.subGalleries.map((subGallery, g) => ({
           title: subGallery.title.trim() || undefined,
-          images: subGallery.images
-            .map((image, j) =>
-              buildImageSlot(image, ecardGalleryImageField(g, j), files),
-            )
-            .filter((slot): slot is ImageSlotPayload => slot !== undefined),
+          images: subGallery.images.flatMap(
+            (entry, j): EcardGalleryImageEntryPayload[] => {
+              const image = buildImageSlot(
+                entry.image,
+                ecardGalleryImageField(g, j),
+                files,
+              );
+              if (!image) return [];
+              return [{ image, caption: entry.caption.trim() || undefined }];
+            },
+          ),
+        })),
+      };
+    case "VIDEO_GALLERY":
+      return {
+        type: "VIDEO_GALLERY",
+        subGalleries: draft.subGalleries.map((subGallery) => ({
+          title: subGallery.title.trim() || undefined,
+          videos: subGallery.videos
+            .filter((video) => video.videoUrl.trim() !== "")
+            .map((video) => ({
+              videoUrl: video.videoUrl.trim(),
+              caption: video.caption.trim() || undefined,
+            })),
         })),
       };
     case "TEAM":

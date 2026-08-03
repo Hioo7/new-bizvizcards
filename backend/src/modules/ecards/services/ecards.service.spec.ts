@@ -213,7 +213,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               subGalleries: [
                 {
                   title: 'Work',
-                  images: [{ action: 'upload' }],
+                  images: [{ image: { action: 'upload' } }],
                 },
               ],
             },
@@ -271,6 +271,69 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           organisationMemberId: memberMembership.id,
           name: 'Team Mate',
         }),
+      ]);
+    });
+
+    it('creates an e-card with a VIDEO_GALLERY component, preserving sub-gallery and video order, with and without captions', async () => {
+      const customer = await seedCustomer();
+
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `video-gallery-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'VIDEO_GALLERY',
+              subGalleries: [
+                {
+                  title: 'Launch Event',
+                  videos: [
+                    {
+                      videoUrl: 'https://www.youtube.com/embed/abc123',
+                      caption: 'Opening keynote',
+                    },
+                    { videoUrl: 'https://player.vimeo.com/video/76979871' },
+                  ],
+                },
+                {
+                  title: 'Behind the Scenes',
+                  videos: [
+                    {
+                      videoUrl: 'https://www.youtube.com/embed/xyz789',
+                      caption: 'Setup day',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const videoGallery = created.components.find(
+        (c) => c.type === 'VIDEO_GALLERY',
+      );
+      expect(videoGallery?.subGalleries).toHaveLength(2);
+      expect(videoGallery?.subGalleries.map((sg) => sg.title)).toEqual([
+        'Launch Event',
+        'Behind the Scenes',
+      ]);
+      expect(videoGallery?.subGalleries[0].videos).toEqual([
+        {
+          videoUrl: 'https://www.youtube.com/embed/abc123',
+          caption: 'Opening keynote',
+        },
+        { videoUrl: 'https://player.vimeo.com/video/76979871', caption: null },
+      ]);
+      expect(videoGallery?.subGalleries[1].videos).toEqual([
+        {
+          videoUrl: 'https://www.youtube.com/embed/xyz789',
+          caption: 'Setup day',
+        },
       ]);
     });
 
@@ -826,7 +889,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           components: [
             {
               type: 'GALLERY',
-              subGalleries: [{ images: [{ action: 'upload' }] }],
+              subGalleries: [{ images: [{ image: { action: 'upload' } }] }],
             },
           ],
         },
@@ -856,7 +919,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               type: 'GALLERY',
               subGalleries: [
                 {
-                  images: [{ action: 'keep', mediaId: keptMediaId }],
+                  images: [{ image: { action: 'keep', mediaId: keptMediaId } }],
                 },
               ],
             },
@@ -889,6 +952,176 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       await expect(
         prisma.media.findUnique({ where: { id: keptMediaId } }),
       ).resolves.not.toBeNull();
+    });
+
+    it('round-trips a GALLERY image caption through create and update, and clears it back to null when omitted', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `gallery-caption-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'GALLERY',
+              subGalleries: [
+                {
+                  images: [
+                    { image: { action: 'upload' }, caption: 'Team outing' },
+                    { image: { action: 'upload' } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        [makeFile('galleryImage_0_0'), makeFile('galleryImage_0_1')],
+      );
+
+      const createdGallery = created.components.find(
+        (c) => c.type === 'GALLERY',
+      );
+      expect(createdGallery?.subGalleries[0].images[0].caption).toBe(
+        'Team outing',
+      );
+      expect(createdGallery?.subGalleries[0].images[1].caption).toBeNull();
+
+      const mediaId0 = createdGallery?.subGalleries[0].images[0]
+        .imageMediaId as string;
+      const mediaId1 = createdGallery?.subGalleries[0].images[1]
+        .imageMediaId as string;
+
+      const updated = await service.updateById(
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'GALLERY',
+              subGalleries: [
+                {
+                  images: [
+                    {
+                      image: { action: 'keep', mediaId: mediaId0 },
+                      caption: 'Updated caption',
+                    },
+                    { image: { action: 'keep', mediaId: mediaId1 } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const updatedGallery = updated.components.find(
+        (c) => c.type === 'GALLERY',
+      );
+      expect(updatedGallery?.subGalleries[0].images[0].caption).toBe(
+        'Updated caption',
+      );
+      expect(updatedGallery?.subGalleries[0].images[1].caption).toBeNull();
+
+      // Omitting a previously-set caption on a later full-replace clears it,
+      // not "leaves it unchanged" — same convention as every other optional
+      // component field.
+      const cleared = await service.updateById(
+        updated.id,
+        {
+          endpoint: updated.endpoint,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'GALLERY',
+              subGalleries: [
+                {
+                  images: [{ image: { action: 'keep', mediaId: mediaId0 } }],
+                },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const clearedGallery = cleared.components.find(
+        (c) => c.type === 'GALLERY',
+      );
+      expect(clearedGallery?.subGalleries[0].images[0].caption).toBeNull();
+    });
+
+    it('replaces VIDEO_GALLERY sub-galleries and videos wholesale on update', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `video-gallery-upd-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'VIDEO_GALLERY',
+              subGalleries: [
+                {
+                  title: 'Old Gallery',
+                  videos: [
+                    { videoUrl: 'https://www.youtube.com/embed/old111' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const updated = await service.updateById(
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'VIDEO_GALLERY',
+              subGalleries: [
+                {
+                  title: 'New Gallery',
+                  videos: [
+                    {
+                      videoUrl: 'https://player.vimeo.com/video/222222',
+                      caption: 'Fresh footage',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const videoGallery = updated.components.find(
+        (c) => c.type === 'VIDEO_GALLERY',
+      );
+      expect(videoGallery?.subGalleries).toHaveLength(1);
+      expect(videoGallery?.subGalleries[0].title).toBe('New Gallery');
+      expect(videoGallery?.subGalleries[0].videos).toEqual([
+        {
+          videoUrl: 'https://player.vimeo.com/video/222222',
+          caption: 'Fresh footage',
+        },
+      ]);
     });
 
     it('keeps the same brochure PDF on update when the slot action is "keep"', async () => {
@@ -1025,7 +1258,11 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               {
                 type: 'GALLERY',
                 subGalleries: [
-                  { images: [{ action: 'keep', mediaId: randomUUID() }] },
+                  {
+                    images: [
+                      { image: { action: 'keep', mediaId: randomUUID() } },
+                    ],
+                  },
                 ],
               },
             ],

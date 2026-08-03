@@ -13,6 +13,7 @@ export const ECARD_COMPONENT_TYPES = [
   "SOCIAL_LINKS",
   "GALLERY",
   "VIDEO",
+  "VIDEO_GALLERY",
   "TEAM",
   "WHATSAPP",
   "BROCHURE",
@@ -26,6 +27,7 @@ export const ECARD_COMPONENT_LABELS: Record<
   SOCIAL_LINKS: "Social links",
   GALLERY: "Gallery",
   VIDEO: "Video",
+  VIDEO_GALLERY: "Video Gallery",
   TEAM: "Team",
   WHATSAPP: "WhatsApp",
   BROCHURE: "Brochure",
@@ -101,6 +103,13 @@ export const DEFAULT_GALLERY_LIMITS = {
   maxGalleries: 3,
   maxImagesPerGallery: 10,
   maxGallerySizeBytes: 10 * 1024 * 1024,
+};
+
+// Same starting-point convention as DEFAULT_GALLERY_LIMITS, minus a
+// file-size dimension — video gallery entries are URLs, not uploads.
+export const DEFAULT_VIDEO_GALLERY_LIMITS = {
+  maxVideoGalleries: 3,
+  maxVideosPerGallery: 10,
 };
 
 export const PLAN_FORM_STEPS = [

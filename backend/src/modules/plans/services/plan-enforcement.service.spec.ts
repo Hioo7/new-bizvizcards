@@ -29,6 +29,10 @@ interface PlanOverrides {
     maxImagesPerGallery: number;
     maxGallerySizeBytes: number;
   };
+  videoGalleryLimits?: {
+    maxVideoGalleries: number;
+    maxVideosPerGallery: number;
+  };
   // Defaults to every gated layout OFF, matching every real plan's
   // default-off state — override with the specific layouts a test needs on.
   availableHeroLayouts?: ECardHeroLayout[];
@@ -154,6 +158,14 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                 maxGalleries: 3,
                 maxImagesPerGallery: 10,
                 maxGallerySizeBytes: 1024,
+              },
+            },
+          }),
+          ...(type === ECardComponentType.VIDEO_GALLERY && {
+            videoGalleryLimits: {
+              create: overrides.videoGalleryLimits ?? {
+                maxVideoGalleries: 3,
+                maxVideosPerGallery: 10,
               },
             },
           }),
@@ -442,6 +454,99 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
 
       await expect(
         service.assertCanAddGalleryContent(customer.id, null, undefined),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertCanAddVideoGalleryContent', () => {
+    const limits = {
+      maxVideoGalleries: 2,
+      maxVideosPerGallery: 4,
+    };
+
+    it('never blocks when the incoming count is not higher than existing (grandfathered)', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ videoGalleryLimits: limits });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanAddVideoGalleryContent(
+          customer.id,
+          {
+            organisationId: null,
+            existingVideoSubGalleryCount: 5,
+            existingTotalVideoCount: 20,
+          },
+          { subGalleries: [{ videos: [1, 2] }] },
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks adding a new video sub-gallery once already at the cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ videoGalleryLimits: limits });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanAddVideoGalleryContent(
+          customer.id,
+          {
+            organisationId: null,
+            existingVideoSubGalleryCount: 2,
+            existingTotalVideoCount: 0,
+          },
+          { subGalleries: [{ videos: [] }, { videos: [] }, { videos: [] }] },
+        ),
+      ).rejects.toThrow(
+        "This customer's plan has reached its video gallery limit for this e-card",
+      );
+    });
+
+    it('blocks adding a new video once the per-gallery video cap is already reached', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ videoGalleryLimits: limits });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanAddVideoGalleryContent(
+          customer.id,
+          {
+            organisationId: null,
+            existingVideoSubGalleryCount: 1,
+            existingTotalVideoCount: 4,
+          },
+          { subGalleries: [{ videos: [1, 2, 3, 4, 5] }] },
+        ),
+      ).rejects.toThrow(
+        "This customer's plan has reached its video gallery limit for this e-card",
+      );
+    });
+
+    it('allows adding a new video sub-gallery when under the cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ videoGalleryLimits: limits });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanAddVideoGalleryContent(
+          customer.id,
+          {
+            organisationId: null,
+            existingVideoSubGalleryCount: 1,
+            existingTotalVideoCount: 0,
+          },
+          { subGalleries: [{ videos: [] }, { videos: [] }] },
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('is a no-op when the payload has no video gallery component', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan();
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanAddVideoGalleryContent(customer.id, null, undefined),
       ).resolves.toBeUndefined();
     });
   });

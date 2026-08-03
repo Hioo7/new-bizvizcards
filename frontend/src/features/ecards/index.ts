@@ -11,6 +11,7 @@ export { default as AboutEditSheet } from "@features/ecards/components/AboutEdit
 export { default as SocialLinksEditSheet } from "@features/ecards/components/SocialLinksEditSheet";
 export { default as VideoEditSheet } from "@features/ecards/components/VideoEditSheet";
 export { default as GalleryEditSheet } from "@features/ecards/components/GalleryEditSheet";
+export { default as VideoGalleryEditSheet } from "@features/ecards/components/VideoGalleryEditSheet";
 export { default as TeamEditSheet } from "@features/ecards/components/TeamEditSheet";
 export { default as WhatsAppEditSheet } from "@features/ecards/components/WhatsAppEditSheet";
 export { default as BrochureEditSheet } from "@features/ecards/components/BrochureEditSheet";
@@ -43,7 +44,10 @@ export {
   getHeroLayoutValidationErrors,
   mapServerFieldErrorsToHeroFields,
 } from "@features/ecards/utils/ecardFormMapping";
-export { normalizeEcardVideoUrl } from "@features/ecards/utils/normalizeVideoUrl";
+export {
+  normalizeEcardVideoUrl,
+  getEcardVideoThumbnailUrl,
+} from "@features/ecards/utils/normalizeVideoUrl";
 
 // Schemas
 export {

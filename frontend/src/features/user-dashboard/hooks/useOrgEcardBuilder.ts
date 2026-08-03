@@ -89,7 +89,9 @@ function draftToOrgComponent(
       };
     case "GALLERY":
     case "BROCHURE":
-      // Gallery/Brochure require file uploads not supported through this flow
+    case "VIDEO_GALLERY":
+      // Gallery/Brochure require file uploads not supported through this
+      // flow; Video Gallery's multi-row editing isn't supported here either.
       return { type: draft.type };
   }
 }

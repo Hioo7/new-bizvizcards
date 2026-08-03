@@ -73,14 +73,34 @@ export interface VideoComponentDraft {
   videoUrl: string;
 }
 
+export interface GalleryImageEntryDraft {
+  image: ImageFieldValue;
+  caption: string;
+}
+
 export interface GallerySubGalleryDraft {
   title: string;
-  images: ImageFieldValue[];
+  images: GalleryImageEntryDraft[];
 }
 
 export interface GalleryComponentDraft {
   type: "GALLERY";
   subGalleries: GallerySubGalleryDraft[];
+}
+
+export interface VideoGalleryVideoDraft {
+  videoUrl: string;
+  caption: string;
+}
+
+export interface VideoGallerySubGalleryDraft {
+  title: string;
+  videos: VideoGalleryVideoDraft[];
+}
+
+export interface VideoGalleryComponentDraft {
+  type: "VIDEO_GALLERY";
+  subGalleries: VideoGallerySubGalleryDraft[];
 }
 
 export interface TeamComponentDraft {
@@ -105,6 +125,7 @@ export type ComponentDraft =
   | SocialLinksComponentDraft
   | VideoComponentDraft
   | GalleryComponentDraft
+  | VideoGalleryComponentDraft
   | TeamComponentDraft
   | WhatsAppComponentDraft
   | BrochureComponentDraft;
@@ -126,6 +147,8 @@ export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft 
       return { type: "VIDEO", title: "", videoUrl: "" };
     case "GALLERY":
       return { type: "GALLERY", subGalleries: [] };
+    case "VIDEO_GALLERY":
+      return { type: "VIDEO_GALLERY", subGalleries: [] };
     case "TEAM":
       return { type: "TEAM", title: "", memberIds: [] };
     case "WHATSAPP":

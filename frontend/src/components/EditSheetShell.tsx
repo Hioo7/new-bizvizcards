@@ -13,6 +13,10 @@ interface EditSheetShellProps {
   /** Omit for a "browse/manage" sheet whose actions already save themselves — shows a single Done button instead of Cancel/Save. */
   onSave?: () => void;
   isSubmitting?: boolean;
+  /** Set false to block Save (e.g. a row still has an inline validation
+   * error) while leaving Cancel usable — unlike isSubmitting, which disables
+   * both. Defaults to true, so existing callers are unaffected. */
+  canSave?: boolean;
   error?: string | null;
   children: ReactNode;
 }
@@ -25,6 +29,7 @@ export default function EditSheetShell({
   onClose,
   onSave,
   isSubmitting = false,
+  canSave = true,
   error = null,
   children,
 }: EditSheetShellProps) {
@@ -94,7 +99,7 @@ export default function EditSheetShell({
                 <button
                   type="button"
                   onClick={onSave}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canSave}
                   className="btn min-h-11 gap-2 rounded-field bg-primary text-primary-content hover:bg-primary/90"
                 >
                   {isSubmitting && <span className="loading loading-spinner loading-sm" />}

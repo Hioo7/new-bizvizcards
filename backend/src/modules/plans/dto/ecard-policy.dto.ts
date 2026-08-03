@@ -19,6 +19,15 @@ const galleryComponentLimitsSchema = z
   })
   .strict();
 
+// Same shape as galleryComponentLimitsSchema, minus a file-size dimension —
+// video gallery entries are URLs, not uploads.
+const videoGalleryComponentLimitsSchema = z
+  .object({
+    maxVideoGalleries: z.number().int().min(0),
+    maxVideosPerGallery: z.number().int().min(0),
+  })
+  .strict();
+
 const ecardComponentAvailabilitySchema = z
   .object({
     type: z.enum(ECardComponentType),
@@ -26,6 +35,8 @@ const ecardComponentAvailabilitySchema = z
     // Required iff type === 'GALLERY' — enforced by the refine below since
     // Prisma/Zod can't express a conditional field keyed off a sibling enum.
     galleryLimits: galleryComponentLimitsSchema.optional(),
+    // Same pattern as galleryLimits above, required iff type === 'VIDEO_GALLERY'.
+    videoGalleryLimits: videoGalleryComponentLimitsSchema.optional(),
   })
   .strict()
   .refine(
@@ -40,6 +51,23 @@ const ecardComponentAvailabilitySchema = z
     {
       message: 'galleryLimits may only be set for the GALLERY component',
       path: ['galleryLimits'],
+    },
+  )
+  .refine(
+    (value) =>
+      value.type !== 'VIDEO_GALLERY' || value.videoGalleryLimits !== undefined,
+    {
+      message: 'videoGalleryLimits is required for the VIDEO_GALLERY component',
+      path: ['videoGalleryLimits'],
+    },
+  )
+  .refine(
+    (value) =>
+      value.type === 'VIDEO_GALLERY' || value.videoGalleryLimits === undefined,
+    {
+      message:
+        'videoGalleryLimits may only be set for the VIDEO_GALLERY component',
+      path: ['videoGalleryLimits'],
     },
   );
 

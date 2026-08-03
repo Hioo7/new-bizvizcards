@@ -8,6 +8,7 @@ import type {
 import {
   DEFAULT_ECARD_ACCENT_COLOR_PRESETS,
   DEFAULT_GALLERY_LIMITS,
+  DEFAULT_VIDEO_GALLERY_LIMITS,
   ECARD_COMPONENT_TYPES,
   ECARD_GATED_HERO_LAYOUTS,
   ECARD_GATED_ICON_SHAPES,
@@ -24,6 +25,9 @@ export function createDefaultEcardPolicy(): EcardPolicy {
       type,
       isAvailable: true,
       ...(type === "GALLERY" && { galleryLimits: DEFAULT_GALLERY_LIMITS }),
+      ...(type === "VIDEO_GALLERY" && {
+        videoGalleryLimits: DEFAULT_VIDEO_GALLERY_LIMITS,
+      }),
     })),
     heroLayoutAvailabilities: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
       layout,

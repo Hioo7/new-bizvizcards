@@ -157,6 +157,14 @@ function mergeOneComponent(
       ? templateComponentToCardComponent(templateComponent)
       : cardComponent;
   }
+  if (
+    cardComponent.type === 'VIDEO_GALLERY' &&
+    templateComponent.type === 'VIDEO_GALLERY'
+  ) {
+    return templateComponent.subGalleries.length > 0
+      ? templateComponentToCardComponent(templateComponent)
+      : cardComponent;
+  }
   if (cardComponent.type === 'TEAM' && templateComponent.type === 'TEAM') {
     return templateComponent.members.length > 0
       ? templateComponentToCardComponent(templateComponent)
@@ -219,6 +227,12 @@ function templateComponentToCardComponent(
       return {
         ...base,
         type: ECardComponentType.GALLERY,
+        subGalleries: templateComponent.subGalleries,
+      };
+    case ECardComponentType.VIDEO_GALLERY:
+      return {
+        ...base,
+        type: ECardComponentType.VIDEO_GALLERY,
         subGalleries: templateComponent.subGalleries,
       };
     case ECardComponentType.TEAM:

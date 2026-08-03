@@ -215,6 +215,12 @@ describe('Business Events (e2e, TEST_DATABASE_URL only)', () => {
               maxGallerySizeBytes: 1024 * 1024,
             },
           }),
+          ...(type === ECardComponentType.VIDEO_GALLERY && {
+            videoGalleryLimits: {
+              maxVideoGalleries: 5,
+              maxVideosPerGallery: 5,
+            },
+          }),
         }),
       ),
     };

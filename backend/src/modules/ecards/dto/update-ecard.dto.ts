@@ -8,6 +8,7 @@ import { updateEcardGalleryComponentSchema } from './components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from './components/social-links.dto';
 import { ecardTeamComponentSchema } from './components/team-member-pick.dto';
 import { ecardVideoComponentSchema } from './components/video.dto';
+import { ecardVideoGalleryComponentSchema } from './components/video-gallery.dto';
 import { ecardWhatsAppComponentSchema } from './components/whatsapp.dto';
 import {
   assertHeroLayoutFieldsConsistent,
@@ -21,6 +22,7 @@ const updateEcardComponentSchema = z.discriminatedUnion('type', [
   ecardSocialLinksComponentSchema,
   updateEcardGalleryComponentSchema,
   ecardVideoComponentSchema,
+  ecardVideoGalleryComponentSchema,
   ecardTeamComponentSchema,
   ecardWhatsAppComponentSchema,
   updateEcardBrochureComponentSchema,

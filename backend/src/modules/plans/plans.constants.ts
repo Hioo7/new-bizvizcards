@@ -23,6 +23,8 @@ export const PLAN_FALLBACK_MAX_SMART_CARDS = 0;
 export const PLAN_FALLBACK_MAX_GALLERIES = 1;
 export const PLAN_FALLBACK_MAX_IMAGES_PER_GALLERY = 5;
 export const PLAN_FALLBACK_MAX_GALLERY_SIZE_BYTES = 5 * 1024 * 1024;
+export const PLAN_FALLBACK_MAX_VIDEO_GALLERIES = 1;
+export const PLAN_FALLBACK_MAX_VIDEOS_PER_GALLERY = 5;
 export const PLAN_FALLBACK_MAX_ORGS_CAN_JOIN = 1;
 export const PLAN_FALLBACK_MAX_ORGS_CAN_CREATE = 0;
 export const PLAN_FALLBACK_MAX_EVENTS = 100;
@@ -59,6 +61,8 @@ export const PLAN_ECARD_LIMIT_REACHED_MESSAGE =
   "This customer's plan has reached its e-card limit";
 export const PLAN_GALLERY_LIMIT_REACHED_MESSAGE =
   "This customer's plan has reached its gallery limit for this e-card";
+export const PLAN_VIDEO_GALLERY_LIMIT_REACHED_MESSAGE =
+  "This customer's plan has reached its video gallery limit for this e-card";
 export const PLAN_SMART_CARD_NOT_AVAILABLE_MESSAGE =
   "This customer's plan does not include smart cards";
 export const PLAN_SMART_CARD_LIMIT_REACHED_MESSAGE =

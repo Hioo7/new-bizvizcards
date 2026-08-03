@@ -4,6 +4,7 @@ import ImageSlotField from "@components/media/ImageSlotField";
 import EmptyStepState from "@components/EmptyStepState";
 import EditSheetShell from "@components/EditSheetShell";
 import {
+  ECARD_CAPTION_MAX_LENGTH,
   ECARD_MAX_GALLERY_IMAGES,
   ECARD_MAX_SUB_GALLERIES,
   ECARD_TEXT_SHORT_MAX_LENGTH,
@@ -54,7 +55,9 @@ export default function GalleryEditSheet({
   function addImage(subIndex: number) {
     setSubGalleries(
       subGalleries.map((sub, i) =>
-        i === subIndex ? { ...sub, images: [...sub.images, emptyImageField()] } : sub,
+        i === subIndex
+          ? { ...sub, images: [...sub.images, { image: emptyImageField(), caption: "" }] }
+          : sub,
       ),
     );
   }
@@ -65,7 +68,24 @@ export default function GalleryEditSheet({
         i === subIndex
           ? {
               ...sub,
-              images: sub.images.map((img, j) => (j === imageIndex ? value : img)),
+              images: sub.images.map((entry, j) =>
+                j === imageIndex ? { ...entry, image: value } : entry,
+              ),
+            }
+          : sub,
+      ),
+    );
+  }
+
+  function updateCaption(subIndex: number, imageIndex: number, caption: string) {
+    setSubGalleries(
+      subGalleries.map((sub, i) =>
+        i === subIndex
+          ? {
+              ...sub,
+              images: sub.images.map((entry, j) =>
+                j === imageIndex ? { ...entry, caption } : entry,
+              ),
             }
           : sub,
       ),
@@ -123,18 +143,29 @@ export default function GalleryEditSheet({
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {subGallery.images.map((image, imageIndex) => (
-              <ImageSlotField
-                key={imageIndex}
-                label=""
-                value={image}
-                onChange={(value) => updateImage(subIndex, imageIndex, value)}
-                cropShape="rect"
-                variant="square"
-                skipCrop
-                onRemove={() => removeImage(subIndex, imageIndex)}
-              />
+          <div className="flex flex-wrap items-start gap-3">
+            {subGallery.images.map((entry, imageIndex) => (
+              <div key={imageIndex} className="flex w-28 flex-col gap-1">
+                <ImageSlotField
+                  label=""
+                  value={entry.image}
+                  onChange={(value) => updateImage(subIndex, imageIndex, value)}
+                  cropShape="rect"
+                  variant="square"
+                  skipCrop
+                  onRemove={() => removeImage(subIndex, imageIndex)}
+                />
+                <input
+                  value={entry.caption}
+                  onChange={(event) =>
+                    updateCaption(subIndex, imageIndex, event.target.value)
+                  }
+                  maxLength={ECARD_CAPTION_MAX_LENGTH}
+                  placeholder="Caption (optional)"
+                  aria-label="Image caption"
+                  className="w-full rounded-field border border-base-300 bg-base-100 px-2 py-1 text-xs text-base-content focus:border-primary focus:outline-none"
+                />
+              </div>
             ))}
             {subGallery.images.length < ECARD_MAX_GALLERY_IMAGES && (
               <button

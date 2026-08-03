@@ -51,6 +51,12 @@ function ecardComponentAvailabilities(
         maxGallerySizeBytes: 10 * 1024 * 1024,
       },
     }),
+    ...(type === ECardComponentType.VIDEO_GALLERY && {
+      videoGalleryLimits: {
+        maxVideoGalleries: 10,
+        maxVideosPerGallery: 10,
+      },
+    }),
   }));
 }
 

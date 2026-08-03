@@ -29,6 +29,7 @@ import {
   PLAN_SMART_CARD_NOT_AVAILABLE_MESSAGE,
   PLAN_SMART_CARD_TEMPLATE_NOT_ALLOWED_MESSAGE,
   PLAN_THEME_NOT_AVAILABLE_MESSAGE,
+  PLAN_VIDEO_GALLERY_LIMIT_REACHED_MESSAGE,
 } from '../plans.constants';
 import { PlanPolicyResolverService } from './plan-policy-resolver.service';
 
@@ -42,6 +43,16 @@ export interface ExistingGalleryState {
 
 export interface IncomingGalleryContent {
   subGalleries: Array<{ images: unknown[] }>;
+}
+
+export interface ExistingVideoGalleryState {
+  organisationId: string | null;
+  existingVideoSubGalleryCount: number;
+  existingTotalVideoCount: number;
+}
+
+export interface IncomingVideoGalleryContent {
+  subGalleries: Array<{ videos: unknown[] }>;
 }
 
 export interface AccentColorPair {
@@ -119,6 +130,46 @@ export class PlanEnforcementService {
       existingTotalImageCount >= limits.maxImagesPerGallery
     ) {
       throw new ConflictException(PLAN_GALLERY_LIMIT_REACHED_MESSAGE);
+    }
+  }
+
+  async assertCanAddVideoGalleryContent(
+    customerId: string,
+    existing: ExistingVideoGalleryState | null,
+    incoming: IncomingVideoGalleryContent | undefined,
+  ): Promise<void> {
+    if (!incoming) {
+      return;
+    }
+
+    const limits = await this.policyResolver
+      .getEffectiveEcardPolicyForCard({
+        customerId,
+        organisationId: existing?.organisationId ?? null,
+      })
+      .then((ecardPolicy) => ecardPolicy.videoGalleryLimits);
+
+    const existingVideoSubGalleryCount =
+      existing?.existingVideoSubGalleryCount ?? 0;
+    const existingTotalVideoCount = existing?.existingTotalVideoCount ?? 0;
+    const incomingVideoSubGalleryCount = incoming.subGalleries.length;
+    const incomingTotalVideoCount = incoming.subGalleries.reduce(
+      (sum, subGallery) => sum + subGallery.videos.length,
+      0,
+    );
+
+    if (
+      incomingVideoSubGalleryCount > existingVideoSubGalleryCount &&
+      existingVideoSubGalleryCount >= limits.maxVideoGalleries
+    ) {
+      throw new ConflictException(PLAN_VIDEO_GALLERY_LIMIT_REACHED_MESSAGE);
+    }
+
+    if (
+      incomingTotalVideoCount > existingTotalVideoCount &&
+      existingTotalVideoCount >= limits.maxVideosPerGallery
+    ) {
+      throw new ConflictException(PLAN_VIDEO_GALLERY_LIMIT_REACHED_MESSAGE);
     }
   }
 

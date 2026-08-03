@@ -22,6 +22,11 @@ export interface EffectiveGalleryLimits {
   maxGallerySizeBytes: number;
 }
 
+export interface EffectiveVideoGalleryLimits {
+  maxVideoGalleries: number;
+  maxVideosPerGallery: number;
+}
+
 export interface EffectiveAccentColorPreset {
   themeAffinity: ECardAccentColorPresetThemeAffinity;
   primaryColor: string;
@@ -34,6 +39,7 @@ export interface EffectiveEcardPolicy {
   exchangeContactAccess: boolean;
   components: Record<ECardComponentType, boolean>;
   galleryLimits: EffectiveGalleryLimits;
+  videoGalleryLimits: EffectiveVideoGalleryLimits;
   // Only the plan-restrictable layouts are ever false-by-default here —
   // DEFAULT is unconditionally forced to true in mapEcardPolicy below.
   heroLayouts: Record<ECardHeroLayout, boolean>;
@@ -81,7 +87,9 @@ export interface EffectivePolicy {
 // Exported for reuse by PlansService, which needs the identical nested
 // shape to round-trip a plan's policy tree back out as a DTO.
 export const ecardPolicyInclude = {
-  componentAvailabilities: { include: { galleryLimits: true } },
+  componentAvailabilities: {
+    include: { galleryLimits: true, videoGalleryLimits: true },
+  },
   heroLayoutAvailabilities: true,
   themeAvailabilities: true,
   iconShapeAvailabilities: true,
@@ -288,6 +296,11 @@ export class PlanPolicyResolverService {
       maxGallerySizeBytes: 0,
     };
 
+    let videoGalleryLimits: EffectiveVideoGalleryLimits = {
+      maxVideoGalleries: 0,
+      maxVideosPerGallery: 0,
+    };
+
     for (const availability of ecardPolicy.componentAvailabilities) {
       components[availability.type] = availability.isAvailable;
       if (
@@ -298,6 +311,16 @@ export class PlanPolicyResolverService {
           maxGalleries: availability.galleryLimits.maxGalleries,
           maxImagesPerGallery: availability.galleryLimits.maxImagesPerGallery,
           maxGallerySizeBytes: availability.galleryLimits.maxGallerySizeBytes,
+        };
+      }
+      if (
+        availability.type === ECardComponentType.VIDEO_GALLERY &&
+        availability.videoGalleryLimits
+      ) {
+        videoGalleryLimits = {
+          maxVideoGalleries: availability.videoGalleryLimits.maxVideoGalleries,
+          maxVideosPerGallery:
+            availability.videoGalleryLimits.maxVideosPerGallery,
         };
       }
     }
@@ -341,6 +364,7 @@ export class PlanPolicyResolverService {
       exchangeContactAccess: ecardPolicy.exchangeContactAccess,
       components,
       galleryLimits,
+      videoGalleryLimits,
       heroLayouts,
       themes,
       iconShapes,
@@ -431,6 +455,16 @@ export class PlanPolicyResolverService {
         maxGallerySizeBytes: Math.max(
           personal.galleryLimits.maxGallerySizeBytes,
           orgBoost.galleryLimits.maxGallerySizeBytes,
+        ),
+      },
+      videoGalleryLimits: {
+        maxVideoGalleries: Math.max(
+          personal.videoGalleryLimits.maxVideoGalleries,
+          orgBoost.videoGalleryLimits.maxVideoGalleries,
+        ),
+        maxVideosPerGallery: Math.max(
+          personal.videoGalleryLimits.maxVideosPerGallery,
+          orgBoost.videoGalleryLimits.maxVideosPerGallery,
         ),
       },
     };

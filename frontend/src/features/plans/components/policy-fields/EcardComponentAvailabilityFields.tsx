@@ -1,10 +1,12 @@
 import type { EcardComponentAvailability } from "@app-types/plan";
 import {
   DEFAULT_GALLERY_LIMITS,
+  DEFAULT_VIDEO_GALLERY_LIMITS,
   ECARD_COMPONENT_LABELS,
   ECARD_COMPONENT_TYPES,
 } from "@features/plans/config";
 import GalleryLimitsFields from "@features/plans/components/policy-fields/GalleryLimitsFields";
+import VideoGalleryLimitsFields from "@features/plans/components/policy-fields/VideoGalleryLimitsFields";
 
 interface EcardComponentAvailabilityFieldsProps {
   value: EcardComponentAvailability[];
@@ -26,6 +28,10 @@ export default function EcardComponentAvailabilityFields({
                 !component.galleryLimits && {
                   galleryLimits: DEFAULT_GALLERY_LIMITS,
                 }),
+              ...(type === "VIDEO_GALLERY" &&
+                !component.videoGalleryLimits && {
+                  videoGalleryLimits: DEFAULT_VIDEO_GALLERY_LIMITS,
+                }),
             }
           : component,
       ),
@@ -39,6 +45,19 @@ export default function EcardComponentAvailabilityFields({
     onChange(
       value.map((component) =>
         component.type === type ? { ...component, galleryLimits } : component,
+      ),
+    );
+  }
+
+  function updateVideoGalleryLimits(
+    type: (typeof ECARD_COMPONENT_TYPES)[number],
+    videoGalleryLimits: EcardComponentAvailability["videoGalleryLimits"],
+  ) {
+    onChange(
+      value.map((component) =>
+        component.type === type
+          ? { ...component, videoGalleryLimits }
+          : component,
       ),
     );
   }
@@ -68,6 +87,14 @@ export default function EcardComponentAvailabilityFields({
                 onChange={(limits) => updateGalleryLimits(type, limits)}
               />
             )}
+            {type === "VIDEO_GALLERY" &&
+              isAvailable &&
+              component?.videoGalleryLimits && (
+                <VideoGalleryLimitsFields
+                  value={component.videoGalleryLimits}
+                  onChange={(limits) => updateVideoGalleryLimits(type, limits)}
+                />
+              )}
           </div>
         );
       })}

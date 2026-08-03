@@ -1,88 +1,43 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { EcardGalleryComponent, EcardSubGallery } from "@app-types/ecard";
+import { MediaCarousel } from "@features/public-ecard/components/MediaCarousel";
+import type { MediaCarouselItem } from "@features/public-ecard/components/MediaCarousel";
 
 interface GallerySectionProps {
   component: EcardGalleryComponent;
 }
 
-function SubGalleryCarousel({ images, title }: { images: string[]; title: string }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const safeLen = Math.max(images.length, 1);
-  const hasMultiple = images.length > 1;
+interface GalleryCarouselItem extends MediaCarouselItem {
+  imageUrl: string;
+}
 
-  const next = () => setCurrentIndex((prev) => (prev + 1) % safeLen);
-  const prev = () => setCurrentIndex((prev) => (prev - 1 + safeLen) % safeLen);
+function SubGalleryCarousel({ subGallery }: { subGallery: EcardSubGallery }) {
+  const title = subGallery.title ?? "Gallery";
+  const items: GalleryCarouselItem[] = subGallery.images.map((image, idx) => ({
+    id: `${image.imageMediaId}-${idx}`,
+    thumbnailUrl: image.imageUrl,
+    imageUrl: image.imageUrl,
+    caption: image.caption,
+  }));
 
   return (
-    <div className="mt-4 space-y-4">
-      <div className="relative overflow-hidden rounded-xl bg-base-200">
-        {images[currentIndex] && (
-          <img
-            src={images[currentIndex]}
-            alt={`${title} photo ${currentIndex + 1}`}
-            className="w-full h-auto object-contain"
-          />
-        )}
-        {hasMultiple && (
-          <>
-            <button
-              type="button"
-              onClick={prev}
-              aria-label="Previous photo"
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-base-100/80 p-2 hover:bg-base-100"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={next}
-              aria-label="Next photo"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-base-100/80 p-2 hover:bg-base-100"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </>
-        )}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
-          {images.map((_, idx) => (
-            <div
-              key={idx}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                idx === currentIndex ? "bg-base-content" : "bg-base-content/50"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-      {images.length > 1 && (
-        <div className="flex overflow-x-auto space-x-2 pb-2">
-          {images.map((image, idx) => (
-            <button
-              type="button"
-              key={idx}
-              onClick={() => setCurrentIndex(idx)}
-              className={`relative w-16 h-16 shrink-0 rounded-md border-2 overflow-hidden ${
-                currentIndex === idx ? "border-primary" : "border-transparent"
-              }`}
-            >
-              <img
-                src={image}
-                alt={`${title} thumbnail ${idx + 1}`}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            </button>
-          ))}
-        </div>
+    <MediaCarousel
+      items={items}
+      title={title}
+      renderMain={(item, idx) => (
+        <img
+          src={item.imageUrl}
+          alt={`${title} photo ${idx + 1}`}
+          className="w-full h-auto object-contain"
+        />
       )}
-    </div>
+    />
   );
 }
 
 function SubGalleryItem({ subGallery }: { subGallery: EcardSubGallery }) {
   const [isOpen, setIsOpen] = useState(true);
-  const imageUrls = subGallery.images.map((image) => image.imageUrl);
-  if (imageUrls.length === 0) return null;
+  if (subGallery.images.length === 0) return null;
 
   return (
     <div className="w-full rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
@@ -94,9 +49,7 @@ function SubGalleryItem({ subGallery }: { subGallery: EcardSubGallery }) {
         <span className="text-lg">{subGallery.title || "Gallery"}</span>
         <span>{isOpen ? "▼" : "▶"}</span>
       </button>
-      {isOpen && (
-        <SubGalleryCarousel images={imageUrls} title={subGallery.title ?? "Gallery"} />
-      )}
+      {isOpen && <SubGalleryCarousel subGallery={subGallery} />}
     </div>
   );
 }

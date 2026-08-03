@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Clapperboard,
   FileText,
   Images,
   Link2,
@@ -20,6 +21,7 @@ export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "SOCIAL_LINKS",
   "GALLERY",
   "VIDEO",
+  "VIDEO_GALLERY",
   "TEAM",
   "WHATSAPP",
   "BROCHURE",
@@ -54,6 +56,11 @@ export const ECARD_COMPONENT_META: Record<EcardComponentType, EcardComponentMeta
     icon: Video,
     description: "An embedded YouTube or Vimeo video.",
   },
+  VIDEO_GALLERY: {
+    label: "Video Gallery",
+    icon: Clapperboard,
+    description: "Themed YouTube or Vimeo video galleries.",
+  },
   TEAM: {
     label: "Team",
     icon: Users,
@@ -77,6 +84,9 @@ export const ECARD_TEXT_LONG_MAX_LENGTH = 5000;
 
 export const ECARD_MAX_SUB_GALLERIES = 10;
 export const ECARD_MAX_GALLERY_IMAGES = 30;
+export const ECARD_MAX_VIDEO_SUB_GALLERIES = 10;
+export const ECARD_MAX_VIDEOS_PER_GALLERY = 30;
+export const ECARD_CAPTION_MAX_LENGTH = 100;
 export const ECARD_MAX_TEAM_MEMBERS = 50;
 
 export const ECARD_ENDPOINT_MIN_LENGTH = 3;

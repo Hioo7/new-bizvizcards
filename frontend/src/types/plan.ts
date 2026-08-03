@@ -46,11 +46,20 @@ export interface GalleryComponentLimits {
   maxGallerySizeBytes: number;
 }
 
+// Same shape as GalleryComponentLimits, minus a file-size dimension — video
+// gallery entries are URLs, not uploads.
+export interface VideoGalleryComponentLimits {
+  maxVideoGalleries: number;
+  maxVideosPerGallery: number;
+}
+
 export interface EcardComponentAvailability {
   type: EcardComponentType;
   isAvailable: boolean;
   // Required iff type === "GALLERY", omitted for every other component type.
   galleryLimits?: GalleryComponentLimits;
+  // Required iff type === "VIDEO_GALLERY", omitted for every other type.
+  videoGalleryLimits?: VideoGalleryComponentLimits;
 }
 
 export interface EcardPolicy {
@@ -151,6 +160,7 @@ export interface EffectiveEcardPolicy {
   exchangeContactAccess: boolean;
   components: Record<EcardComponentType, boolean>;
   galleryLimits: GalleryComponentLimits;
+  videoGalleryLimits: VideoGalleryComponentLimits;
   heroLayouts: Record<ECardHeroLayout, boolean>;
   // Same convention — DEFAULT_DARK/CIRCLE are unconditionally true.
   themes: Record<ECardTheme, boolean>;

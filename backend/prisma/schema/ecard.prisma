@@ -3,6 +3,7 @@ enum ECardComponentType {
   SOCIAL_LINKS
   GALLERY
   VIDEO
+  VIDEO_GALLERY
   TEAM
   WHATSAPP
   BROCHURE
@@ -124,13 +125,14 @@ model ECardComponent {
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
 
-  about       ECardAboutComponent?
-  socialLinks ECardSocialLinksComponent?
-  gallery     ECardGalleryComponent?
-  video       ECardVideoComponent?
-  team        ECardTeamComponent?
-  whatsapp    ECardWhatsAppComponent?
-  brochure    ECardBrochureComponent?
+  about        ECardAboutComponent?
+  socialLinks  ECardSocialLinksComponent?
+  gallery      ECardGalleryComponent?
+  video        ECardVideoComponent?
+  videoGallery ECardVideoGalleryComponent?
+  team         ECardTeamComponent?
+  whatsapp     ECardWhatsAppComponent?
+  brochure     ECardBrochureComponent?
 
   @@unique([ecardId, type])
   @@index([ecardId, order])
@@ -211,9 +213,50 @@ model ECardGalleryImage {
   imageMediaId String          @unique @db.Uuid
   image        Media           @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
   order        Int             @default(0)
+  // Optional per-image label rendered below the image card — never overlaid
+  // on the image itself. Absent = render the card exactly as before.
+  caption      String?         @db.VarChar(100)
 
   @@index([subGalleryId])
   @@map("ECardGalleryImage")
+}
+
+model ECardVideoGalleryComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  subGalleries ECardVideoSubGallery[]
+
+  @@map("ECardVideoGalleryComponent")
+}
+
+model ECardVideoSubGallery {
+  id                      String                     @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  videoGalleryComponentId String                     @db.Uuid
+  videoGalleryComponent   ECardVideoGalleryComponent @relation(fields: [videoGalleryComponentId], references: [ecardComponentId], onDelete: Cascade)
+  title                   String?
+  order                   Int                        @default(0)
+
+  videos ECardVideoGalleryVideo[]
+
+  @@index([videoGalleryComponentId])
+  @@map("ECardVideoSubGallery")
+}
+
+model ECardVideoGalleryVideo {
+  id           String               @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  subGalleryId String               @db.Uuid
+  subGallery   ECardVideoSubGallery @relation(fields: [subGalleryId], references: [id], onDelete: Cascade)
+  // Normalized canonical embed URL (see normalizeEcardVideoUrl) — never the
+  // raw user-pasted link, same convention as ECardVideoComponent.videoUrl.
+  videoUrl     String
+  // Optional per-video label rendered below the video card — same convention
+  // as ECardGalleryImage.caption above.
+  caption      String?              @db.VarChar(100)
+  order        Int                  @default(0)
+
+  @@index([subGalleryId])
+  @@map("ECardVideoGalleryVideo")
 }
 
 model ECardBrochureComponent {

@@ -78,6 +78,12 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
               maxGallerySizeBytes: 1024,
             },
           }),
+          ...(type === ECardComponentType.VIDEO_GALLERY && {
+            videoGalleryLimits: {
+              maxVideoGalleries: 2,
+              maxVideosPerGallery: 5,
+            },
+          }),
         }),
       ),
       heroLayoutAvailabilities: ECARD_GATED_HERO_LAYOUTS.map((layout) => ({
@@ -193,6 +199,13 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
         maxGalleries: 2,
         maxImagesPerGallery: 5,
         maxGallerySizeBytes: 1024,
+      });
+      const videoGallery = plan.ecardPolicy.componentAvailabilities.find(
+        (c) => c.type === ECardComponentType.VIDEO_GALLERY,
+      );
+      expect(videoGallery?.videoGalleryLimits).toEqual({
+        maxVideoGalleries: 2,
+        maxVideosPerGallery: 5,
       });
     });
 
@@ -360,6 +373,42 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
         (c) => c.type === ECardComponentType.WHATSAPP,
       );
       expect(whatsapp?.isAvailable).toBe(false);
+    });
+
+    it('fully replaces the videoGalleryLimits satellite on the VIDEO_GALLERY component', async () => {
+      const plan = await createPlan();
+
+      const updated = await service.update(plan.id, {
+        ecardPolicy: buildEcardPolicyDto({
+          componentAvailabilities: Object.values(ECardComponentType).map(
+            (type) => ({
+              type,
+              isAvailable: true,
+              ...(type === ECardComponentType.GALLERY && {
+                galleryLimits: {
+                  maxGalleries: 1,
+                  maxImagesPerGallery: 1,
+                  maxGallerySizeBytes: 1,
+                },
+              }),
+              ...(type === ECardComponentType.VIDEO_GALLERY && {
+                videoGalleryLimits: {
+                  maxVideoGalleries: 9,
+                  maxVideosPerGallery: 9,
+                },
+              }),
+            }),
+          ),
+        }),
+      });
+
+      const videoGallery = updated.ecardPolicy.componentAvailabilities.find(
+        (c) => c.type === ECardComponentType.VIDEO_GALLERY,
+      );
+      expect(videoGallery?.videoGalleryLimits).toEqual({
+        maxVideoGalleries: 9,
+        maxVideosPerGallery: 9,
+      });
     });
 
     it('fully replaces theme/icon-shape availabilities and accent-color presets, not merges', async () => {

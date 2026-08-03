@@ -102,7 +102,10 @@ model EcardComponentAvailability {
   // layer (the PlansService assembler methods are the only write path)
   // guarantees this, since Prisma can't express a conditional FK keyed off a
   // sibling enum column.
-  galleryLimits GalleryComponentLimits?
+  galleryLimits      GalleryComponentLimits?
+  // Same pattern as galleryLimits above, only ever exists on the
+  // VIDEO_GALLERY row.
+  videoGalleryLimits VideoGalleryComponentLimits?
 
   @@unique([ecardPolicyId, type])
   @@map("EcardComponentAvailability")
@@ -187,6 +190,17 @@ model GalleryComponentLimits {
   maxGallerySizeBytes          Int
 
   @@map("GalleryComponentLimits")
+}
+
+// Same shape as GalleryComponentLimits, minus a file-size dimension — video
+// gallery entries are URLs, not uploads, so there's nothing to size-limit.
+model VideoGalleryComponentLimits {
+  ecardComponentAvailabilityId String                     @id @db.Uuid
+  ecardComponentAvailability   EcardComponentAvailability @relation(fields: [ecardComponentAvailabilityId], references: [id], onDelete: Cascade)
+  maxVideoGalleries            Int
+  maxVideosPerGallery          Int
+
+  @@map("VideoGalleryComponentLimits")
 }
 
 model SmartCardPolicy {

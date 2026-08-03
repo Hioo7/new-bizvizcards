@@ -51,6 +51,14 @@ function permissiveEcardPolicyCreateData() {
             },
           },
         }),
+        ...(type === ECardComponentType.VIDEO_GALLERY && {
+          videoGalleryLimits: {
+            create: {
+              maxVideoGalleries: GENEROUS_LIMIT,
+              maxVideosPerGallery: GENEROUS_LIMIT,
+            },
+          },
+        }),
       })),
     },
     // Generous like everything else here — tests specifically about

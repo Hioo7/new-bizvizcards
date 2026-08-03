@@ -15,6 +15,10 @@ function makePolicy(
       maxImagesPerGallery: 1,
       maxGallerySizeBytes: 1,
     },
+    videoGalleryLimits: {
+      maxVideoGalleries: 1,
+      maxVideosPerGallery: 1,
+    },
     heroLayouts: {
       DEFAULT: true,
       BANNER: false,

@@ -58,3 +58,15 @@ export function normalizeEcardVideoUrl(input: string): string | null {
 
   return null;
 }
+
+const YOUTUBE_EMBED_ID_REGEX = /^https:\/\/www\.youtube\.com\/embed\/([\w-]+)/;
+
+// Derives a real thumbnail image URL from an already-normalized embed URL —
+// pure regex on a known shape, no API call. YouTube exposes a predictable
+// per-video thumbnail URL; Vimeo does not (would require an oEmbed call), so
+// this returns null for Vimeo/unrecognized URLs and the caller falls back to
+// a generic placeholder.
+export function getEcardVideoThumbnailUrl(embedUrl: string): string | null {
+  const match = embedUrl.match(YOUTUBE_EMBED_ID_REGEX);
+  return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : null;
+}

@@ -33,6 +33,7 @@ import AboutEditSheet from "@features/ecards/components/AboutEditSheet";
 import SocialLinksEditSheet from "@features/ecards/components/SocialLinksEditSheet";
 import VideoEditSheet from "@features/ecards/components/VideoEditSheet";
 import GalleryEditSheet from "@features/ecards/components/GalleryEditSheet";
+import VideoGalleryEditSheet from "@features/ecards/components/VideoGalleryEditSheet";
 import TeamEditSheet from "@features/ecards/components/TeamEditSheet";
 import WhatsAppEditSheet from "@features/ecards/components/WhatsAppEditSheet";
 import BrochureEditSheet from "@features/ecards/components/BrochureEditSheet";
@@ -401,6 +402,25 @@ export default function EcardBuilderView() {
 
       {editingComponent?.draft.type === "GALLERY" && (
         <GalleryEditSheet
+          open
+          draft={editingComponent.draft}
+          isSubmitting={false}
+          error={null}
+          onClose={() => setEditing(null)}
+          onSave={(draft) => {
+            builder.setState((state) => ({
+              ...state,
+              components: state.components.map((c) =>
+                c.key === editingComponent.key ? { ...c, draft } : c,
+              ),
+            }));
+            setEditing(null);
+          }}
+        />
+      )}
+
+      {editingComponent?.draft.type === "VIDEO_GALLERY" && (
+        <VideoGalleryEditSheet
           open
           draft={editingComponent.draft}
           isSubmitting={false}

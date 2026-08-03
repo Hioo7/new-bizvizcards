@@ -66,6 +66,7 @@ export interface EcardVideoComponent extends EcardComponentBase {
 export interface EcardGalleryImage {
   imageMediaId: string;
   imageUrl: string;
+  caption: string | null;
 }
 
 export interface EcardSubGallery {
@@ -77,6 +78,22 @@ export interface EcardSubGallery {
 export interface EcardGalleryComponent extends EcardComponentBase {
   type: "GALLERY";
   subGalleries: EcardSubGallery[];
+}
+
+export interface EcardVideoGalleryVideo {
+  videoUrl: string;
+  caption: string | null;
+}
+
+export interface EcardVideoSubGallery {
+  id: string;
+  title: string | null;
+  videos: EcardVideoGalleryVideo[];
+}
+
+export interface EcardVideoGalleryComponent extends EcardComponentBase {
+  type: "VIDEO_GALLERY";
+  subGalleries: EcardVideoSubGallery[];
 }
 
 export interface EcardTeamMember {
@@ -113,6 +130,7 @@ export type EcardComponent =
   | EcardSocialLinksComponent
   | EcardVideoComponent
   | EcardGalleryComponent
+  | EcardVideoGalleryComponent
   | EcardTeamComponent
   | EcardWhatsAppComponent
   | EcardBrochureComponent;
@@ -200,14 +218,34 @@ export interface EcardVideoComponentPayload {
   videoUrl: string;
 }
 
+export interface EcardGalleryImageEntryPayload {
+  image: ImageSlotPayload;
+  caption?: string;
+}
+
 export interface EcardSubGalleryPayload {
   title?: string;
-  images: ImageSlotPayload[];
+  images: EcardGalleryImageEntryPayload[];
 }
 
 export interface EcardGalleryComponentPayload {
   type: "GALLERY";
   subGalleries: EcardSubGalleryPayload[];
+}
+
+export interface EcardVideoGalleryVideoPayload {
+  videoUrl: string;
+  caption?: string;
+}
+
+export interface EcardVideoSubGalleryPayload {
+  title?: string;
+  videos: EcardVideoGalleryVideoPayload[];
+}
+
+export interface EcardVideoGalleryComponentPayload {
+  type: "VIDEO_GALLERY";
+  subGalleries: EcardVideoSubGalleryPayload[];
 }
 
 export interface EcardTeamComponentPayload {
@@ -232,6 +270,7 @@ export type EcardComponentPayload =
   | EcardSocialLinksComponentPayload
   | EcardVideoComponentPayload
   | EcardGalleryComponentPayload
+  | EcardVideoGalleryComponentPayload
   | EcardTeamComponentPayload
   | EcardWhatsAppComponentPayload
   | EcardBrochureComponentPayload;

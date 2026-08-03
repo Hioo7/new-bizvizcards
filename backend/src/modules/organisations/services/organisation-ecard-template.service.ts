@@ -46,6 +46,16 @@ const FULL_INCLUDE = {
           },
         },
       },
+      videoGallery: {
+        include: {
+          subGalleries: {
+            orderBy: { order: 'asc' as const },
+            include: {
+              videos: { orderBy: { order: 'asc' as const } },
+            },
+          },
+        },
+      },
       team: {
         include: {
           members: {
@@ -116,6 +126,7 @@ export interface OrganisationEcardTemplateVideoComponentResponse extends Organis
 export interface OrganisationEcardTemplateGalleryImageResponse {
   imageMediaId: string;
   imageUrl: string;
+  caption: string | null;
 }
 
 export interface OrganisationEcardTemplateSubGalleryResponse {
@@ -127,6 +138,22 @@ export interface OrganisationEcardTemplateSubGalleryResponse {
 export interface OrganisationEcardTemplateGalleryComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
   type: typeof ECardComponentType.GALLERY;
   subGalleries: OrganisationEcardTemplateSubGalleryResponse[];
+}
+
+export interface OrganisationEcardTemplateVideoGalleryVideoResponse {
+  videoUrl: string;
+  caption: string | null;
+}
+
+export interface OrganisationEcardTemplateVideoSubGalleryResponse {
+  id: string;
+  title: string | null;
+  videos: OrganisationEcardTemplateVideoGalleryVideoResponse[];
+}
+
+export interface OrganisationEcardTemplateVideoGalleryComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
+  type: typeof ECardComponentType.VIDEO_GALLERY;
+  subGalleries: OrganisationEcardTemplateVideoSubGalleryResponse[];
 }
 
 export interface OrganisationEcardTemplateTeamMemberResponse {
@@ -163,6 +190,7 @@ export type OrganisationEcardTemplateComponentResponse =
   | OrganisationEcardTemplateSocialLinksComponentResponse
   | OrganisationEcardTemplateVideoComponentResponse
   | OrganisationEcardTemplateGalleryComponentResponse
+  | OrganisationEcardTemplateVideoGalleryComponentResponse
   | OrganisationEcardTemplateTeamComponentResponse
   | OrganisationEcardTemplateWhatsAppComponentResponse
   | OrganisationEcardTemplateBrochureComponentResponse;
@@ -545,6 +573,36 @@ export class OrganisationEcardTemplateService {
                 subGalleryId: subGalleryRow.id,
                 imageMediaId: mediaId,
                 order: j,
+                caption: subGallery.images[j].caption,
+              },
+            });
+          }
+        }
+        return;
+      }
+      case 'VIDEO_GALLERY': {
+        const videoGalleryRow =
+          await tx.organisationEcardTemplateVideoGalleryComponent.create({
+            data: { templateComponentId },
+          });
+        for (let g = 0; g < component.subGalleries.length; g++) {
+          const subGallery = component.subGalleries[g];
+          const subGalleryRow =
+            await tx.organisationEcardTemplateVideoSubGallery.create({
+              data: {
+                videoGalleryComponentId: videoGalleryRow.templateComponentId,
+                title: subGallery.title,
+                order: g,
+              },
+            });
+          for (let j = 0; j < subGallery.videos.length; j++) {
+            const video = subGallery.videos[j];
+            await tx.organisationEcardTemplateVideoGalleryVideo.create({
+              data: {
+                subGalleryId: subGalleryRow.id,
+                videoUrl: video.videoUrl,
+                caption: video.caption,
+                order: j,
               },
             });
           }
@@ -594,9 +652,9 @@ export class OrganisationEcardTemplateService {
     return Promise.all(
       galleryComponent.subGalleries.map((subGallery, g) =>
         Promise.all(
-          subGallery.images.map((slot, j) =>
+          subGallery.images.map((entry, j) =>
             this.mediaSlotResolver.resolveUpdateSlot(
-              slot,
+              entry.image,
               organisationEcardTemplateGalleryImageField(g, j),
               fileMap,
               `${keyPrefix}/gallery/${g}`,
@@ -744,6 +802,22 @@ export class OrganisationEcardTemplateService {
               images: subGallery.images.map((image) => ({
                 imageMediaId: image.imageMediaId,
                 imageUrl: this.mediaService.getPublicUrl(image.image),
+                caption: image.caption ?? null,
+              })),
+            }),
+          ),
+        };
+      case ECardComponentType.VIDEO_GALLERY:
+        return {
+          ...base,
+          type: ECardComponentType.VIDEO_GALLERY,
+          subGalleries: (component.videoGallery?.subGalleries ?? []).map(
+            (subGallery) => ({
+              id: subGallery.id,
+              title: subGallery.title,
+              videos: subGallery.videos.map((video) => ({
+                videoUrl: video.videoUrl,
+                caption: video.caption ?? null,
               })),
             }),
           ),

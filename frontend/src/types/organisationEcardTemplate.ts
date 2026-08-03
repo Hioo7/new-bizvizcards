@@ -8,6 +8,7 @@ import type {
   EcardImageUpload,
   EcardSocialLinksComponentPayload,
   EcardTeamComponentPayload,
+  EcardVideoGalleryComponentPayload,
   ImageSlotPayload,
 } from "@app-types/ecard";
 
@@ -66,6 +67,7 @@ export type OrganisationEcardTemplateComponentPayload =
   | EcardAboutComponentPayload
   | EcardSocialLinksComponentPayload
   | EcardGalleryComponentPayload
+  | EcardVideoGalleryComponentPayload
   | OrganisationEcardTemplateVideoComponentPayload
   | EcardTeamComponentPayload
   | OrganisationEcardTemplateWhatsAppComponentPayload

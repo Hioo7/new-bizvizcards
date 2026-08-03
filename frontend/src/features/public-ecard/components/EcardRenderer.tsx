@@ -12,6 +12,7 @@ import { AboutSection } from "@features/public-ecard/components/sections/AboutSe
 import { SocialLinksSection } from "@features/public-ecard/components/sections/SocialLinksSection";
 import { GallerySection } from "@features/public-ecard/components/sections/GallerySection";
 import { VideoSection } from "@features/public-ecard/components/sections/VideoSection";
+import { VideoGallerySection } from "@features/public-ecard/components/sections/VideoGallerySection";
 import { TeamSection } from "@features/public-ecard/components/sections/TeamSection";
 import { WhatsAppSection } from "@features/public-ecard/components/sections/WhatsAppSection";
 import { BrochureSection } from "@features/public-ecard/components/sections/BrochureSection";
@@ -59,6 +60,8 @@ function renderComponent(
       return <GallerySection key={component.id} component={component} />;
     case "VIDEO":
       return <VideoSection key={component.id} component={component} />;
+    case "VIDEO_GALLERY":
+      return <VideoGallerySection key={component.id} component={component} />;
     case "TEAM":
       return <TeamSection key={component.id} component={component} />;
     case "WHATSAPP":
