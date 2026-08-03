@@ -106,6 +106,7 @@ model ECard {
 
   components ECardComponent[]
   events     ECardEvent[]
+  leads      Lead[]
 
   linkedProductUnits ProductUnitLink[]
 

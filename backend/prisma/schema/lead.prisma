@@ -55,6 +55,12 @@ model Lead {
   folderId String?     @db.Uuid
   folder   LeadFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
+  // Which e-card this lead was exchanged through, when sourcedBy is E_CARD.
+  // Null for leads sourced another way, and for leads created before this
+  // field existed (never retroactively attributable).
+  ecardId String? @db.Uuid
+  ecard   ECard?  @relation(fields: [ecardId], references: [id], onDelete: SetNull)
+
   name              String
   email             String?
   countryDialCode   String?
@@ -74,6 +80,7 @@ model Lead {
 
   @@index([customerId])
   @@index([folderId])
+  @@index([ecardId])
   @@map("Lead")
 }
 

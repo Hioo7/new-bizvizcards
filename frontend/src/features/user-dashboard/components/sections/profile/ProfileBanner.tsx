@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Settings } from "lucide-react";
 import type { AuthUser } from "@app-types/auth";
 
 interface ProfileBannerProps {
@@ -7,6 +7,7 @@ interface ProfileBannerProps {
   countryCode?: string;
   onEditProfile: () => void;
   onManageEcards?: () => void;
+  onOpenSettings: () => void;
 }
 
 function getInitials(name: string): string {
@@ -24,20 +25,9 @@ export default function ProfileBanner({
   countryCode,
   onEditProfile,
   onManageEcards,
+  onOpenSettings,
 }: ProfileBannerProps) {
   const initials = getInitials(user.name);
-  const [walletError, setWalletError] = useState<string | null>(null);
-  const [walletLoading, setWalletLoading] = useState(false);
-
-  function handleAppleWallet() {
-    setWalletLoading(true);
-    setWalletError(null);
-    setTimeout(() => {
-      setWalletLoading(false);
-      setWalletError("Apple Wallet coming soon!");
-      setTimeout(() => setWalletError(null), 3000);
-    }, 500);
-  }
 
   const displayPhone =
     phone
@@ -52,10 +42,15 @@ export default function ProfileBanner({
       {/* Top bar */}
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white/20 text-xs font-bold text-white">
-            Bv
-          </span>
-          <span className="text-base font-bold text-white">BizVizCards</span>
+          {/* Settings */}
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Settings"
+            className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-sm transition-all hover:bg-white/25 hover:border-white/50 active:scale-95"
+          >
+            <Settings className="h-5 w-5" aria-hidden="true" />
+          </button>
         </div>
         <div className="flex items-center gap-2">
           {/* Edit Profile */}
@@ -126,28 +121,6 @@ export default function ProfileBanner({
           <p className="text-sm text-white/70">{displayPhone}</p>
         )}
       </div>
-
-      {/* Wallet buttons row */}
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          disabled={walletLoading}
-          onClick={handleAppleWallet}
-          className="flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-full bg-neutral px-3 py-2.5 text-xs font-semibold text-neutral-content transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-60"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 fill-neutral-content" aria-hidden="true">
-            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-          </svg>
-          <span className="text-left leading-tight">
-            Add to<br />Apple Wallet
-          </span>
-        </button>
-      </div>
-
-      {/* Wallet error */}
-      {walletError && (
-        <p className="mt-2 text-center text-xs text-white/80">{walletError}</p>
-      )}
     </div>
   );
 }

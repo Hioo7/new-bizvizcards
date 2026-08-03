@@ -45,7 +45,7 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
 
   afterEach(async () => {
     if (seededAccountIds.length > 0) {
-      // Cascades Customer -> SmartCard/Lead/LeadFolder rows created for that customer.
+      // Cascades Customer -> SmartCard/ECard/Lead/LeadFolder rows created for that customer.
       await prisma.customerAccount.deleteMany({
         where: { id: { in: seededAccountIds } },
       });
@@ -78,6 +78,17 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
     });
   }
 
+  async function seedEcard(customerId: string) {
+    return prisma.eCard.create({
+      data: {
+        customerId,
+        endpoint: `leads-service-ecard-${randomUUID()}`,
+        heroName: 'Test Ecard',
+        heroEmail: 'test-ecard@example.com',
+      },
+    });
+  }
+
   describe('createFromExchangeContact', () => {
     it('creates a lead linked to the smart card owner and records the source type', async () => {
       const customer = await seedCustomer();
@@ -92,6 +103,7 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
       expect(lead.customerId).toBe(customer.id);
       expect(lead.sourcedBy).toBe(LeadSourceType.SMART_CARD);
       expect(lead.folderId).toBeNull();
+      expect(lead.ecardId).toBeNull();
     });
 
     it("files the lead into the customer's active folder when one is set", async () => {
@@ -129,6 +141,61 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
 
       await expect(
         service.createFromExchangeContact(smartCard.endpoint, {
+          name: 'Visitor',
+          countryDialCode: '91',
+          phoneNumber: '9876543210',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('createFromEcardExchangeContact', () => {
+    it('creates a lead linked to the e-card owner, records the source type, and persists the ecardId', async () => {
+      const customer = await seedCustomer();
+      const ecard = await seedEcard(customer.id);
+
+      const lead = await service.createFromEcardExchangeContact(
+        ecard.endpoint,
+        {
+          name: 'Visitor One',
+          countryDialCode: '91',
+          phoneNumber: '9876543210',
+        },
+      );
+
+      expect(lead.customerId).toBe(customer.id);
+      expect(lead.sourcedBy).toBe(LeadSourceType.E_CARD);
+      expect(lead.ecardId).toBe(ecard.id);
+      expect(lead.folderId).toBeNull();
+    });
+
+    it("files the lead into the customer's active folder when one is set", async () => {
+      const customer = await seedCustomer();
+      const ecard = await seedEcard(customer.id);
+      const folder = await prisma.leadFolder.create({
+        data: { customerId: customer.id, name: 'Active Folder' },
+      });
+      await prisma.customer.update({
+        where: { id: customer.id },
+        data: { defaultLeadFolderId: folder.id },
+      });
+
+      const lead = await service.createFromEcardExchangeContact(
+        ecard.endpoint,
+        {
+          name: 'Visitor Two',
+          countryDialCode: '91',
+          phoneNumber: '9876543211',
+        },
+      );
+
+      expect(lead.folderId).toBe(folder.id);
+      expect(lead.ecardId).toBe(ecard.id);
+    });
+
+    it('throws NotFoundException when the e-card endpoint does not exist', async () => {
+      await expect(
+        service.createFromEcardExchangeContact('does-not-exist', {
           name: 'Visitor',
           countryDialCode: '91',
           phoneNumber: '9876543210',

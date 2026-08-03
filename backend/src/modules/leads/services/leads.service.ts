@@ -74,6 +74,7 @@ export class LeadsService {
       ecard.customer.defaultLeadFolderId,
       LeadSourceType.E_CARD,
       dto,
+      ecard.id,
     );
   }
 
@@ -82,12 +83,14 @@ export class LeadsService {
     defaultLeadFolderId: string | null,
     sourcedBy: LeadSourceType,
     dto: ExchangeContactDto,
+    ecardId?: string,
   ): Promise<LeadModel> {
     return this.prisma.lead.create({
       data: {
         customerId,
         sourcedBy,
         folderId: defaultLeadFolderId ?? undefined,
+        ecardId,
         name: dto.name,
         email: dto.email,
         countryDialCode: dto.countryDialCode,

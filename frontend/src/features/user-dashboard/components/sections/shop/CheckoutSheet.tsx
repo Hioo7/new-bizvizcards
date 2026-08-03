@@ -142,88 +142,86 @@ export default function CheckoutSheet({
   return (
     <>
       <dialog className="modal modal-bottom sm:modal-middle" open>
-        <div className="modal-box p-0 overflow-hidden sm:max-w-lg rounded-t-3xl rounded-b-none sm:rounded-2xl">
-          <div className="flex flex-col max-h-[92dvh]">
-            {/* Drag handle (mobile) */}
-            <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
-              <div className="h-1 w-10 rounded-full bg-base-300" />
-            </div>
-
-            {checkout.step === "confirmed" ? (
-              <ConfirmedStep
-                orderId={checkout.placedOrder?.id ?? ""}
-                totalAmount={checkout.placedOrder?.totalAmount ?? cart.totalAmount}
-                onClose={handleClose}
-              />
-            ) : (
-              <>
-                {/* Header */}
-                <div className="shrink-0 flex items-center gap-3 px-5 pt-4 pb-4 border-b border-base-200">
-                  <button
-                    type="button"
-                    onClick={
-                      checkout.step === "review"
-                        ? () => checkout.setStep("address")
-                        : handleClose
-                    }
-                    aria-label="Back"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-base-200 text-base-content/60"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                      <path
-                        d="M19 12H5M12 19l-7-7 7-7"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-base font-bold text-base-content">
-                      {checkout.step === "address" ? "Delivery Address" : "Review & Pay"}
-                    </p>
-                    <p className="text-xs text-base-content/50">
-                      {checkout.step === "address"
-                        ? "Choose where to deliver"
-                        : "Confirm and complete payment"}
-                    </p>
-                  </div>
-                  {/* Step indicator */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <div className={`h-1.5 w-6 rounded-full transition-colors ${checkout.step === "address" ? "bg-primary" : "bg-base-300"}`} />
-                    <div className={`h-1.5 w-6 rounded-full transition-colors ${checkout.step === "review" ? "bg-primary" : "bg-base-300"}`} />
-                  </div>
-                </div>
-
-                {/* Scrollable body */}
-                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-5 flex flex-col gap-4 pb-6">
-                  {checkout.step === "address" && (
-                    <AddressStep
-                      addresses={checkout.addresses}
-                      addressesLoading={checkout.addressesLoading}
-                      addressesError={checkout.addressesError}
-                      selectedAddressId={checkout.selectedAddressId}
-                      onSelect={checkout.setSelectedAddressId}
-                      onAddNew={() => setShowAddressForm(true)}
-                      canAddMore={checkout.addresses.length < ADDRESSES_MAX}
-                      onContinue={() => checkout.setStep("review")}
-                    />
-                  )}
-
-                  {checkout.step === "review" && (
-                    <ReviewStep
-                      cart={cart}
-                      selectedAddress={selectedAddress}
-                      isBusy={isBusy}
-                      error={combinedError}
-                      onPayNow={() => void handlePayNow()}
-                    />
-                  )}
-                </div>
-              </>
-            )}
+        <div className="modal-box p-0 overflow-hidden flex flex-col max-h-[92dvh] sm:max-w-lg rounded-t-3xl rounded-b-none sm:rounded-2xl">
+          {/* Drag handle (mobile) */}
+          <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
+            <div className="h-1 w-10 rounded-full bg-base-300" />
           </div>
+
+          {checkout.step === "confirmed" ? (
+            <ConfirmedStep
+              orderId={checkout.placedOrder?.id ?? ""}
+              totalAmount={checkout.placedOrder?.totalAmount ?? cart.totalAmount}
+              onClose={handleClose}
+            />
+          ) : (
+            <>
+              {/* Header */}
+              <div className="shrink-0 flex items-center gap-3 px-5 pt-4 pb-4 border-b border-base-200">
+                <button
+                  type="button"
+                  onClick={
+                    checkout.step === "review"
+                      ? () => checkout.setStep("address")
+                      : handleClose
+                  }
+                  aria-label="Back"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-base-200 text-base-content/60"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                    <path
+                      d="M19 12H5M12 19l-7-7 7-7"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-bold text-base-content">
+                    {checkout.step === "address" ? "Delivery Address" : "Review & Pay"}
+                  </p>
+                  <p className="text-xs text-base-content/50">
+                    {checkout.step === "address"
+                      ? "Choose where to deliver"
+                      : "Confirm and complete payment"}
+                  </p>
+                </div>
+                {/* Step indicator */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <div className={`h-1.5 w-6 rounded-full transition-colors ${checkout.step === "address" ? "bg-primary" : "bg-base-300"}`} />
+                  <div className={`h-1.5 w-6 rounded-full transition-colors ${checkout.step === "review" ? "bg-primary" : "bg-base-300"}`} />
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-5 flex flex-col gap-4 pb-6">
+                {checkout.step === "address" && (
+                  <AddressStep
+                    addresses={checkout.addresses}
+                    addressesLoading={checkout.addressesLoading}
+                    addressesError={checkout.addressesError}
+                    selectedAddressId={checkout.selectedAddressId}
+                    onSelect={checkout.setSelectedAddressId}
+                    onAddNew={() => setShowAddressForm(true)}
+                    canAddMore={checkout.addresses.length < ADDRESSES_MAX}
+                    onContinue={() => checkout.setStep("review")}
+                  />
+                )}
+
+                {checkout.step === "review" && (
+                  <ReviewStep
+                    cart={cart}
+                    selectedAddress={selectedAddress}
+                    isBusy={isBusy}
+                    error={combinedError}
+                    onPayNow={() => void handlePayNow()}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </div>
         <div
           className="modal-backdrop"

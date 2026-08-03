@@ -1,5 +1,5 @@
 // Dashboard section types
-export type DashboardSection = "profile" | "leads" | "analytics" | "cart" | "settings";
+export type DashboardSection = "profile" | "leads" | "analytics" | "cart" | "apps" | "settings";
 
 // ── Leads ────────────────────────────────────────────────────────────────────
 
@@ -73,6 +73,7 @@ export interface Lead {
   location?: string | null;
   stage?: OpportunityStage | null;
   folderId?: string | null;
+  ecardId: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,12 +1,16 @@
 import { useState } from "react";
+import { Layers, UserRound } from "lucide-react";
+import type { Ecard } from "@app-types/ecard";
 import type { Lead } from "@features/user-dashboard/types";
 import { useInsights } from "@features/user-dashboard/hooks/useInsights";
+import EcardAnalyticsPickerSheet from "./EcardAnalyticsPickerSheet";
 
 interface InsightsSectionProps {
   leads: Lead[];
   loading: boolean;
   error: string | null;
   isAccessible: boolean;
+  ecards: Ecard[];
 }
 
 interface StatCardProps {
@@ -123,8 +127,19 @@ export default function InsightsSection({
   loading,
   error,
   isAccessible,
+  ecards,
 }: InsightsSectionProps) {
   const [chartView, setChartView] = useState<"monthly" | "weekly">("monthly");
+  const [selectedEcardId, setSelectedEcardId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const filteredLeads = selectedEcardId
+    ? leads.filter((lead) => lead.ecardId === selectedEcardId)
+    : leads;
+
+  const selectedEcard = selectedEcardId
+    ? (ecards.find((ecard) => ecard.id === selectedEcardId) ?? null)
+    : null;
 
   const {
     todayLeads,
@@ -135,7 +150,7 @@ export default function InsightsSection({
     monthlyBuckets,
     weeklyBuckets,
     recentLeads,
-  } = useInsights(leads);
+  } = useInsights(filteredLeads);
 
   if (!isAccessible) {
     return (
@@ -170,8 +185,37 @@ export default function InsightsSection({
         className="sticky top-0 z-10 px-4 pb-5 pt-10"
         style={{ backgroundColor: "var(--color-primary)" }}
       >
-        <h1 className="text-xl font-bold text-white">Analytics</h1>
-        <p className="text-sm text-white/70">Your leads overview</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-white">Analytics</h1>
+            <p className="text-sm text-white/70">Your leads overview</p>
+          </div>
+          {ecards.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              aria-label="Switch e-card"
+              className="flex flex-col items-center gap-1"
+            >
+              <span className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-sm transition-all hover:bg-white/25 hover:border-white/50 active:scale-95">
+                {selectedEcard?.hero.profilePhotoUrl ? (
+                  <img
+                    src={selectedEcard.hero.profilePhotoUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : selectedEcard ? (
+                  <UserRound className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <Layers className="h-5 w-5" aria-hidden="true" />
+                )}
+              </span>
+              <span className="max-w-[72px] truncate text-[10px] font-medium text-white/80">
+                {selectedEcard ? selectedEcard.hero.name : "All e-cards"}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="px-4 pt-4">
@@ -225,7 +269,7 @@ export default function InsightsSection({
             </div>
 
             {/* Chart */}
-            {leads.length > 0 ? (
+            {filteredLeads.length > 0 ? (
               <div className="mb-4 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
                 {/* Toggle */}
                 <div className="mb-4 flex items-center justify-between">
@@ -319,6 +363,17 @@ export default function InsightsSection({
           </>
         )}
       </div>
+
+      <EcardAnalyticsPickerSheet
+        open={pickerOpen}
+        ecards={ecards}
+        selectedEcardId={selectedEcardId}
+        onSelect={(id) => {
+          setSelectedEcardId(id);
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }

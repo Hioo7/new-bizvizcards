@@ -22,6 +22,7 @@ import {
   SocialLinksEditSheet,
   VideoEditSheet,
   GalleryEditSheet,
+  VideoGalleryEditSheet,
   TeamEditSheet,
   WhatsAppEditSheet,
   BrochureEditSheet,
@@ -161,9 +162,7 @@ export default function CustomerEcardBuilderSheet({
 
   return (
     <dialog className="modal modal-bottom sm:modal-middle" open>
-      <div className="modal-box p-0 overflow-hidden sm:max-w-2xl rounded-t-3xl rounded-b-none sm:rounded-2xl">
-        {/* Inner flex column owns height so modal-box overflow doesn't interfere */}
-        <div className="flex flex-col max-h-[96dvh] sm:max-h-[92dvh]">
+      <div className="modal-box p-0 overflow-hidden flex flex-col max-h-[96dvh] sm:max-h-[92dvh] sm:max-w-2xl rounded-t-3xl rounded-b-none sm:rounded-2xl">
         {/* Drag handle (mobile only) */}
         <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
           <div className="h-1 w-10 rounded-full bg-base-300" />
@@ -236,7 +235,7 @@ export default function CustomerEcardBuilderSheet({
                 items={builder.state.components.map((c) => c.key)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="overflow-hidden rounded-2xl border border-base-300 bg-base-100">
+                <div className="shrink-0 overflow-hidden rounded-2xl border border-base-300 bg-base-100">
                   {builder.state.components.map((component) => (
                     <SortableComponentRow
                       key={component.key}
@@ -278,7 +277,6 @@ export default function CustomerEcardBuilderSheet({
           </button>
             </>
           )}
-        </div>
         </div>
       </div>
       <div className="modal-backdrop" onClick={onClose} />
@@ -365,6 +363,25 @@ export default function CustomerEcardBuilderSheet({
 
       {editingComponent?.draft.type === "GALLERY" && (
         <GalleryEditSheet
+          open
+          draft={editingComponent.draft}
+          isSubmitting={false}
+          error={null}
+          onClose={() => setEditing(null)}
+          onSave={(draft) => {
+            builder.setState((state: EcardBuilderState) => ({
+              ...state,
+              components: state.components.map((c) =>
+                c.key === editingComponent.key ? { ...c, draft } : c,
+              ),
+            }));
+            setEditing(null);
+          }}
+        />
+      )}
+
+      {editingComponent?.draft.type === "VIDEO_GALLERY" && (
+        <VideoGalleryEditSheet
           open
           draft={editingComponent.draft}
           isSubmitting={false}

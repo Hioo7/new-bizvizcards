@@ -17,12 +17,14 @@ interface ProfileSectionProps {
   user: AuthUser;
   ecardAvailable: boolean;
   orgAvailable: boolean;
+  onOpenSettings: () => void;
 }
 
 export default function ProfileSection({
   user: initialUser,
   ecardAvailable,
   orgAvailable,
+  onOpenSettings,
 }: ProfileSectionProps) {
   const [user, setUser] = useState<AuthUser>(initialUser);
   const [openModal, setOpenModal] = useState<ModalType>(null);
@@ -66,6 +68,7 @@ export default function ProfileSection({
         phone={phone}
         countryCode={dialCode}
         onEditProfile={() => setOpenModal("profile")}
+        onOpenSettings={onOpenSettings}
         onManageEcards={
           ecardAvailable
             ? () => {
@@ -105,7 +108,6 @@ export default function ProfileSection({
               setBuilderOpen(true);
             }}
             onDelete={customerEcards.remove}
-            onNotify={showToast}
           />
         </div>
       </div>

@@ -129,7 +129,7 @@ function CartIcon() {
   );
 }
 
-function SettingsIcon() {
+function AppsIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -138,13 +138,10 @@ function SettingsIcon() {
       className="h-6 w-6"
       aria-hidden="true"
     >
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
+      <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   );
 }
@@ -154,7 +151,7 @@ const TABS: NavTab[] = [
   { section: "leads", label: "Leads" },
   { section: "analytics", label: "Analytics" },
   { section: "cart", label: "Cart" },
-  { section: "settings", label: "Settings" },
+  { section: "apps", label: "Apps" },
 ];
 
 function getIcon(section: DashboardSection, isActive: boolean) {
@@ -167,8 +164,10 @@ function getIcon(section: DashboardSection, isActive: boolean) {
       return <AnalyticsIcon />;
     case "cart":
       return <CartIcon />;
+    case "apps":
+      return <AppsIcon />;
     case "settings":
-      return <SettingsIcon />;
+      return null;
   }
 }
 

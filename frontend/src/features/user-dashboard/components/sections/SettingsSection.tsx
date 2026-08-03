@@ -10,6 +10,7 @@ import {
 
 interface SettingsSectionProps {
   onSignOut: () => Promise<void>;
+  onBack: () => void;
 }
 
 function ChevronRightIcon() {
@@ -108,7 +109,7 @@ function Divider() {
   return <div className="mx-4 border-t border-base-200" />;
 }
 
-export default function SettingsSection({ onSignOut }: SettingsSectionProps) {
+export default function SettingsSection({ onSignOut, onBack }: SettingsSectionProps) {
   const { canInstall, isInstalled, triggerInstall } = usePWAInstall();
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
@@ -126,11 +127,29 @@ export default function SettingsSection({ onSignOut }: SettingsSectionProps) {
         style={{ backgroundColor: "var(--color-primary)" }}
       >
         <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
-            <p className="text-sm text-white/70 mt-0.5">
-              Manage your account and preferences
-            </p>
+          <div className="flex items-start gap-3">
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back"
+              className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-white hover:bg-white/10"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                <path
+                  d="M19 12H5M12 19l-7-7 7-7"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Settings</h1>
+              <p className="text-sm text-white/70 mt-0.5">
+                Manage your account and preferences
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-1 mt-1">
             {/* Bell icon */}
