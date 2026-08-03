@@ -36,7 +36,7 @@ export function AboutSection({ component }: AboutSectionProps) {
           <p className="mt-1 text-sm italic text-base-content/70">{component.shortNote}</p>
         )}
         {bodyText && (
-          <div className="mt-3 text-sm">
+          <div className="mt-3 text-sm break-words">
             {displayText}
             {isTruncatable && (
               <button

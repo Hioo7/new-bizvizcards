@@ -160,7 +160,7 @@ export function EcardRenderer({ card, exchangeContactAllowed }: EcardRendererPro
     <div
       data-theme={ECARD_THEME_TO_DAISYUI_THEME[card.hero.theme]}
       style={accentColorStyle}
-      className="min-h-screen bg-gradient-to-r from-neutral via-secondary to-neutral text-base-content"
+      className="min-h-screen overflow-x-hidden bg-gradient-to-r from-neutral via-secondary to-neutral text-base-content"
     >
       <div className="px-4 md:px-48 pt-6 md:pt-20">
         {renderHero({
