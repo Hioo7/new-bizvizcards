@@ -203,6 +203,7 @@ export function componentToDraft(component: EcardComponent): ComponentDraft {
         facebook: component.facebook ?? "",
         twitter: component.twitter ?? "",
         linkedIn: component.linkedIn ?? "",
+        youtube: component.youtube ?? "",
       };
     case "VIDEO":
       return {
@@ -259,6 +260,27 @@ export function componentToDraft(component: EcardComponent): ComponentDraft {
             }
           : { file: null },
       };
+    case "LOCATION_TILE":
+      return {
+        type: "LOCATION_TILE",
+        label: component.label ?? "",
+        latitude: component.latitude,
+        longitude: component.longitude,
+      };
+    case "REVIEW_LINK":
+      return {
+        type: "REVIEW_LINK",
+        url: component.url ?? "",
+      };
+    case "TESTIMONIALS":
+      return {
+        type: "TESTIMONIALS",
+        entries: component.entries.map((entry) => ({
+          name: entry.name,
+          rating: entry.rating,
+          text: entry.text,
+        })),
+      };
   }
 }
 
@@ -301,6 +323,7 @@ function componentDraftToPayload(
         facebook: draft.facebook.trim() || undefined,
         twitter: draft.twitter.trim() || undefined,
         linkedIn: draft.linkedIn.trim() || undefined,
+        youtube: draft.youtube.trim() || undefined,
       };
     case "VIDEO":
       return {
@@ -360,6 +383,30 @@ function componentDraftToPayload(
       }
       return { type: "BROCHURE", pdf };
     }
+    case "LOCATION_TILE": {
+      if (draft.latitude === null || draft.longitude === null) {
+        throw new Error("Location component requires a captured location");
+      }
+      return {
+        type: "LOCATION_TILE",
+        label: draft.label.trim(),
+        latitude: draft.latitude,
+        longitude: draft.longitude,
+      };
+    }
+    case "REVIEW_LINK":
+      return { type: "REVIEW_LINK", url: draft.url.trim() };
+    case "TESTIMONIALS":
+      return {
+        type: "TESTIMONIALS",
+        entries: draft.entries
+          .filter((entry) => entry.name.trim() && entry.text.trim())
+          .map((entry) => ({
+            name: entry.name.trim(),
+            rating: entry.rating,
+            text: entry.text.trim(),
+          })),
+      };
   }
   // index is only used to keep the parameter list symmetric with the
   // caller's map(); no per-component numbering is needed in the payload.

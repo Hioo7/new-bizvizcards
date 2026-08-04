@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { Loader2, MapPin } from "lucide-react";
+import { useGeolocation, type GeolocationCoords } from "@hooks/useGeolocation";
 import { EXCHANGE_CONTACT_GEOLOCATION_TIMEOUT_MS } from "@config/exchangeContact.config";
 
-export interface GeolocationCoords {
-  latitude: number;
-  longitude: number;
-}
+export type { GeolocationCoords };
 
 interface SmartCardExchangeContactLocationStageProps {
   isSubmitting: boolean;
@@ -18,28 +15,10 @@ export default function SmartCardExchangeContactLocationStage({
   onShareLocation,
   onSkip,
 }: SmartCardExchangeContactLocationStageProps) {
-  const [isLocating, setIsLocating] = useState(false);
+  const { isLocating, capture } = useGeolocation(EXCHANGE_CONTACT_GEOLOCATION_TIMEOUT_MS);
 
   function handleShareLocation() {
-    if (!navigator.geolocation) {
-      onSkip();
-      return;
-    }
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setIsLocating(false);
-        onShareLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      () => {
-        setIsLocating(false);
-        onSkip();
-      },
-      { timeout: EXCHANGE_CONTACT_GEOLOCATION_TIMEOUT_MS },
-    );
+    capture(onShareLocation, onSkip);
   }
 
   const busy = isLocating || isSubmitting;

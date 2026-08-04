@@ -128,6 +128,7 @@ function mergeOneComponent(
       facebook: templateComponent.facebook ?? cardComponent.facebook,
       twitter: templateComponent.twitter ?? cardComponent.twitter,
       linkedIn: templateComponent.linkedIn ?? cardComponent.linkedIn,
+      youtube: templateComponent.youtube ?? cardComponent.youtube,
     };
   }
   if (cardComponent.type === 'VIDEO' && templateComponent.type === 'VIDEO') {
@@ -178,6 +179,34 @@ function mergeOneComponent(
       ? templateComponentToCardComponent(templateComponent)
       : cardComponent;
   }
+  if (
+    cardComponent.type === 'LOCATION_TILE' &&
+    templateComponent.type === 'LOCATION_TILE'
+  ) {
+    return {
+      ...cardComponent,
+      label: templateComponent.label ?? cardComponent.label,
+      latitude: templateComponent.latitude ?? cardComponent.latitude,
+      longitude: templateComponent.longitude ?? cardComponent.longitude,
+    };
+  }
+  if (
+    cardComponent.type === 'REVIEW_LINK' &&
+    templateComponent.type === 'REVIEW_LINK'
+  ) {
+    return {
+      ...cardComponent,
+      url: templateComponent.url ?? cardComponent.url,
+    };
+  }
+  if (
+    cardComponent.type === 'TESTIMONIALS' &&
+    templateComponent.type === 'TESTIMONIALS'
+  ) {
+    return templateComponent.entries.length > 0
+      ? templateComponentToCardComponent(templateComponent)
+      : cardComponent;
+  }
 
   // Unreachable — the guard above already confirmed matching types — but
   // keeps every branch typed without a cast.
@@ -208,6 +237,7 @@ function templateComponentToCardComponent(
         facebook: templateComponent.facebook,
         twitter: templateComponent.twitter,
         linkedIn: templateComponent.linkedIn,
+        youtube: templateComponent.youtube,
       };
     case ECardComponentType.VIDEO:
       return {
@@ -249,6 +279,26 @@ function templateComponentToCardComponent(
         pdfMediaId: templateComponent.pdfMediaId,
         pdfUrl: templateComponent.pdfUrl,
         fileName: templateComponent.fileName,
+      };
+    case ECardComponentType.LOCATION_TILE:
+      return {
+        ...base,
+        type: ECardComponentType.LOCATION_TILE,
+        label: templateComponent.label,
+        latitude: templateComponent.latitude,
+        longitude: templateComponent.longitude,
+      };
+    case ECardComponentType.REVIEW_LINK:
+      return {
+        ...base,
+        type: ECardComponentType.REVIEW_LINK,
+        url: templateComponent.url,
+      };
+    case ECardComponentType.TESTIMONIALS:
+      return {
+        ...base,
+        type: ECardComponentType.TESTIMONIALS,
+        entries: templateComponent.entries,
       };
   }
 }

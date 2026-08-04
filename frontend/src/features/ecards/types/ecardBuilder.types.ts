@@ -65,6 +65,7 @@ export interface SocialLinksComponentDraft {
   facebook: string;
   twitter: string;
   linkedIn: string;
+  youtube: string;
 }
 
 export interface VideoComponentDraft {
@@ -120,6 +121,29 @@ export interface BrochureComponentDraft {
   pdf: ImageFieldValue;
 }
 
+export interface LocationTileComponentDraft {
+  type: "LOCATION_TILE";
+  label: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface ReviewLinkComponentDraft {
+  type: "REVIEW_LINK";
+  url: string;
+}
+
+export interface TestimonialEntryDraft {
+  name: string;
+  rating: number;
+  text: string;
+}
+
+export interface TestimonialsComponentDraft {
+  type: "TESTIMONIALS";
+  entries: TestimonialEntryDraft[];
+}
+
 export type ComponentDraft =
   | AboutComponentDraft
   | SocialLinksComponentDraft
@@ -128,7 +152,10 @@ export type ComponentDraft =
   | VideoGalleryComponentDraft
   | TeamComponentDraft
   | WhatsAppComponentDraft
-  | BrochureComponentDraft;
+  | BrochureComponentDraft
+  | LocationTileComponentDraft
+  | ReviewLinkComponentDraft
+  | TestimonialsComponentDraft;
 
 export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft {
   switch (type) {
@@ -142,6 +169,7 @@ export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft 
         facebook: "",
         twitter: "",
         linkedIn: "",
+        youtube: "",
       };
     case "VIDEO":
       return { type: "VIDEO", title: "", videoUrl: "" };
@@ -155,6 +183,12 @@ export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft 
       return { type: "WHATSAPP", phoneCountryDialCode: "", phoneNumber: "" };
     case "BROCHURE":
       return { type: "BROCHURE", pdf: emptyImageField() };
+    case "LOCATION_TILE":
+      return { type: "LOCATION_TILE", label: "", latitude: null, longitude: null };
+    case "REVIEW_LINK":
+      return { type: "REVIEW_LINK", url: "" };
+    case "TESTIMONIALS":
+      return { type: "TESTIMONIALS", entries: [] };
   }
 }
 

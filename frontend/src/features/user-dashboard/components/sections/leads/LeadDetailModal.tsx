@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { LocationMapEmbed } from "@components/LocationMapEmbed";
 import type { Lead, UpdateLeadPayload } from "@features/user-dashboard/types";
 import {
   OPPORTUNITY_STAGES,
@@ -518,11 +519,8 @@ export default function LeadDetailModal({
                   {/* Location + map */}
                   {lead.location ? (
                     <div className="overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm">
-                      <iframe
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent(lead.location)}&output=embed`}
-                        className="w-full border-0"
-                        style={{ height: "192px" }}
-                        loading="lazy"
+                      <LocationMapEmbed
+                        query={{ kind: "address", address: lead.location }}
                         title="Lead location"
                       />
                       <div className="flex items-center gap-3 px-4 py-3">

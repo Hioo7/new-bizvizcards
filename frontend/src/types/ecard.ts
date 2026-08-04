@@ -55,6 +55,7 @@ export interface EcardSocialLinksComponent extends EcardComponentBase {
   facebook: string | null;
   twitter: string | null;
   linkedIn: string | null;
+  youtube: string | null;
 }
 
 export interface EcardVideoComponent extends EcardComponentBase {
@@ -125,6 +126,30 @@ export interface EcardBrochureComponent extends EcardComponentBase {
   fileName: string | null;
 }
 
+export interface EcardLocationTileComponent extends EcardComponentBase {
+  type: "LOCATION_TILE";
+  label: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface EcardReviewLinkComponent extends EcardComponentBase {
+  type: "REVIEW_LINK";
+  url: string | null;
+}
+
+export interface EcardTestimonialEntry {
+  id: string;
+  name: string;
+  rating: number;
+  text: string;
+}
+
+export interface EcardTestimonialsComponent extends EcardComponentBase {
+  type: "TESTIMONIALS";
+  entries: EcardTestimonialEntry[];
+}
+
 export type EcardComponent =
   | EcardAboutComponent
   | EcardSocialLinksComponent
@@ -133,7 +158,10 @@ export type EcardComponent =
   | EcardVideoGalleryComponent
   | EcardTeamComponent
   | EcardWhatsAppComponent
-  | EcardBrochureComponent;
+  | EcardBrochureComponent
+  | EcardLocationTileComponent
+  | EcardReviewLinkComponent
+  | EcardTestimonialsComponent;
 
 export type EcardComponentType = EcardComponent["type"];
 
@@ -210,6 +238,7 @@ export interface EcardSocialLinksComponentPayload {
   facebook?: string;
   twitter?: string;
   linkedIn?: string;
+  youtube?: string;
 }
 
 export interface EcardVideoComponentPayload {
@@ -265,6 +294,29 @@ export interface EcardBrochureComponentPayload {
   pdf: ImageSlotPayload;
 }
 
+export interface EcardLocationTileComponentPayload {
+  type: "LOCATION_TILE";
+  label: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface EcardReviewLinkComponentPayload {
+  type: "REVIEW_LINK";
+  url: string;
+}
+
+export interface EcardTestimonialEntryPayload {
+  name: string;
+  rating: number;
+  text: string;
+}
+
+export interface EcardTestimonialsComponentPayload {
+  type: "TESTIMONIALS";
+  entries: EcardTestimonialEntryPayload[];
+}
+
 export type EcardComponentPayload =
   | EcardAboutComponentPayload
   | EcardSocialLinksComponentPayload
@@ -273,7 +325,10 @@ export type EcardComponentPayload =
   | EcardVideoGalleryComponentPayload
   | EcardTeamComponentPayload
   | EcardWhatsAppComponentPayload
-  | EcardBrochureComponentPayload;
+  | EcardBrochureComponentPayload
+  | EcardLocationTileComponentPayload
+  | EcardReviewLinkComponentPayload
+  | EcardTestimonialsComponentPayload;
 
 export interface EcardPayload {
   endpoint: string;

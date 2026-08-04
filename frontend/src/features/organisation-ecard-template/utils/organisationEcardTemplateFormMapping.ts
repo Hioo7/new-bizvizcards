@@ -92,6 +92,7 @@ function componentDraftToTemplatePayload(
         facebook: draft.facebook.trim() || undefined,
         twitter: draft.twitter.trim() || undefined,
         linkedIn: draft.linkedIn.trim() || undefined,
+        youtube: draft.youtube.trim() || undefined,
       };
     case "VIDEO":
       return {
@@ -146,6 +147,26 @@ function componentDraftToTemplatePayload(
       return {
         type: "BROCHURE",
         pdf: buildImageSlot(draft.pdf, ECARD_BROCHURE_FIELD, files),
+      };
+    case "LOCATION_TILE":
+      return {
+        type: "LOCATION_TILE",
+        label: draft.label.trim() || undefined,
+        latitude: draft.latitude ?? undefined,
+        longitude: draft.longitude ?? undefined,
+      };
+    case "REVIEW_LINK":
+      return { type: "REVIEW_LINK", url: draft.url.trim() || undefined };
+    case "TESTIMONIALS":
+      return {
+        type: "TESTIMONIALS",
+        entries: draft.entries
+          .filter((entry) => entry.name.trim() && entry.text.trim())
+          .map((entry) => ({
+            name: entry.name.trim(),
+            rating: entry.rating,
+            text: entry.text.trim(),
+          })),
       };
   }
 }

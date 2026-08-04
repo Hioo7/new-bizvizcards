@@ -5,6 +5,7 @@ import {
   InstagramIcon,
   LinkedInIcon,
   TwitterIcon,
+  YouTubeIcon,
 } from "@components/icons/BrandIcons";
 import { ECARD_HERO_ICON_SHAPE_META } from "@features/ecards";
 import type { ECardIconShape, EcardSocialLinksComponent } from "@app-types/ecard";
@@ -20,6 +21,7 @@ const FIELDS: { key: keyof EcardSocialLinksComponent; Icon: ComponentType<{ clas
   { key: "facebook", Icon: FacebookIcon },
   { key: "twitter", Icon: TwitterIcon },
   { key: "linkedIn", Icon: LinkedInIcon },
+  { key: "youtube", Icon: YouTubeIcon },
 ];
 
 export function SocialLinksSection({

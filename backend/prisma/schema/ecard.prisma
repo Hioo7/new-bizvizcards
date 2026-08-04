@@ -7,6 +7,9 @@ enum ECardComponentType {
   TEAM
   WHATSAPP
   BROCHURE
+  LOCATION_TILE
+  REVIEW_LINK
+  TESTIMONIALS
 
   @@map("ECardComponentType")
 }
@@ -134,6 +137,9 @@ model ECardComponent {
   team         ECardTeamComponent?
   whatsapp     ECardWhatsAppComponent?
   brochure     ECardBrochureComponent?
+  locationTile ECardLocationTileComponent?
+  reviewLink   ECardReviewLinkComponent?
+  testimonials ECardTestimonialsComponent?
 
   @@unique([ecardId, type])
   @@index([ecardId, order])
@@ -161,6 +167,7 @@ model ECardSocialLinksComponent {
   facebook  String?
   twitter   String?
   linkedIn  String?
+  youtube   String?
 
   @@map("ECardSocialLinksComponent")
 }
@@ -292,4 +299,56 @@ model ECardTeamMember {
   @@unique([teamComponentId, organisationMemberId])
   @@index([teamComponentId])
   @@map("ECardTeamMember")
+}
+
+model ECardLocationTileComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  label String
+  // Captured only via the browser's Geolocation API in the builder — never
+  // typed manually, so there's no separate free-text address field (compare
+  // Lead.location/locationLatitude/locationLongitude, where the address
+  // string and coordinates are independent). All three fields are required
+  // together, same "empty = meaningless" convention as ECardWhatsAppComponent.
+  latitude  Float
+  longitude Float
+
+  @@map("ECardLocationTileComponent")
+}
+
+model ECardReviewLinkComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  // Required — same "an empty one would make the component meaningless"
+  // reasoning as ECardWhatsAppComponent/ECardBrochureComponent. Not
+  // Google-specific: just a URL the visitor is redirected to.
+  url String
+
+  @@map("ECardReviewLinkComponent")
+}
+
+model ECardTestimonialsComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  entries ECardTestimonialEntry[]
+
+  @@map("ECardTestimonialsComponent")
+}
+
+model ECardTestimonialEntry {
+  id                      String                      @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  testimonialsComponentId String                      @db.Uuid
+  testimonialsComponent   ECardTestimonialsComponent  @relation(fields: [testimonialsComponentId], references: [ecardComponentId], onDelete: Cascade)
+  name                    String
+  // 1-5, bounds enforced at the DTO layer (no DB check constraint — matches
+  // this schema's convention of validating bounds in Zod, not Postgres).
+  rating                  Int
+  text                    String
+  order                   Int                         @default(0)
+
+  @@index([testimonialsComponentId])
+  @@map("ECardTestimonialEntry")
 }

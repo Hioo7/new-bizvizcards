@@ -58,6 +58,9 @@ model OrganisationEcardTemplateComponent {
   team         OrganisationEcardTemplateTeamComponent?
   whatsapp     OrganisationEcardTemplateWhatsAppComponent?
   brochure     OrganisationEcardTemplateBrochureComponent?
+  locationTile OrganisationEcardTemplateLocationTileComponent?
+  reviewLink   OrganisationEcardTemplateReviewLinkComponent?
+  testimonials OrganisationEcardTemplateTestimonialsComponent?
 
   @@unique([templateId, type])
   @@index([templateId, order])
@@ -85,6 +88,7 @@ model OrganisationEcardTemplateSocialLinksComponent {
   facebook  String?
   twitter   String?
   linkedIn  String?
+  youtube   String?
 
   @@map("OrganisationEcardTemplateSocialLinksComponent")
 }
@@ -213,4 +217,49 @@ model OrganisationEcardTemplateTeamMember {
   @@unique([teamComponentId, organisationMemberId])
   @@index([teamComponentId])
   @@map("OrganisationEcardTemplateTeamMember")
+}
+
+model OrganisationEcardTemplateLocationTileComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  // Nullable, per-field merge like OrganisationEcardTemplateWhatsAppComponent
+  // above — an org can standardize just the label (e.g. always call it "Head
+  // Office") while leaving the coordinates to the member, or vice versa.
+  label     String?
+  latitude  Float?
+  longitude Float?
+
+  @@map("OrganisationEcardTemplateLocationTileComponent")
+}
+
+model OrganisationEcardTemplateReviewLinkComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  url String?
+
+  @@map("OrganisationEcardTemplateReviewLinkComponent")
+}
+
+model OrganisationEcardTemplateTestimonialsComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  entries OrganisationEcardTemplateTestimonialEntry[]
+
+  @@map("OrganisationEcardTemplateTestimonialsComponent")
+}
+
+model OrganisationEcardTemplateTestimonialEntry {
+  id                      String                                          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  testimonialsComponentId String                                          @db.Uuid
+  testimonialsComponent   OrganisationEcardTemplateTestimonialsComponent @relation(fields: [testimonialsComponentId], references: [templateComponentId], onDelete: Cascade)
+  name                    String
+  rating                  Int
+  text                    String
+  order                   Int                                             @default(0)
+
+  @@index([testimonialsComponentId])
+  @@map("OrganisationEcardTemplateTestimonialEntry")
 }

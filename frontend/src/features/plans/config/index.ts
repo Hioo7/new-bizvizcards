@@ -17,6 +17,9 @@ export const ECARD_COMPONENT_TYPES = [
   "TEAM",
   "WHATSAPP",
   "BROCHURE",
+  "LOCATION_TILE",
+  "REVIEW_LINK",
+  "TESTIMONIALS",
 ] as const;
 
 export const ECARD_COMPONENT_LABELS: Record<
@@ -31,6 +34,9 @@ export const ECARD_COMPONENT_LABELS: Record<
   TEAM: "Team",
   WHATSAPP: "WhatsApp",
   BROCHURE: "Brochure",
+  LOCATION_TILE: "Location",
+  REVIEW_LINK: "Review link",
+  TESTIMONIALS: "Testimonials",
 };
 
 // DEFAULT is never included — it's always available and never a toggle in

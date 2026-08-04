@@ -93,6 +93,29 @@ function draftToOrgComponent(
       // Gallery/Brochure require file uploads not supported through this
       // flow; Video Gallery's multi-row editing isn't supported here either.
       return { type: draft.type };
+    case "LOCATION_TILE":
+      if (draft.latitude === null || draft.longitude === null) {
+        return { type: draft.type };
+      }
+      return {
+        type: "LOCATION_TILE",
+        label: draft.label.trim(),
+        latitude: draft.latitude,
+        longitude: draft.longitude,
+      };
+    case "REVIEW_LINK":
+      return { type: "REVIEW_LINK", url: draft.url.trim() };
+    case "TESTIMONIALS":
+      return {
+        type: "TESTIMONIALS",
+        entries: draft.entries
+          .filter((entry) => entry.name.trim() && entry.text.trim())
+          .map((entry) => ({
+            name: entry.name.trim(),
+            rating: entry.rating,
+            text: entry.text.trim(),
+          })),
+      };
   }
 }
 

@@ -1,0 +1,1 @@
+export const MAP_EMBED_DEFAULT_HEIGHT_CLASS = "h-48";

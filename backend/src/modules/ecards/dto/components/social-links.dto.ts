@@ -10,6 +10,7 @@ export const ecardSocialLinksComponentSchema = z
     facebook: urlField,
     twitter: urlField,
     linkedIn: urlField,
+    youtube: urlField,
   })
   .strict();
 

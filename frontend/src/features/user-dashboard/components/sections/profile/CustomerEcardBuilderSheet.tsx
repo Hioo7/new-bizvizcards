@@ -18,14 +18,7 @@ import {
   EcardSettingsCard,
   SortableComponentRow,
   ComponentTypePickerModal,
-  AboutEditSheet,
-  SocialLinksEditSheet,
-  VideoEditSheet,
-  GalleryEditSheet,
-  VideoGalleryEditSheet,
-  TeamEditSheet,
-  WhatsAppEditSheet,
-  BrochureEditSheet,
+  ComponentEditSheetRouter,
   ECARD_COMPONENT_TYPES,
   ECARD_MAX_COMPONENTS,
   emptyDraftForType,
@@ -304,160 +297,22 @@ export default function CustomerEcardBuilderSheet({
       )}
 
       {/* Component edit sheets */}
-      {editingComponent?.draft.type === "ABOUT" && (
-        <AboutEditSheet
-          open
-          draft={editingComponent.draft}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
-
-      {editingComponent?.draft.type === "SOCIAL_LINKS" && (
-        <SocialLinksEditSheet
-          open
-          draft={editingComponent.draft}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
-
-      {editingComponent?.draft.type === "VIDEO" && (
-        <VideoEditSheet
-          open
-          draft={editingComponent.draft}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
-
-      {editingComponent?.draft.type === "GALLERY" && (
-        <GalleryEditSheet
-          open
-          draft={editingComponent.draft}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
-
-      {editingComponent?.draft.type === "VIDEO_GALLERY" && (
-        <VideoGalleryEditSheet
-          open
-          draft={editingComponent.draft}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
-
-      {editingComponent?.draft.type === "TEAM" && (
-        <TeamEditSheet
-          open
-          organisationId={builder.state.hero.organisationId}
-          scope="customer"
-          draft={editingComponent.draft}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
-
-      {editingComponent?.draft.type === "WHATSAPP" && (
-        <WhatsAppEditSheet
-          open
-          draft={editingComponent.draft}
-          heroPhone={builder.state.hero}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
-
-      {editingComponent?.draft.type === "BROCHURE" && (
-        <BrochureEditSheet
-          open
-          draft={editingComponent.draft}
-          isSubmitting={false}
-          error={null}
-          onClose={() => setEditing(null)}
-          onSave={(draft) => {
-            builder.setState((state: EcardBuilderState) => ({
-              ...state,
-              components: state.components.map((c) =>
-                c.key === editingComponent.key ? { ...c, draft } : c,
-              ),
-            }));
-            setEditing(null);
-          }}
-        />
-      )}
+      <ComponentEditSheetRouter
+        editingComponent={editingComponent}
+        organisationId={builder.state.hero.organisationId}
+        teamScope="customer"
+        heroPhone={builder.state.hero}
+        onClose={() => setEditing(null)}
+        onSave={(draft) => {
+          builder.setState((state: EcardBuilderState) => ({
+            ...state,
+            components: state.components.map((c) =>
+              c.key === editingComponent!.key ? { ...c, draft } : c,
+            ),
+          }));
+          setEditing(null);
+        }}
+      />
 
       <ComponentTypePickerModal
         open={isPickingType}

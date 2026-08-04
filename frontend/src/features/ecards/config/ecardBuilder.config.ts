@@ -4,7 +4,10 @@ import {
   FileText,
   Images,
   Link2,
+  MapPin,
   MessageCircle,
+  MessageSquareQuote,
+  Star,
   Users,
   Video,
 } from "lucide-react";
@@ -25,6 +28,9 @@ export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "TEAM",
   "WHATSAPP",
   "BROCHURE",
+  "LOCATION_TILE",
+  "REVIEW_LINK",
+  "TESTIMONIALS",
 ];
 
 export const ECARD_MAX_COMPONENTS = ECARD_COMPONENT_TYPES.length;
@@ -76,6 +82,21 @@ export const ECARD_COMPONENT_META: Record<EcardComponentType, EcardComponentMeta
     icon: BookOpen,
     description: "A button linking to an uploaded PDF brochure.",
   },
+  LOCATION_TILE: {
+    label: "Location",
+    icon: MapPin,
+    description: "A named location with a map, captured from the browser.",
+  },
+  REVIEW_LINK: {
+    label: "Review Link",
+    icon: Star,
+    description: "A button linking visitors to leave a review.",
+  },
+  TESTIMONIALS: {
+    label: "Testimonials",
+    icon: MessageSquareQuote,
+    description: "A carousel of customer testimonials with star ratings.",
+  },
 };
 
 export const ECARD_TEXT_SHORT_MAX_LENGTH = 150;
@@ -103,6 +124,20 @@ export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
 
 export const ECARD_BROCHURE_ALLOWED_MIME_TYPES = ["application/pdf"];
 export const ECARD_BROCHURE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+
+export const ECARD_LOCATION_TILE_LABEL_MAX_LENGTH = 100;
+export const ECARD_LOCATION_LATITUDE_MIN = -90;
+export const ECARD_LOCATION_LATITUDE_MAX = 90;
+export const ECARD_LOCATION_LONGITUDE_MIN = -180;
+export const ECARD_LOCATION_LONGITUDE_MAX = 180;
+
+export const ECARD_REVIEW_LINK_URL_MAX_LENGTH = 2048;
+
+export const ECARD_MAX_TESTIMONIALS = 20;
+export const ECARD_TESTIMONIAL_NAME_MAX_LENGTH = 100;
+export const ECARD_TESTIMONIAL_TEXT_MAX_LENGTH = 500;
+export const ECARD_TESTIMONIAL_RATING_MIN = 1;
+export const ECARD_TESTIMONIAL_RATING_MAX = 5;
 
 // Shown when the outer "Save card" action is blocked by a client-side pre-check of the
 // Hero section (e.g. the endpoint was never set) — see getHeroValidationErrors.

@@ -16,6 +16,9 @@ import { VideoGallerySection } from "@features/public-ecard/components/sections/
 import { TeamSection } from "@features/public-ecard/components/sections/TeamSection";
 import { WhatsAppSection } from "@features/public-ecard/components/sections/WhatsAppSection";
 import { BrochureSection } from "@features/public-ecard/components/sections/BrochureSection";
+import { LocationTileSection } from "@features/public-ecard/components/sections/LocationTileSection";
+import { ReviewLinkSection } from "@features/public-ecard/components/sections/ReviewLinkSection";
+import { TestimonialsSection } from "@features/public-ecard/components/sections/TestimonialsSection";
 import { ECARD_THEME_TO_DAISYUI_THEME } from "@features/public-ecard/config";
 import type { Ecard, EcardComponent } from "@app-types/ecard";
 import type { CSSProperties } from "react";
@@ -68,6 +71,12 @@ function renderComponent(
       return <WhatsAppSection key={component.id} component={component} heroName={heroName} />;
     case "BROCHURE":
       return <BrochureSection key={component.id} component={component} />;
+    case "LOCATION_TILE":
+      return <LocationTileSection key={component.id} component={component} />;
+    case "REVIEW_LINK":
+      return <ReviewLinkSection key={component.id} component={component} />;
+    case "TESTIMONIALS":
+      return <TestimonialsSection key={component.id} component={component} />;
   }
 }
 

@@ -33,6 +33,11 @@ const FULL_INCLUDE = {
       video: true,
       whatsapp: true,
       brochure: { include: { pdf: true } },
+      locationTile: true,
+      reviewLink: true,
+      testimonials: {
+        include: { entries: { orderBy: { order: 'asc' as const } } },
+      },
       gallery: {
         include: {
           subGalleries: {
@@ -115,6 +120,7 @@ export interface OrganisationEcardTemplateSocialLinksComponentResponse extends O
   facebook: string | null;
   twitter: string | null;
   linkedIn: string | null;
+  youtube: string | null;
 }
 
 export interface OrganisationEcardTemplateVideoComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
@@ -185,6 +191,30 @@ export interface OrganisationEcardTemplateBrochureComponentResponse extends Orga
   fileName: string | null;
 }
 
+export interface OrganisationEcardTemplateLocationTileComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
+  type: typeof ECardComponentType.LOCATION_TILE;
+  label: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface OrganisationEcardTemplateReviewLinkComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
+  type: typeof ECardComponentType.REVIEW_LINK;
+  url: string | null;
+}
+
+export interface OrganisationEcardTemplateTestimonialEntryResponse {
+  id: string;
+  name: string;
+  rating: number;
+  text: string;
+}
+
+export interface OrganisationEcardTemplateTestimonialsComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
+  type: typeof ECardComponentType.TESTIMONIALS;
+  entries: OrganisationEcardTemplateTestimonialEntryResponse[];
+}
+
 export type OrganisationEcardTemplateComponentResponse =
   | OrganisationEcardTemplateAboutComponentResponse
   | OrganisationEcardTemplateSocialLinksComponentResponse
@@ -193,7 +223,10 @@ export type OrganisationEcardTemplateComponentResponse =
   | OrganisationEcardTemplateVideoGalleryComponentResponse
   | OrganisationEcardTemplateTeamComponentResponse
   | OrganisationEcardTemplateWhatsAppComponentResponse
-  | OrganisationEcardTemplateBrochureComponentResponse;
+  | OrganisationEcardTemplateBrochureComponentResponse
+  | OrganisationEcardTemplateLocationTileComponentResponse
+  | OrganisationEcardTemplateReviewLinkComponentResponse
+  | OrganisationEcardTemplateTestimonialsComponentResponse;
 
 export interface OrganisationEcardTemplateResponse {
   id: string;
@@ -525,6 +558,7 @@ export class OrganisationEcardTemplateService {
             facebook: component.facebook,
             twitter: component.twitter,
             linkedIn: component.linkedIn,
+            youtube: component.youtube,
           },
         });
         return;
@@ -632,6 +666,40 @@ export class OrganisationEcardTemplateService {
           data: { templateComponentId, pdfMediaId: brochureMediaId },
         });
         return;
+      case 'LOCATION_TILE':
+        await tx.organisationEcardTemplateLocationTileComponent.create({
+          data: {
+            templateComponentId,
+            label: component.label,
+            latitude: component.latitude,
+            longitude: component.longitude,
+          },
+        });
+        return;
+      case 'REVIEW_LINK':
+        await tx.organisationEcardTemplateReviewLinkComponent.create({
+          data: { templateComponentId, url: component.url },
+        });
+        return;
+      case 'TESTIMONIALS': {
+        const testimonialsRow =
+          await tx.organisationEcardTemplateTestimonialsComponent.create({
+            data: { templateComponentId },
+          });
+        for (let t = 0; t < component.entries.length; t++) {
+          const entry = component.entries[t];
+          await tx.organisationEcardTemplateTestimonialEntry.create({
+            data: {
+              testimonialsComponentId: testimonialsRow.templateComponentId,
+              name: entry.name,
+              rating: entry.rating,
+              text: entry.text,
+              order: t,
+            },
+          });
+        }
+        return;
+      }
     }
   }
 
@@ -775,6 +843,7 @@ export class OrganisationEcardTemplateService {
           facebook: component.socialLinks?.facebook ?? null,
           twitter: component.socialLinks?.twitter ?? null,
           linkedIn: component.socialLinks?.linkedIn ?? null,
+          youtube: component.socialLinks?.youtube ?? null,
         };
       case ECardComponentType.WHATSAPP:
         return {
@@ -840,6 +909,31 @@ export class OrganisationEcardTemplateService {
             ? this.mediaService.getPublicUrl(component.brochure.pdf)
             : null,
           fileName: component.brochure?.pdf?.originalName ?? null,
+        };
+      case ECardComponentType.LOCATION_TILE:
+        return {
+          ...base,
+          type: ECardComponentType.LOCATION_TILE,
+          label: component.locationTile?.label ?? null,
+          latitude: component.locationTile?.latitude ?? null,
+          longitude: component.locationTile?.longitude ?? null,
+        };
+      case ECardComponentType.REVIEW_LINK:
+        return {
+          ...base,
+          type: ECardComponentType.REVIEW_LINK,
+          url: component.reviewLink?.url ?? null,
+        };
+      case ECardComponentType.TESTIMONIALS:
+        return {
+          ...base,
+          type: ECardComponentType.TESTIMONIALS,
+          entries: (component.testimonials?.entries ?? []).map((entry) => ({
+            id: entry.id,
+            name: entry.name,
+            rating: entry.rating,
+            text: entry.text,
+          })),
         };
     }
   }

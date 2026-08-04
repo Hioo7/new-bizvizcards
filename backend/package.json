@@ -30,6 +30,7 @@
     "seed:event-policy-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-event-policy-defaults.ts",
     "seed:ecard-accent-color-preset-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-ecard-accent-color-preset-defaults.ts",
     "seed:video-gallery-component-availability-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-video-gallery-component-availability-defaults.ts",
+    "seed:location-review-testimonials-component-availability-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-location-review-testimonials-component-availability-defaults.ts",
     "generate:legacy-prisma": "prisma generate --config prisma/legacy.config.ts"
   },
   "dependencies": {

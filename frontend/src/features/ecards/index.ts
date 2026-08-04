@@ -15,6 +15,10 @@ export { default as VideoGalleryEditSheet } from "@features/ecards/components/Vi
 export { default as TeamEditSheet } from "@features/ecards/components/TeamEditSheet";
 export { default as WhatsAppEditSheet } from "@features/ecards/components/WhatsAppEditSheet";
 export { default as BrochureEditSheet } from "@features/ecards/components/BrochureEditSheet";
+export { default as LocationTileEditSheet } from "@features/ecards/components/LocationTileEditSheet";
+export { default as ReviewLinkEditSheet } from "@features/ecards/components/ReviewLinkEditSheet";
+export { default as TestimonialsEditSheet } from "@features/ecards/components/TestimonialsEditSheet";
+export { default as ComponentEditSheetRouter } from "@features/ecards/components/ComponentEditSheetRouter";
 export { default as HeroLayoutPickerStep } from "@features/ecards/components/HeroLayoutPickerStep";
 export { default as HeroThemePickerStep } from "@features/ecards/components/HeroThemePickerStep";
 export { default as HeroIconShapePickerStep } from "@features/ecards/components/HeroIconShapePickerStep";
@@ -55,6 +59,10 @@ export {
   type HeroSheetValues,
   type WhatsAppSheetValues,
   type VideoSheetValues,
+  type ReviewLinkSheetValues,
+  type LocationTileSheetValues,
+  type TestimonialsSheetValues,
+  type TestimonialEntrySheetValues,
 } from "@features/ecards/schemas/ecardComponentSchemas";
 
 // Config
@@ -76,4 +84,9 @@ export {
   ECARD_HERO_BANNER_ASPECT,
   ECARD_HERO_BANNER_ASPECT_CLASS,
   ECARD_HERO_DEFAULT_FALLBACK_COLOR,
+  ECARD_LOCATION_TILE_LABEL_MAX_LENGTH,
+  ECARD_REVIEW_LINK_URL_MAX_LENGTH,
+  ECARD_MAX_TESTIMONIALS,
+  ECARD_TESTIMONIAL_NAME_MAX_LENGTH,
+  ECARD_TESTIMONIAL_TEXT_MAX_LENGTH,
 } from "@features/ecards/config/ecardBuilder.config";

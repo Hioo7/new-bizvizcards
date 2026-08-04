@@ -24,6 +24,7 @@ const FIELDS: { name: keyof SocialLinksSheetValues; label: string }[] = [
   { name: "facebook", label: "Facebook" },
   { name: "twitter", label: "Twitter / X" },
   { name: "linkedIn", label: "LinkedIn" },
+  { name: "youtube", label: "YouTube" },
 ];
 
 export default function SocialLinksEditSheet({
@@ -46,6 +47,7 @@ export default function SocialLinksEditSheet({
       facebook: draft.facebook,
       twitter: draft.twitter,
       linkedIn: draft.linkedIn,
+      youtube: draft.youtube,
     },
   });
 

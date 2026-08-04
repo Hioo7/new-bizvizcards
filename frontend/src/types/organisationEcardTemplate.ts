@@ -8,6 +8,7 @@ import type {
   EcardImageUpload,
   EcardSocialLinksComponentPayload,
   EcardTeamComponentPayload,
+  EcardTestimonialsComponentPayload,
   EcardVideoGalleryComponentPayload,
   ImageSlotPayload,
 } from "@app-types/ecard";
@@ -63,6 +64,18 @@ export interface OrganisationEcardTemplateBrochureComponentPayload {
   pdf?: ImageSlotPayload;
 }
 
+export interface OrganisationEcardTemplateLocationTileComponentPayload {
+  type: "LOCATION_TILE";
+  label?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface OrganisationEcardTemplateReviewLinkComponentPayload {
+  type: "REVIEW_LINK";
+  url?: string;
+}
+
 export type OrganisationEcardTemplateComponentPayload =
   | EcardAboutComponentPayload
   | EcardSocialLinksComponentPayload
@@ -71,7 +84,12 @@ export type OrganisationEcardTemplateComponentPayload =
   | OrganisationEcardTemplateVideoComponentPayload
   | EcardTeamComponentPayload
   | OrganisationEcardTemplateWhatsAppComponentPayload
-  | OrganisationEcardTemplateBrochureComponentPayload;
+  | OrganisationEcardTemplateBrochureComponentPayload
+  | OrganisationEcardTemplateLocationTileComponentPayload
+  | OrganisationEcardTemplateReviewLinkComponentPayload
+  // Already fully optional/defaulted ([]) — reused verbatim, same as
+  // Gallery/VideoGallery/Team above.
+  | EcardTestimonialsComponentPayload;
 
 export interface OrganisationEcardTemplatePayload {
   heroName?: string;

@@ -238,6 +238,47 @@ describe('mergeOrganisationEcardTemplateOntoCard', () => {
     });
   });
 
+  describe('scalar component merge (SOCIAL_LINKS youtube)', () => {
+    it('merges youtube field by field — template wins where set, card wins where the template left it blank', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'SOCIAL_LINKS',
+            website: null,
+            instagram: 'https://instagram.com/card-handle',
+            facebook: null,
+            twitter: null,
+            linkedIn: null,
+            youtube: 'https://www.youtube.com/@card-channel',
+          },
+        ],
+      });
+      const template = makeTemplate({
+        components: [
+          {
+            id: 't1',
+            order: 0,
+            type: 'SOCIAL_LINKS',
+            website: null,
+            instagram: null,
+            facebook: null,
+            twitter: null,
+            linkedIn: null,
+            youtube: 'https://www.youtube.com/@org-channel',
+          },
+        ],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+      const socialLinks = merged.components[0];
+      if (socialLinks.type !== 'SOCIAL_LINKS') throw new Error('unreachable');
+      expect(socialLinks.youtube).toBe('https://www.youtube.com/@org-channel'); // template set -> template's
+      expect(socialLinks.instagram).toBe('https://instagram.com/card-handle'); // template unset -> card's
+    });
+  });
+
   describe('whole-value components (GALLERY / TEAM / BROCHURE)', () => {
     it('replaces the card gallery with the template gallery when the template has content', () => {
       const card = makeCard({
@@ -392,6 +433,124 @@ describe('mergeOrganisationEcardTemplateOntoCard', () => {
       const brochure = merged.components[0];
       if (brochure.type !== 'BROCHURE') throw new Error('unreachable');
       expect(brochure.pdfMediaId).toBe('card-pdf');
+    });
+  });
+
+  describe('scalar component merge (LOCATION_TILE / REVIEW_LINK)', () => {
+    it('merges LOCATION_TILE field by field — template wins where set, card wins where the template left it blank', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'LOCATION_TILE',
+            label: 'Card Office',
+            latitude: 12.34,
+            longitude: 56.78,
+          },
+        ],
+      });
+      const template = makeTemplate({
+        components: [
+          {
+            id: 't1',
+            order: 0,
+            type: 'LOCATION_TILE',
+            label: 'Org HQ',
+            latitude: null,
+            longitude: null,
+          },
+        ],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+      const locationTile = merged.components[0];
+      if (locationTile.type !== 'LOCATION_TILE') throw new Error('unreachable');
+      expect(locationTile.label).toBe('Org HQ'); // template set -> template's
+      expect(locationTile.latitude).toBe(12.34); // template unset -> card's
+      expect(locationTile.longitude).toBe(56.78); // template unset -> card's
+    });
+
+    it('merges REVIEW_LINK field by field — template wins where set, card wins where the template left it blank', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'REVIEW_LINK',
+            url: 'https://card-review.example.com',
+          },
+        ],
+      });
+      const template = makeTemplate({
+        components: [{ id: 't1', order: 0, type: 'REVIEW_LINK', url: null }],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+      const reviewLink = merged.components[0];
+      if (reviewLink.type !== 'REVIEW_LINK') throw new Error('unreachable');
+      expect(reviewLink.url).toBe('https://card-review.example.com');
+    });
+  });
+
+  describe('whole-value component (TESTIMONIALS)', () => {
+    it('replaces the card testimonials with the template testimonials when the template has entries', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'TESTIMONIALS',
+            entries: [
+              { id: 'e1', name: 'Card Person', rating: 3, text: 'Card text' },
+            ],
+          },
+        ],
+      });
+      const template = makeTemplate({
+        components: [
+          {
+            id: 't1',
+            order: 0,
+            type: 'TESTIMONIALS',
+            entries: [
+              { id: 'e2', name: 'Org Person', rating: 5, text: 'Org text' },
+            ],
+          },
+        ],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+      const testimonials = merged.components[0];
+      if (testimonials.type !== 'TESTIMONIALS') throw new Error('unreachable');
+      expect(testimonials.entries).toEqual([
+        { id: 'e2', name: 'Org Person', rating: 5, text: 'Org text' },
+      ]);
+    });
+
+    it('falls through to the card testimonials entirely when the template component is empty', () => {
+      const card = makeCard({
+        components: [
+          {
+            id: 'c1',
+            order: 0,
+            type: 'TESTIMONIALS',
+            entries: [
+              { id: 'e1', name: 'Card Person', rating: 3, text: 'Card text' },
+            ],
+          },
+        ],
+      });
+      const template = makeTemplate({
+        components: [{ id: 't1', order: 0, type: 'TESTIMONIALS', entries: [] }],
+      });
+
+      const merged = mergeOrganisationEcardTemplateOntoCard(card, template);
+      const testimonials = merged.components[0];
+      if (testimonials.type !== 'TESTIMONIALS') throw new Error('unreachable');
+      expect(testimonials.entries).toEqual([
+        { id: 'e1', name: 'Card Person', rating: 3, text: 'Card text' },
+      ]);
     });
   });
 

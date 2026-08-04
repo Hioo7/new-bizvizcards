@@ -58,6 +58,11 @@ const FULL_INCLUDE = {
       video: true,
       whatsapp: true,
       brochure: { include: { pdf: true } },
+      locationTile: true,
+      reviewLink: true,
+      testimonials: {
+        include: { entries: { orderBy: { order: 'asc' as const } } },
+      },
       gallery: {
         include: {
           subGalleries: {
@@ -144,6 +149,7 @@ export interface EcardSocialLinksComponentResponse extends EcardComponentRespons
   facebook: string | null;
   twitter: string | null;
   linkedIn: string | null;
+  youtube: string | null;
 }
 
 export interface EcardVideoComponentResponse extends EcardComponentResponseBase {
@@ -214,6 +220,30 @@ export interface EcardBrochureComponentResponse extends EcardComponentResponseBa
   fileName: string | null;
 }
 
+export interface EcardLocationTileComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.LOCATION_TILE;
+  label: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface EcardReviewLinkComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.REVIEW_LINK;
+  url: string | null;
+}
+
+export interface EcardTestimonialEntryResponse {
+  id: string;
+  name: string;
+  rating: number;
+  text: string;
+}
+
+export interface EcardTestimonialsComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.TESTIMONIALS;
+  entries: EcardTestimonialEntryResponse[];
+}
+
 export type EcardComponentResponse =
   | EcardAboutComponentResponse
   | EcardSocialLinksComponentResponse
@@ -222,7 +252,10 @@ export type EcardComponentResponse =
   | EcardVideoGalleryComponentResponse
   | EcardTeamComponentResponse
   | EcardWhatsAppComponentResponse
-  | EcardBrochureComponentResponse;
+  | EcardBrochureComponentResponse
+  | EcardLocationTileComponentResponse
+  | EcardReviewLinkComponentResponse
+  | EcardTestimonialsComponentResponse;
 
 @Injectable()
 export class EcardsService {
@@ -848,6 +881,7 @@ export class EcardsService {
             facebook: component.facebook,
             twitter: component.twitter,
             linkedIn: component.linkedIn,
+            youtube: component.youtube,
           },
         });
         return;
@@ -953,6 +987,39 @@ export class EcardsService {
           data: { ecardComponentId, pdfMediaId: brochureMediaId },
         });
         return;
+      case 'LOCATION_TILE':
+        await tx.eCardLocationTileComponent.create({
+          data: {
+            ecardComponentId,
+            label: component.label,
+            latitude: component.latitude,
+            longitude: component.longitude,
+          },
+        });
+        return;
+      case 'REVIEW_LINK':
+        await tx.eCardReviewLinkComponent.create({
+          data: { ecardComponentId, url: component.url },
+        });
+        return;
+      case 'TESTIMONIALS': {
+        const testimonialsRow = await tx.eCardTestimonialsComponent.create({
+          data: { ecardComponentId },
+        });
+        for (let t = 0; t < component.entries.length; t++) {
+          const entry = component.entries[t];
+          await tx.eCardTestimonialEntry.create({
+            data: {
+              testimonialsComponentId: testimonialsRow.ecardComponentId,
+              name: entry.name,
+              rating: entry.rating,
+              text: entry.text,
+              order: t,
+            },
+          });
+        }
+        return;
+      }
     }
   }
 
@@ -1217,6 +1284,7 @@ export class EcardsService {
           facebook: component.socialLinks?.facebook ?? null,
           twitter: component.socialLinks?.twitter ?? null,
           linkedIn: component.socialLinks?.linkedIn ?? null,
+          youtube: component.socialLinks?.youtube ?? null,
         };
       case ECardComponentType.WHATSAPP:
         return {
@@ -1282,6 +1350,31 @@ export class EcardsService {
             ? this.mediaService.getPublicUrl(component.brochure.pdf)
             : null,
           fileName: component.brochure?.pdf?.originalName ?? null,
+        };
+      case ECardComponentType.LOCATION_TILE:
+        return {
+          ...base,
+          type: ECardComponentType.LOCATION_TILE,
+          label: component.locationTile?.label ?? null,
+          latitude: component.locationTile?.latitude ?? null,
+          longitude: component.locationTile?.longitude ?? null,
+        };
+      case ECardComponentType.REVIEW_LINK:
+        return {
+          ...base,
+          type: ECardComponentType.REVIEW_LINK,
+          url: component.reviewLink?.url ?? null,
+        };
+      case ECardComponentType.TESTIMONIALS:
+        return {
+          ...base,
+          type: ECardComponentType.TESTIMONIALS,
+          entries: (component.testimonials?.entries ?? []).map((entry) => ({
+            id: entry.id,
+            name: entry.name,
+            rating: entry.rating,
+            text: entry.text,
+          })),
         };
     }
   }

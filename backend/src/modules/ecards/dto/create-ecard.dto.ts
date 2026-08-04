@@ -5,8 +5,11 @@ import { ECARD_MAX_COMPONENTS } from '../ecards.constants';
 import { ecardAboutComponentSchema } from './components/about.dto';
 import { createEcardBrochureComponentSchema } from './components/brochure.dto';
 import { createEcardGalleryComponentSchema } from './components/gallery.dto';
+import { ecardLocationTileComponentSchema } from './components/location-tile.dto';
+import { ecardReviewLinkComponentSchema } from './components/review-link.dto';
 import { ecardSocialLinksComponentSchema } from './components/social-links.dto';
 import { ecardTeamComponentSchema } from './components/team-member-pick.dto';
+import { ecardTestimonialsComponentSchema } from './components/testimonials.dto';
 import { ecardVideoComponentSchema } from './components/video.dto';
 import { ecardVideoGalleryComponentSchema } from './components/video-gallery.dto';
 import { ecardWhatsAppComponentSchema } from './components/whatsapp.dto';
@@ -26,6 +29,9 @@ const createEcardComponentSchema = z.discriminatedUnion('type', [
   ecardTeamComponentSchema,
   ecardWhatsAppComponentSchema,
   createEcardBrochureComponentSchema,
+  ecardLocationTileComponentSchema,
+  ecardReviewLinkComponentSchema,
+  ecardTestimonialsComponentSchema,
 ]);
 
 export const createEcardShape = {

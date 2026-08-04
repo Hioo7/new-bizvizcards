@@ -4,8 +4,10 @@ import {
   ECARD_PHONE_NUMBER_DIGITS_REGEX,
   ECARD_PHONE_NUMBER_MAX_DIGITS,
   ECARD_PHONE_NUMBER_MIN_DIGITS,
+  ECARD_REVIEW_LINK_URL_MAX_LENGTH,
   ECARD_TEXT_SHORT_MAX_LENGTH,
   normalizeEcardVideoUrl,
+  type ReviewLinkSheetValues,
   type VideoSheetValues,
   type WhatsAppSheetValues,
 } from "@features/ecards";
@@ -53,4 +55,15 @@ export const organisationEcardTemplateVideoSheetSchema: z.ZodType<
       }
       return normalized;
     }),
+});
+
+export const organisationEcardTemplateReviewLinkSheetSchema: z.ZodType<
+  ReviewLinkSheetValues,
+  ReviewLinkSheetValues
+> = z.object({
+  url: z
+    .string()
+    .trim()
+    .max(ECARD_REVIEW_LINK_URL_MAX_LENGTH)
+    .refine((value) => value === "" || /^https?:\/\//.test(value), "Enter a valid URL"),
 });

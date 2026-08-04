@@ -15,14 +15,30 @@ export const ECARD_PHONE_NUMBER_MAX_DIGITS = 15;
 export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
 
 // One instance of each ECardComponentType per card (ABOUT, SOCIAL_LINKS,
-// GALLERY, VIDEO, VIDEO_GALLERY, TEAM, WHATSAPP, BROCHURE) — see
-// ECardComponent.@@unique([ecardId, type]).
-export const ECARD_MAX_COMPONENTS = 8;
+// GALLERY, VIDEO, VIDEO_GALLERY, TEAM, WHATSAPP, BROCHURE, LOCATION_TILE,
+// REVIEW_LINK, TESTIMONIALS) — see ECardComponent.@@unique([ecardId, type]).
+export const ECARD_MAX_COMPONENTS = 11;
 export const ECARD_MAX_SUB_GALLERIES = 10;
 export const ECARD_MAX_GALLERY_IMAGES = 30;
 export const ECARD_MAX_VIDEO_SUB_GALLERIES = 10;
 export const ECARD_MAX_VIDEOS_PER_GALLERY = 30;
 export const ECARD_MAX_TEAM_MEMBERS = 50;
+
+export const ECARD_LOCATION_TILE_LABEL_MAX_LENGTH = 100;
+export const ECARD_LOCATION_LATITUDE_MIN = -90;
+export const ECARD_LOCATION_LATITUDE_MAX = 90;
+export const ECARD_LOCATION_LONGITUDE_MIN = -180;
+export const ECARD_LOCATION_LONGITUDE_MAX = 180;
+
+export const ECARD_REVIEW_LINK_URL_MAX_LENGTH = 2048;
+
+// A hand-typed list (unlike Team's org-member picker), so kept smaller than
+// ECARD_MAX_TEAM_MEMBERS.
+export const ECARD_MAX_TESTIMONIALS = 20;
+export const ECARD_TESTIMONIAL_NAME_MAX_LENGTH = 100;
+export const ECARD_TESTIMONIAL_TEXT_MAX_LENGTH = 500;
+export const ECARD_TESTIMONIAL_RATING_MIN = 1;
+export const ECARD_TESTIMONIAL_RATING_MAX = 5;
 
 // Shared by Gallery image captions and Video Gallery video captions.
 export const ECARD_CAPTION_MAX_LENGTH = 100;

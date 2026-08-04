@@ -11,14 +11,21 @@ import { ecardAboutComponentSchema } from '../../ecards/dto/components/about.dto
 import { updateEcardGalleryComponentSchema } from '../../ecards/dto/components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from '../../ecards/dto/components/social-links.dto';
 import { ecardTeamComponentSchema } from '../../ecards/dto/components/team-member-pick.dto';
+import { ecardTestimonialsComponentSchema } from '../../ecards/dto/components/testimonials.dto';
 import { ecardVideoGalleryComponentSchema } from '../../ecards/dto/components/video-gallery.dto';
 import { hasUniqueComponentTypes } from '../../ecards/dto/ecard-core.dto';
 import {
+  ECARD_LOCATION_LATITUDE_MAX,
+  ECARD_LOCATION_LATITUDE_MIN,
+  ECARD_LOCATION_LONGITUDE_MAX,
+  ECARD_LOCATION_LONGITUDE_MIN,
+  ECARD_LOCATION_TILE_LABEL_MAX_LENGTH,
   ECARD_MAX_COMPONENTS,
   ECARD_PHONE_DIAL_CODE_MAX_LENGTH,
   ECARD_PHONE_NUMBER_DIGITS_REGEX,
   ECARD_PHONE_NUMBER_MAX_DIGITS,
   ECARD_PHONE_NUMBER_MIN_DIGITS,
+  ECARD_REVIEW_LINK_URL_MAX_LENGTH,
   ECARD_TEXT_SHORT_MAX_LENGTH,
   ECARD_VIDEO_URL_MAX_LENGTH,
 } from '../../ecards/ecards.constants';
@@ -80,6 +87,42 @@ const organisationEcardTemplateBrochureComponentSchema = z
   })
   .strict();
 
+// LOCATION_TILE's label can be set independently (an org standardizing just
+// the tile's name, e.g. always "Head Office"), but latitude/longitude are
+// meaningless individually — same isPairedOrBothAbsent pairing rule as
+// Lead's own lat/lng fields, applied here to just those two.
+const organisationEcardTemplateLocationTileComponentSchema = z
+  .object({
+    type: z.literal('LOCATION_TILE'),
+    label: z
+      .string()
+      .trim()
+      .max(ECARD_LOCATION_TILE_LABEL_MAX_LENGTH)
+      .optional(),
+    latitude: z
+      .number()
+      .min(ECARD_LOCATION_LATITUDE_MIN)
+      .max(ECARD_LOCATION_LATITUDE_MAX)
+      .optional(),
+    longitude: z
+      .number()
+      .min(ECARD_LOCATION_LONGITUDE_MIN)
+      .max(ECARD_LOCATION_LONGITUDE_MAX)
+      .optional(),
+  })
+  .strict()
+  .refine((v) => isPairedOrBothAbsent(v.latitude, v.longitude), {
+    message: 'latitude and longitude must be provided together',
+    path: ['longitude'],
+  });
+
+const organisationEcardTemplateReviewLinkComponentSchema = z
+  .object({
+    type: z.literal('REVIEW_LINK'),
+    url: z.url().max(ECARD_REVIEW_LINK_URL_MAX_LENGTH).optional(),
+  })
+  .strict();
+
 const organisationEcardTemplateComponentSchema = z.discriminatedUnion('type', [
   ecardAboutComponentSchema,
   ecardSocialLinksComponentSchema,
@@ -89,6 +132,13 @@ const organisationEcardTemplateComponentSchema = z.discriminatedUnion('type', [
   ecardTeamComponentSchema,
   organisationEcardTemplateWhatsAppComponentSchema,
   organisationEcardTemplateBrochureComponentSchema,
+  organisationEcardTemplateLocationTileComponentSchema,
+  organisationEcardTemplateReviewLinkComponentSchema,
+  // Already fully optional/defaulted ([]) on the customer's own e-card —
+  // reused verbatim, same as ABOUT/SOCIAL_LINKS/etc above. An empty entries
+  // array on the template naturally means "defer to the customer's own
+  // testimonials", consistent with GALLERY/VIDEO_GALLERY/TEAM's reuse.
+  ecardTestimonialsComponentSchema,
 ]);
 
 // Single schema for both the first-ever save and every subsequent one — an

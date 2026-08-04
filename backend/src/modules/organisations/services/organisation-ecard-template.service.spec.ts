@@ -289,6 +289,87 @@ describe('OrganisationEcardTemplateService (integration, TEST_DATABASE_URL only)
         { videoUrl: 'https://player.vimeo.com/video/76979871', caption: null },
       ]);
     });
+
+    it('creates a template with a LOCATION_TILE component that only sets the label, deferring coordinates to the member card', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+
+      const created = await service.upsertForEmployee(
+        organisation.id,
+        { components: [{ type: 'LOCATION_TILE', label: 'HQ' }] },
+        [],
+      );
+
+      const locationTile = created.components.find(
+        (c) => c.type === 'LOCATION_TILE',
+      );
+      expect(locationTile).toMatchObject({
+        label: 'HQ',
+        latitude: null,
+        longitude: null,
+      });
+    });
+
+    it('creates a template with a REVIEW_LINK and a TESTIMONIALS component', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+
+      const created = await service.upsertForEmployee(
+        organisation.id,
+        {
+          components: [
+            { type: 'REVIEW_LINK', url: 'https://g.page/r/acme/review' },
+            {
+              type: 'TESTIMONIALS',
+              entries: [{ name: 'Org Client', rating: 5, text: 'Excellent' }],
+            },
+          ],
+        },
+        [],
+      );
+
+      const reviewLink = created.components.find(
+        (c) => c.type === 'REVIEW_LINK',
+      );
+      expect(reviewLink).toMatchObject({
+        url: 'https://g.page/r/acme/review',
+      });
+
+      const testimonials = created.components.find(
+        (c) => c.type === 'TESTIMONIALS',
+      );
+      expect(testimonials?.entries).toEqual([
+        expect.objectContaining({
+          name: 'Org Client',
+          rating: 5,
+          text: 'Excellent',
+        }),
+      ]);
+    });
+
+    it('creates a template with a SOCIAL_LINKS component including youtube', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+
+      const created = await service.upsertForEmployee(
+        organisation.id,
+        {
+          components: [
+            {
+              type: 'SOCIAL_LINKS',
+              website: 'https://acme.test',
+              youtube: 'https://www.youtube.com/@acme',
+            },
+          ],
+        },
+        [],
+      );
+
+      const socialLinks = created.components.find(
+        (c) => c.type === 'SOCIAL_LINKS',
+      );
+      expect(socialLinks).toMatchObject({
+        website: 'https://acme.test',
+        youtube: 'https://www.youtube.com/@acme',
+      });
+    });
   });
 
   describe('upsertForSpoc', () => {

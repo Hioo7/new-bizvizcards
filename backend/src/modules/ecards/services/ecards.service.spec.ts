@@ -13,6 +13,7 @@ import { OrganisationMembersService } from '../../organisations/services/organis
 import { OrganisationsService } from '../../organisations/services/organisations.service';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
+import { ecardSocialLinksComponentSchema } from '../dto/components/social-links.dto';
 import { ECARD_MAX_PER_CUSTOMER } from '../ecards.constants';
 import { EcardsService } from './ecards.service';
 
@@ -1331,6 +1332,262 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
         [],
       );
       expect(disabled.hero.autoDownloadContact).toBe(false);
+    });
+  });
+
+  describe('LOCATION_TILE / REVIEW_LINK / TESTIMONIALS components', () => {
+    it('creates an e-card with all three new component types and resolves the response', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `new-components-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'LOCATION_TILE',
+              label: 'Head Office',
+              latitude: 12.9716,
+              longitude: 77.5946,
+            },
+            { type: 'REVIEW_LINK', url: 'https://g.page/r/example/review' },
+            {
+              type: 'TESTIMONIALS',
+              entries: [
+                { name: 'Alice', rating: 5, text: 'Great service!' },
+                { name: 'Bob', rating: 4, text: 'Very good.' },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      expect(created.components).toHaveLength(3);
+
+      const locationTile = created.components.find(
+        (c) => c.type === 'LOCATION_TILE',
+      );
+      expect(locationTile).toMatchObject({
+        label: 'Head Office',
+        latitude: 12.9716,
+        longitude: 77.5946,
+      });
+
+      const reviewLink = created.components.find(
+        (c) => c.type === 'REVIEW_LINK',
+      );
+      expect(reviewLink).toMatchObject({
+        url: 'https://g.page/r/example/review',
+      });
+
+      const testimonials = created.components.find(
+        (c) => c.type === 'TESTIMONIALS',
+      );
+      expect(testimonials?.entries).toHaveLength(2);
+      expect(testimonials?.entries[0]).toMatchObject({
+        name: 'Alice',
+        rating: 5,
+        text: 'Great service!',
+      });
+      expect(testimonials?.entries[1]).toMatchObject({
+        name: 'Bob',
+        rating: 4,
+        text: 'Very good.',
+      });
+      // Every entry gets a persisted id, distinct from the other entries.
+      expect(testimonials?.entries[0].id).not.toBe(testimonials?.entries[1].id);
+    });
+
+    it('preserves testimonial entry order across a full-replace update', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `testimonials-order-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'TESTIMONIALS',
+              entries: [
+                { name: 'First', rating: 5, text: 'One' },
+                { name: 'Second', rating: 4, text: 'Two' },
+                { name: 'Third', rating: 3, text: 'Three' },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const updated = await service.updateById(
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: created.hero.name,
+          heroEmail: created.hero.email,
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'TESTIMONIALS',
+              // Reversed order plus a dropped entry — a full replace, not a patch.
+              entries: [
+                { name: 'Third', rating: 3, text: 'Three' },
+                { name: 'First', rating: 5, text: 'One' },
+              ],
+            },
+          ],
+        },
+        [],
+      );
+
+      const testimonials = updated.components.find(
+        (c) => c.type === 'TESTIMONIALS',
+      );
+      expect(testimonials?.entries.map((e) => e.name)).toEqual([
+        'Third',
+        'First',
+      ]);
+    });
+
+    it('removes LOCATION_TILE and REVIEW_LINK components entirely on update when omitted', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `remove-new-components-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'LOCATION_TILE',
+              label: 'Head Office',
+              latitude: 1,
+              longitude: 2,
+            },
+            { type: 'REVIEW_LINK', url: 'https://example.com/review' },
+          ],
+        },
+        [],
+      );
+      expect(created.components).toHaveLength(2);
+
+      const updated = await service.updateById(
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: created.hero.name,
+          heroEmail: created.hero.email,
+          isExchangeContactEnabled: true,
+          components: [],
+        },
+        [],
+      );
+
+      expect(updated.components).toHaveLength(0);
+      await expect(
+        prisma.eCardLocationTileComponent.findFirst({
+          where: { ecardComponent: { ecardId: created.id } },
+        }),
+      ).resolves.toBeNull();
+      await expect(
+        prisma.eCardReviewLinkComponent.findFirst({
+          where: { ecardComponent: { ecardId: created.id } },
+        }),
+      ).resolves.toBeNull();
+    });
+  });
+
+  describe('SOCIAL_LINKS component', () => {
+    it('creates and returns a SOCIAL_LINKS component including youtube', async () => {
+      const customer = await seedCustomer();
+
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `social-links-youtube-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'SOCIAL_LINKS',
+              website: 'https://example.com',
+              youtube: 'https://www.youtube.com/@example',
+            },
+          ],
+        },
+        [],
+      );
+
+      const socialLinks = created.components.find(
+        (c) => c.type === 'SOCIAL_LINKS',
+      );
+      expect(socialLinks).toMatchObject({
+        website: 'https://example.com',
+        youtube: 'https://www.youtube.com/@example',
+        instagram: null,
+      });
+    });
+
+    it('updates the youtube link on a full-replace update', async () => {
+      const customer = await seedCustomer();
+      const created = await service.createForCustomer(
+        customer.id,
+        {
+          endpoint: `social-links-youtube-update-${randomUUID()}`,
+          heroName: 'Test Customer',
+          heroEmail: 'test@example.com',
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'SOCIAL_LINKS',
+              youtube: 'https://www.youtube.com/@original',
+            },
+          ],
+        },
+        [],
+      );
+
+      const updated = await service.updateById(
+        created.id,
+        {
+          endpoint: created.endpoint,
+          heroName: created.hero.name,
+          heroEmail: created.hero.email,
+          isExchangeContactEnabled: true,
+          components: [
+            {
+              type: 'SOCIAL_LINKS',
+              youtube: 'https://www.youtube.com/@updated',
+            },
+          ],
+        },
+        [],
+      );
+
+      const socialLinks = updated.components.find(
+        (c) => c.type === 'SOCIAL_LINKS',
+      );
+      expect(socialLinks).toMatchObject({
+        youtube: 'https://www.youtube.com/@updated',
+      });
+    });
+
+    it('rejects an invalid (non-URL) youtube value at the DTO layer', () => {
+      // Service methods don't re-validate (validation happens in the
+      // controller's ZodValidationPipe), so this asserts against the schema
+      // directly rather than through service.createForCustomer.
+      const result = ecardSocialLinksComponentSchema.safeParse({
+        type: 'SOCIAL_LINKS',
+        youtube: 'not-a-url',
+      });
+      expect(result.success).toBe(false);
     });
   });
 
