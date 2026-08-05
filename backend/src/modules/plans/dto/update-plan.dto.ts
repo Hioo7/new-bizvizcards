@@ -10,6 +10,7 @@ import { ecardPolicySchema } from './ecard-policy.dto';
 import { smartCardPolicySchema } from './smart-card-policy.dto';
 import { organisationPolicySchema } from './organisation-policy.dto';
 import { eventPolicySchema } from './event-policy.dto';
+import { emailSignaturePolicySchema } from './email-signature-policy.dto';
 
 export const updatePlanSchema = z
   .object({
@@ -27,6 +28,7 @@ export const updatePlanSchema = z
     smartCardPolicy: smartCardPolicySchema.optional(),
     organisationPolicy: organisationPolicySchema.optional(),
     eventPolicy: eventPolicySchema.optional(),
+    emailSignaturePolicy: emailSignaturePolicySchema.optional(),
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0, {

@@ -257,6 +257,7 @@ describe('Business Events (e2e, TEST_DATABASE_URL only)', () => {
           orgSmartCardPolicy: permissiveSmartCardPolicyPayload(),
         },
         eventPolicy: { isAvailable: true, maxEvents: 10, maxGuestsPerEvent },
+        emailSignaturePolicy: { isAvailable: true, maxEmailSignatures: 0 },
       })
       .expect(201);
     const id = (response.body as { id: string }).id;

@@ -139,6 +139,9 @@ describe('EventGuestsService (integration, TEST_DATABASE_URL only)', () => {
             eventPolicy: {
               create: { isAvailable: true, maxEvents: 10, maxGuestsPerEvent },
             },
+            emailSignaturePolicy: {
+              create: { isAvailable: true, maxEmailSignatures: 0 },
+            },
           },
         },
       },

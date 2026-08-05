@@ -170,6 +170,22 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
           </>
         )}
       </div>
+
+      <div className="rounded-box border border-base-300 p-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+          Email signature policy
+        </p>
+        <SummaryRow
+          label="Available"
+          value={value.emailSignaturePolicy.isAvailable ? "Yes" : "No"}
+        />
+        {value.emailSignaturePolicy.isAvailable && (
+          <SummaryRow
+            label="Max email signatures"
+            value={String(value.emailSignaturePolicy.maxEmailSignatures)}
+          />
+        )}
+      </div>
     </div>
   );
 }

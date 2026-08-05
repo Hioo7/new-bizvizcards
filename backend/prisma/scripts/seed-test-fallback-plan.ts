@@ -133,6 +133,12 @@ async function main() {
               maxGuestsPerEvent: GENEROUS_LIMIT,
             },
           },
+          emailSignaturePolicy: {
+            create: {
+              isAvailable: true,
+              maxEmailSignatures: GENEROUS_LIMIT,
+            },
+          },
         },
       },
     },

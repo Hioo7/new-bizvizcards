@@ -33,5 +33,9 @@ model Media {
 
   productMedia ProductMedia?
 
+  emailSignatureProfileImage EmailSignature? @relation("EmailSignatureProfileImage")
+  emailSignatureCompanyLogo  EmailSignature? @relation("EmailSignatureCompanyLogo")
+  emailSignatureBannerImage  EmailSignature? @relation("EmailSignatureBannerImage")
+
   @@map("Media")
 }

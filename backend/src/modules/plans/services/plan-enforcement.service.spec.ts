@@ -7,6 +7,7 @@ import {
   ECardHeroLayout,
   ECardIconShape,
   ECardTheme,
+  EmailSignatureTemplateKey,
   EventMemberRole,
   PlanBusinessModelType,
   SmartCardTemplateKey,
@@ -67,6 +68,8 @@ interface PlanOverrides {
   eventIsAvailable?: boolean;
   maxEvents?: number;
   maxGuestsPerEvent?: number;
+  emailSignatureIsAvailable?: boolean;
+  maxEmailSignatures?: number;
 }
 
 describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
@@ -306,6 +309,12 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                     exchangeContactAccess: false,
                   },
                 },
+              },
+            },
+            emailSignaturePolicy: {
+              create: {
+                isAvailable: overrides.emailSignatureIsAvailable ?? true,
+                maxEmailSignatures: overrides.maxEmailSignatures ?? 2,
               },
             },
             eventPolicy: {
@@ -913,6 +922,50 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
 
       await expect(service.assertCanCreateEvent(customer.id)).rejects.toThrow(
         "This customer's plan does not include business events",
+      );
+    });
+  });
+
+  describe('assertCanCreateEmailSignature', () => {
+    it('passes when under the email signature cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ maxEmailSignatures: 2 });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateEmailSignature(customer.id),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks once at the email signature cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ maxEmailSignatures: 1 });
+      await assignPlan(customer.id, plan.id);
+      await prisma.emailSignature.create({
+        data: {
+          customerId: customer.id,
+          templateKey: EmailSignatureTemplateKey.MINIMAL,
+          name: 'Existing Signature',
+          fullName: 'Test User',
+        },
+      });
+
+      await expect(
+        service.assertCanCreateEmailSignature(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan has reached its email signature limit",
+      );
+    });
+
+    it('blocks entirely when email signatures are not available on the plan', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ emailSignatureIsAvailable: false });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateEmailSignature(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan does not include email signatures",
       );
     });
   });

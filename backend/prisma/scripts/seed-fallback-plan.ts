@@ -21,6 +21,7 @@ import {
 import {
   PLAN_FALLBACK_MAX_CUSTOM_FORMS,
   PLAN_FALLBACK_MAX_ECARDS,
+  PLAN_FALLBACK_MAX_EMAIL_SIGNATURES,
   PLAN_FALLBACK_MAX_EVENTS,
   PLAN_FALLBACK_MAX_GALLERIES,
   PLAN_FALLBACK_MAX_GALLERY_SIZE_BYTES,
@@ -137,6 +138,12 @@ async function main() {
               isAvailable: true,
               maxEvents: PLAN_FALLBACK_MAX_EVENTS,
               maxGuestsPerEvent: PLAN_FALLBACK_MAX_GUESTS_PER_EVENT,
+            },
+          },
+          emailSignaturePolicy: {
+            create: {
+              isAvailable: true,
+              maxEmailSignatures: PLAN_FALLBACK_MAX_EMAIL_SIGNATURES,
             },
           },
         },

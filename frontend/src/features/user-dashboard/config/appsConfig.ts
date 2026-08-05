@@ -1,5 +1,6 @@
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { EffectivePolicy } from "@app-types/plan";
 import { ROUTES } from "@config/routes";
 
 export interface UserAppTile {
@@ -9,7 +10,7 @@ export interface UserAppTile {
   route: string;
   /** True when the viewing customer's own plan doesn't include this app —
    * the tile stays visible (so it's discoverable) but renders locked. */
-  isLocked: (args: { isCustomFormAvailable: boolean }) => boolean;
+  isLocked: (policy: EffectivePolicy) => boolean;
 }
 
 export const USER_APP_TILES: UserAppTile[] = [
@@ -18,6 +19,13 @@ export const USER_APP_TILES: UserAppTile[] = [
     label: "Exchange Contact Forms",
     icon: ClipboardList,
     route: ROUTES.userExchangeContactForms,
-    isLocked: ({ isCustomFormAvailable }) => !isCustomFormAvailable,
+    isLocked: (policy) => !policy.ecard.isCustomFormAvailable,
+  },
+  {
+    id: "email-signatures",
+    label: "Email Signatures",
+    icon: Mail,
+    route: ROUTES.userEmailSignatures,
+    isLocked: (policy) => !policy.emailSignature.isAvailable,
   },
 ];

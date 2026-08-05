@@ -26,9 +26,7 @@ export default function AppsSection() {
         {error && (
           <p className="px-4 text-center text-sm text-error">{error}</p>
         )}
-        {policy && (
-          <AppsGrid isCustomFormAvailable={policy.ecard.isCustomFormAvailable} />
-        )}
+        {policy && <AppsGrid policy={policy} />}
       </div>
     </div>
   );

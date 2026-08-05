@@ -104,6 +104,11 @@ export interface EventPolicy {
   maxGuestsPerEvent: number;
 }
 
+export interface EmailSignaturePolicy {
+  isAvailable: boolean;
+  maxEmailSignatures: number;
+}
+
 export interface PlanSummary {
   id: string;
   name: string;
@@ -121,6 +126,7 @@ export interface PlanDetail extends PlanSummary {
   smartCardPolicy: SmartCardPolicy;
   organisationPolicy: OrganisationPolicy;
   eventPolicy: EventPolicy;
+  emailSignaturePolicy: EmailSignaturePolicy;
 }
 
 export interface PlanListResponse {
@@ -141,6 +147,7 @@ export interface PlanPolicyPayload {
   smartCardPolicy: SmartCardPolicy;
   organisationPolicy: OrganisationPolicy;
   eventPolicy: EventPolicy;
+  emailSignaturePolicy: EmailSignaturePolicy;
 }
 
 export interface CreatePlanPayload extends PlanPolicyPayload {
@@ -200,6 +207,11 @@ export interface EffectiveEventPolicy {
   maxGuestsPerEvent: number;
 }
 
+export interface EffectiveEmailSignaturePolicy {
+  isAvailable: boolean;
+  maxEmailSignatures: number;
+}
+
 export interface EffectivePolicy {
   planId: string;
   isFallback: boolean;
@@ -207,6 +219,7 @@ export interface EffectivePolicy {
   smartCard: EffectiveSmartCardPolicy;
   organisation: EffectiveOrganisationPolicy;
   event: EffectiveEventPolicy;
+  emailSignature: EffectiveEmailSignaturePolicy;
   leadsViewAccess: boolean;
 }
 

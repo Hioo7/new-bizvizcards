@@ -158,6 +158,9 @@ describe('ExchangeContactFormsService (integration, TEST_DATABASE_URL only)', ()
             eventPolicy: {
               create: { isAvailable: true, maxEvents: 0, maxGuestsPerEvent: 0 },
             },
+            emailSignaturePolicy: {
+              create: { isAvailable: true, maxEmailSignatures: 0 },
+            },
           },
         },
       },

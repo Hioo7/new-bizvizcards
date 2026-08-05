@@ -40,6 +40,8 @@ export const EMPLOYEE_EXCHANGE_CONTACT_FORMS_BASE_PATH =
 // the employee-facing base path above.
 export const EXCHANGE_CONTACT_FORMS_BASE_PATH = "/api/exchange-contact-forms";
 
+export const EMAIL_SIGNATURES_BASE_PATH = "/api/email-signatures";
+
 export const EMPLOYEE_ORGANISATIONS_BASE_PATH = "/api/employee/organisations";
 
 // Customer-facing (member-read) organisations routes — distinct from the

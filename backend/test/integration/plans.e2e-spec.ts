@@ -127,6 +127,18 @@ function eventPolicyPayload(
   };
 }
 
+function emailSignaturePolicyPayload(
+  overrides: Partial<{
+    isAvailable: boolean;
+    maxEmailSignatures: number;
+  }> = {},
+) {
+  return {
+    isAvailable: overrides.isAvailable ?? true,
+    maxEmailSignatures: overrides.maxEmailSignatures ?? 3,
+  };
+}
+
 function createPlanPayload(
   overrides: Partial<{
     name: string;
@@ -137,6 +149,7 @@ function createPlanPayload(
     smartCardPolicy: ReturnType<typeof smartCardPolicyPayload>;
     organisationPolicy: ReturnType<typeof organisationPolicyPayload>;
     eventPolicy: ReturnType<typeof eventPolicyPayload>;
+    emailSignaturePolicy: ReturnType<typeof emailSignaturePolicyPayload>;
   }> = {},
 ) {
   return {
@@ -152,6 +165,8 @@ function createPlanPayload(
     organisationPolicy:
       overrides.organisationPolicy ?? organisationPolicyPayload(),
     eventPolicy: overrides.eventPolicy ?? eventPolicyPayload(),
+    emailSignaturePolicy:
+      overrides.emailSignaturePolicy ?? emailSignaturePolicyPayload(),
   };
 }
 

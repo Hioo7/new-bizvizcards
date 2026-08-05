@@ -80,6 +80,11 @@ export interface EffectiveEventPolicy {
   maxGuestsPerEvent: number;
 }
 
+export interface EffectiveEmailSignaturePolicy {
+  isAvailable: boolean;
+  maxEmailSignatures: number;
+}
+
 export interface EffectivePolicy {
   planId: string;
   isFallback: boolean;
@@ -87,6 +92,7 @@ export interface EffectivePolicy {
   smartCard: EffectiveSmartCardPolicy;
   organisation: EffectiveOrganisationPolicy;
   event: EffectiveEventPolicy;
+  emailSignature: EffectiveEmailSignaturePolicy;
 }
 
 // Exported for reuse by PlansService, which needs the identical nested
@@ -123,6 +129,7 @@ export const planPolicyInclude = {
     },
   },
   eventPolicy: true,
+  emailSignaturePolicy: true,
 } satisfies Prisma.PlanPolicyInclude;
 
 /**
@@ -284,6 +291,10 @@ export class PlanPolicyResolverService {
         isAvailable: policy.eventPolicy.isAvailable,
         maxEvents: policy.eventPolicy.maxEvents,
         maxGuestsPerEvent: policy.eventPolicy.maxGuestsPerEvent,
+      },
+      emailSignature: {
+        isAvailable: policy.emailSignaturePolicy.isAvailable,
+        maxEmailSignatures: policy.emailSignaturePolicy.maxEmailSignatures,
       },
     };
   }

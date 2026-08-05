@@ -14,6 +14,7 @@ import {
 import type { CreatePlanDto } from '../dto/create-plan.dto';
 import type { EcardPolicyDto } from '../dto/ecard-policy.dto';
 import type { EventPolicyDto } from '../dto/event-policy.dto';
+import type { EmailSignaturePolicyDto } from '../dto/email-signature-policy.dto';
 import type { SmartCardPolicyDto } from '../dto/smart-card-policy.dto';
 import { PlansService } from './plans.service';
 
@@ -129,6 +130,16 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
     };
   }
 
+  function buildEmailSignaturePolicyDto(
+    overrides: Partial<EmailSignaturePolicyDto> = {},
+  ): EmailSignaturePolicyDto {
+    return {
+      isAvailable: true,
+      maxEmailSignatures: 2,
+      ...overrides,
+    };
+  }
+
   function buildCreatePlanDto(
     overrides: Partial<CreatePlanDto> = {},
   ): CreatePlanDto {
@@ -147,6 +158,7 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
         orgSmartCardPolicy: buildSmartCardPolicyDto({ maxSmartCards: 0 }),
       },
       eventPolicy: buildEventPolicyDto(),
+      emailSignaturePolicy: buildEmailSignaturePolicyDto(),
       ...overrides,
     };
   }

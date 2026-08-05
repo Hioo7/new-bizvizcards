@@ -6,6 +6,7 @@ export const ROUTES = {
   userDashboard: "/user/dashboard",
   userExchangeContactForms: "/user/apps/exchange-contact-forms",
   userExchangeContactFormBuilder: "/user/apps/exchange-contact-forms/:formId",
+  userEmailSignatures: "/user/apps/email-signatures",
   orgDashboard: "/org/dashboard",
   adminLogin: "/admin/login",
   adminHome: "/admin",

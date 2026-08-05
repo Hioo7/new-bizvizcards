@@ -57,6 +57,12 @@ model PlanPolicy {
   eventPolicyId String      @unique @db.Uuid
   eventPolicy   EventPolicy @relation(fields: [eventPolicyId], references: [id], onDelete: Cascade)
 
+  // Added after PlanPolicy already had rows in production — same nullable
+  // column -> backfill script (seed-email-signature-policy-defaults.ts) ->
+  // NOT NULL follow-up migration sequencing as eventPolicyId above.
+  emailSignaturePolicyId String               @unique @db.Uuid
+  emailSignaturePolicy   EmailSignaturePolicy @relation(fields: [emailSignaturePolicyId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -283,6 +289,22 @@ model EventPolicy {
   planPolicy PlanPolicy?
 
   @@map("EventPolicy")
+}
+
+// A plan's email-signature policy — same standalone shape as EventPolicy
+// (a toggle + one numeric limit, no child collections). Only ever owned by a
+// PlanPolicy directly, no OrganisationPolicy-level boost (same treatment as
+// EventPolicy — email signatures aren't organisation-linked either).
+model EmailSignaturePolicy {
+  id                 String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable        Boolean  @default(true)
+  maxEmailSignatures Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  planPolicy PlanPolicy?
+
+  @@map("EmailSignaturePolicy")
 }
 
 // Every plan assign/renew/switch/cancel event, per customer. Never mutated

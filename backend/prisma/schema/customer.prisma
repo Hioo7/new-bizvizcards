@@ -24,6 +24,7 @@ model Customer {
   leads       Lead[]
 
   exchangeContactForms ExchangeContactForm[]
+  emailSignatures      EmailSignature[]
 
   organisationMemberships OrganisationMember[]
   createdOrganisations    Organisation[]       @relation("OrganisationCreatedBy")

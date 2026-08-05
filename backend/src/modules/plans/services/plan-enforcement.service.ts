@@ -17,6 +17,8 @@ import {
   PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE,
   PLAN_ECARD_LIMIT_REACHED_MESSAGE,
   PLAN_ECARD_NOT_AVAILABLE_MESSAGE,
+  PLAN_EMAIL_SIGNATURE_LIMIT_REACHED_MESSAGE,
+  PLAN_EMAIL_SIGNATURE_NOT_AVAILABLE_MESSAGE,
   PLAN_EVENT_GUEST_LIMIT_REACHED_MESSAGE,
   PLAN_EVENT_LIMIT_REACHED_MESSAGE,
   PLAN_EVENT_NOT_AVAILABLE_MESSAGE,
@@ -538,6 +540,21 @@ export class PlanEnforcementService {
     });
     if (currentCount >= policy.event.maxEvents) {
       throw new ConflictException(PLAN_EVENT_LIMIT_REACHED_MESSAGE);
+    }
+  }
+
+  async assertCanCreateEmailSignature(customerId: string): Promise<void> {
+    const policy =
+      await this.policyResolver.getEffectivePolicyForCustomer(customerId);
+    if (!policy.emailSignature.isAvailable) {
+      throw new ForbiddenException(PLAN_EMAIL_SIGNATURE_NOT_AVAILABLE_MESSAGE);
+    }
+
+    const currentCount = await this.prisma.emailSignature.count({
+      where: { customerId },
+    });
+    if (currentCount >= policy.emailSignature.maxEmailSignatures) {
+      throw new ConflictException(PLAN_EMAIL_SIGNATURE_LIMIT_REACHED_MESSAGE);
     }
   }
 

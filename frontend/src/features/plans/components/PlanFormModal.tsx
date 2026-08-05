@@ -10,6 +10,7 @@ import EcardPolicyFields from "@features/plans/components/policy-fields/EcardPol
 import SmartCardPolicyFields from "@features/plans/components/policy-fields/SmartCardPolicyFields";
 import OrganisationPolicyFields from "@features/plans/components/policy-fields/OrganisationPolicyFields";
 import EventPolicyFields from "@features/plans/components/policy-fields/EventPolicyFields";
+import EmailSignaturePolicyFields from "@features/plans/components/policy-fields/EmailSignaturePolicyFields";
 
 interface PlanFormModalProps {
   mode: "create" | "edit";
@@ -32,6 +33,7 @@ function planToDraft(plan: PlanDetail): CreatePlanPayload {
     smartCardPolicy: plan.smartCardPolicy,
     organisationPolicy: plan.organisationPolicy,
     eventPolicy: plan.eventPolicy,
+    emailSignaturePolicy: plan.emailSignaturePolicy,
   };
 }
 
@@ -148,6 +150,14 @@ export default function PlanFormModal({
             <EventPolicyFields
               value={draft.eventPolicy}
               onChange={(eventPolicy) => setDraft({ ...draft, eventPolicy })}
+            />
+          )}
+          {stepId === "email-signature" && (
+            <EmailSignaturePolicyFields
+              value={draft.emailSignaturePolicy}
+              onChange={(emailSignaturePolicy) =>
+                setDraft({ ...draft, emailSignaturePolicy })
+              }
             />
           )}
           {stepId === "review" && <PlanReviewStep value={draft} />}

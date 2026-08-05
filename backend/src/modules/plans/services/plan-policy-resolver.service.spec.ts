@@ -261,6 +261,9 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
                 },
               },
             },
+            emailSignaturePolicy: {
+              create: { isAvailable: true, maxEmailSignatures: 2 },
+            },
             eventPolicy: {
               create: {
                 isAvailable: overrides.eventIsAvailable ?? true,

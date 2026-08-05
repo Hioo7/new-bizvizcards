@@ -13,6 +13,7 @@ import { SmartCardsModule } from './modules/smart-cards/smart-cards.module';
 import { OrganisationsModule } from './modules/organisations/organisations.module';
 import { EcardsModule } from './modules/ecards/ecards.module';
 import { ExchangeContactFormsModule } from './modules/exchange-contact-forms/exchange-contact-forms.module';
+import { EmailSignaturesModule } from './modules/email-signatures/email-signatures.module';
 import { RedirectsModule } from './modules/redirects/redirects.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { BusinessEventsModule } from './modules/business-events/business-events.module';
@@ -38,6 +39,7 @@ import { MigrationModule } from './modules/migration/migration.module';
     OrganisationsModule,
     EcardsModule,
     ExchangeContactFormsModule,
+    EmailSignaturesModule,
     RedirectsModule,
     PlansModule,
     BusinessEventsModule,

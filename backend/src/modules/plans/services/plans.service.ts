@@ -19,6 +19,7 @@ import {
 import type { CreatePlanDto } from '../dto/create-plan.dto';
 import type { EcardPolicyDto } from '../dto/ecard-policy.dto';
 import type { EventPolicyDto } from '../dto/event-policy.dto';
+import type { EmailSignaturePolicyDto } from '../dto/email-signature-policy.dto';
 import type { ListPlansQueryDto } from '../dto/list-plans-query.dto';
 import type { OrganisationPolicyDto } from '../dto/organisation-policy.dto';
 import type { SmartCardPolicyDto } from '../dto/smart-card-policy.dto';
@@ -52,6 +53,7 @@ export interface PlanDetail extends PlanSummary {
   smartCardPolicy: SmartCardPolicyDto;
   organisationPolicy: OrganisationPolicyDto;
   eventPolicy: EventPolicyDto;
+  emailSignaturePolicy: EmailSignaturePolicyDto;
 }
 
 export interface PlanListResult {
@@ -103,6 +105,12 @@ export class PlansService {
                 isAvailable: dto.eventPolicy.isAvailable,
                 maxEvents: dto.eventPolicy.maxEvents,
                 maxGuestsPerEvent: dto.eventPolicy.maxGuestsPerEvent,
+              },
+            },
+            emailSignaturePolicy: {
+              create: {
+                isAvailable: dto.emailSignaturePolicy.isAvailable,
+                maxEmailSignatures: dto.emailSignaturePolicy.maxEmailSignatures,
               },
             },
           },
@@ -170,6 +178,10 @@ export class PlansService {
         maxEvents: plan.policy.eventPolicy.maxEvents,
         maxGuestsPerEvent: plan.policy.eventPolicy.maxGuestsPerEvent,
       },
+      emailSignaturePolicy: {
+        isAvailable: plan.policy.emailSignaturePolicy.isAvailable,
+        maxEmailSignatures: plan.policy.emailSignaturePolicy.maxEmailSignatures,
+      },
     };
   }
 
@@ -183,6 +195,7 @@ export class PlansService {
             smartCardPolicyId: true,
             organisationPolicyId: true,
             eventPolicyId: true,
+            emailSignaturePolicyId: true,
           },
         },
       },
@@ -260,6 +273,15 @@ export class PlansService {
             isAvailable: dto.eventPolicy.isAvailable,
             maxEvents: dto.eventPolicy.maxEvents,
             maxGuestsPerEvent: dto.eventPolicy.maxGuestsPerEvent,
+          },
+        });
+      }
+      if (dto.emailSignaturePolicy) {
+        await tx.emailSignaturePolicy.update({
+          where: { id: plan.policy!.emailSignaturePolicyId },
+          data: {
+            isAvailable: dto.emailSignaturePolicy.isAvailable,
+            maxEmailSignatures: dto.emailSignaturePolicy.maxEmailSignatures,
           },
         });
       }

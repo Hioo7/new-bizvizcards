@@ -32,6 +32,7 @@ import EcardPublicPage from "@pages/EcardPublicPage";
 import UserDashboardPage from "@pages/UserDashboardPage";
 import UserExchangeContactFormsPage from "@pages/UserExchangeContactFormsPage";
 import UserExchangeContactFormBuilderPage from "@pages/UserExchangeContactFormBuilderPage";
+import UserEmailSignaturesPage from "@pages/UserEmailSignaturesPage";
 import OrgDashboardPage from "@pages/OrgDashboardPage";
 import DataMigrationPage from "@pages/DataMigrationPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
@@ -60,6 +61,10 @@ function App() {
         <Route
           path={ROUTES.userExchangeContactFormBuilder}
           element={<UserExchangeContactFormBuilderPage />}
+        />
+        <Route
+          path={ROUTES.userEmailSignatures}
+          element={<UserEmailSignaturesPage />}
         />
         <Route path={ROUTES.orgDashboard} element={<OrgDashboardPage />} />
       </Route>

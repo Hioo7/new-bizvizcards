@@ -122,11 +122,15 @@ export const DEFAULT_VIDEO_GALLERY_LIMITS = {
 // building a new plan can adjust before saving, mirrors DEFAULT_GALLERY_LIMITS.
 export const DEFAULT_MAX_CUSTOM_FORMS = 5;
 
+// Same starting-point convention, for a new plan's email signature cap.
+export const DEFAULT_MAX_EMAIL_SIGNATURES = 5;
+
 export const PLAN_FORM_STEPS = [
   { id: "basics", label: "Basics" },
   { id: "ecard", label: "E-card" },
   { id: "smart-card", label: "Smart card" },
   { id: "organisation", label: "Organisation" },
   { id: "event", label: "Events" },
+  { id: "email-signature", label: "Email Signatures" },
   { id: "review", label: "Review" },
 ] as const;

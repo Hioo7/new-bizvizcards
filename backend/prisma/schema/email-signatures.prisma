@@ -1,0 +1,80 @@
+enum EmailSignatureTemplateKey {
+  MODERN
+  CORPORATE
+  MINIMAL
+
+  @@map("EmailSignatureTemplateKey")
+}
+
+enum EmailSignatureSocialPlatform {
+  LINKEDIN
+  TWITTER
+  FACEBOOK
+  INSTAGRAM
+  GITHUB
+  YOUTUBE
+  TIKTOK
+  WHATSAPP
+  WEBSITE
+  CUSTOM
+
+  @@map("EmailSignatureSocialPlatform")
+}
+
+// A customer-owned, structured-fields email signature. Rendered to
+// email-client-safe HTML on demand (EmailSignatureRendererRegistry) rather
+// than stored as a pre-rendered blob — templateKey selects one of a fixed,
+// hardcoded set of renderers (no admin-configurable template builder, see
+// backend/CLAUDE.md's "don't over-engineer" guidance and the SmartCard
+// fixed-template precedent).
+model EmailSignature {
+  id          String                    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId  String                    @db.Uuid
+  customer    Customer                  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  templateKey EmailSignatureTemplateKey
+  // The customer's own label for this signature in their list — never
+  // rendered into the exported signature HTML itself.
+  name        String
+
+  fullName String
+  jobTitle String?
+  company  String?
+  email    String?
+  phone    String?
+  website  String?
+  address  String?
+
+  ctaText String?
+  ctaUrl  String?
+
+  profileImageMediaId String? @unique @db.Uuid
+  profileImageMedia   Media?  @relation("EmailSignatureProfileImage", fields: [profileImageMediaId], references: [id], onDelete: SetNull)
+  companyLogoMediaId  String? @unique @db.Uuid
+  companyLogoMedia    Media?  @relation("EmailSignatureCompanyLogo", fields: [companyLogoMediaId], references: [id], onDelete: SetNull)
+  bannerImageMediaId  String? @unique @db.Uuid
+  bannerImageMedia    Media?  @relation("EmailSignatureBannerImage", fields: [bannerImageMediaId], references: [id], onDelete: SetNull)
+
+  socialLinks EmailSignatureSocialLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@map("EmailSignature")
+}
+
+model EmailSignatureSocialLink {
+  id               String                       @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  emailSignatureId String                       @db.Uuid
+  emailSignature   EmailSignature               @relation(fields: [emailSignatureId], references: [id], onDelete: Cascade)
+  platform         EmailSignatureSocialPlatform
+  url              String
+  // Only meaningful/settable when platform === CUSTOM — enforced at the DTO
+  // layer via a discriminated union (Prisma has no conditional-column
+  // constraint), same convention as Plan.subscriptionDurationMonths.
+  label            String?
+  order            Int                          @default(0)
+
+  @@index([emailSignatureId])
+  @@map("EmailSignatureSocialLink")
+}

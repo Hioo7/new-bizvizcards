@@ -1,6 +1,7 @@
 import type {
   CreatePlanPayload,
   EcardPolicy,
+  EmailSignaturePolicy,
   EventPolicy,
   OrganisationPolicy,
   SmartCardPolicy,
@@ -9,6 +10,7 @@ import {
   DEFAULT_ECARD_ACCENT_COLOR_PRESETS,
   DEFAULT_GALLERY_LIMITS,
   DEFAULT_MAX_CUSTOM_FORMS,
+  DEFAULT_MAX_EMAIL_SIGNATURES,
   DEFAULT_VIDEO_GALLERY_LIMITS,
   ECARD_COMPONENT_TYPES,
   ECARD_GATED_HERO_LAYOUTS,
@@ -77,6 +79,13 @@ export function createDefaultEventPolicy(): EventPolicy {
   };
 }
 
+export function createDefaultEmailSignaturePolicy(): EmailSignaturePolicy {
+  return {
+    isAvailable: false,
+    maxEmailSignatures: DEFAULT_MAX_EMAIL_SIGNATURES,
+  };
+}
+
 export function createDefaultPlanDraft(): CreatePlanPayload {
   return {
     name: "",
@@ -87,5 +96,6 @@ export function createDefaultPlanDraft(): CreatePlanPayload {
     smartCardPolicy: createDefaultSmartCardPolicy(),
     organisationPolicy: createDefaultOrganisationPolicy(),
     eventPolicy: createDefaultEventPolicy(),
+    emailSignaturePolicy: createDefaultEmailSignaturePolicy(),
   };
 }
