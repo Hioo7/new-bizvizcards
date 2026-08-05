@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { ReminderStatus } from '../../../generated/prisma/client';
+import { ExchangeContactFormResolutionService } from '../../exchange-contact-forms/services/exchange-contact-form-resolution.service';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { LeadsService } from './leads.service';
@@ -22,9 +23,11 @@ describe('RemindersService (integration, TEST_DATABASE_URL only)', () => {
 
     appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
+    const policyResolver = new PlanPolicyResolverService(prisma);
     leadsService = new LeadsService(
       prisma,
-      new PlanEnforcementService(prisma, new PlanPolicyResolverService(prisma)),
+      new PlanEnforcementService(prisma, policyResolver),
+      new ExchangeContactFormResolutionService(prisma, policyResolver),
     );
     service = new RemindersService(prisma, leadsService);
   });

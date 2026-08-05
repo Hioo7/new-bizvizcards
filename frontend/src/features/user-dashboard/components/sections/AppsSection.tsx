@@ -1,4 +1,9 @@
+import { useMyEffectivePolicy } from "@hooks/useMyEffectivePolicy";
+import AppsGrid from "@features/user-dashboard/components/apps/AppsGrid";
+
 export default function AppsSection() {
+  const { policy, isLoading, error } = useMyEffectivePolicy();
+
   return (
     <div className="min-h-screen pb-24">
       {/* Sticky blue header */}
@@ -12,21 +17,18 @@ export default function AppsSection() {
         </p>
       </div>
 
-      <div className="flex flex-col items-center justify-center px-4 pt-16 text-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
-          <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-base-content/30" aria-hidden="true">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-base font-semibold text-base-content/60">Apps coming soon</p>
-          <p className="mt-1 text-sm text-base-content/40">
-            We're working on integrations you'll be able to add here
+      <div className="pt-6">
+        {isLoading && (
+          <p className="px-4 text-center text-sm text-base-content/50">
+            Loading…
           </p>
-        </div>
+        )}
+        {error && (
+          <p className="px-4 text-center text-sm text-error">{error}</p>
+        )}
+        {policy && (
+          <AppsGrid isCustomFormAvailable={policy.ecard.isCustomFormAvailable} />
+        )}
       </div>
     </div>
   );

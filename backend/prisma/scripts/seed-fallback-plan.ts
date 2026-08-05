@@ -19,6 +19,7 @@ import {
   ECARD_GATED_THEMES,
 } from '../../src/modules/ecards/ecards.constants';
 import {
+  PLAN_FALLBACK_MAX_CUSTOM_FORMS,
   PLAN_FALLBACK_MAX_ECARDS,
   PLAN_FALLBACK_MAX_EVENTS,
   PLAN_FALLBACK_MAX_GALLERIES,
@@ -42,6 +43,8 @@ function ecardPolicyCreateData(maxEcards: number) {
     isAvailable: true,
     maxEcards,
     exchangeContactAccess: false,
+    isCustomFormAvailable: false,
+    maxCustomForms: PLAN_FALLBACK_MAX_CUSTOM_FORMS,
     componentAvailabilities: {
       create: Object.values(ECardComponentType).map((type) => ({
         type,

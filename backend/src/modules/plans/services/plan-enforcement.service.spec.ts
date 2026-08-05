@@ -24,6 +24,9 @@ interface PlanOverrides {
   ecardIsAvailable?: boolean;
   maxEcards?: number;
   ecardExchangeContactAccess?: boolean;
+  customFormIsAvailable?: boolean;
+  maxCustomForms?: number;
+  orgCustomFormIsAvailable?: boolean;
   galleryLimits?: {
     maxGalleries: number;
     maxImagesPerGallery: number;
@@ -147,6 +150,8 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
       isAvailable: overrides.ecardIsAvailable ?? true,
       maxEcards: overrides.maxEcards ?? 3,
       exchangeContactAccess: overrides.ecardExchangeContactAccess ?? false,
+      isCustomFormAvailable: overrides.customFormIsAvailable ?? false,
+      maxCustomForms: overrides.maxCustomForms ?? 3,
       accentColorCustomizationAvailable,
       componentAvailabilities: {
         create: Object.values(ECardComponentType).map((type) => ({
@@ -243,6 +248,9 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                     maxEcards: 0,
                     exchangeContactAccess:
                       overrides.orgEcardExchangeContactAccess ?? false,
+                    isCustomFormAvailable:
+                      overrides.orgCustomFormIsAvailable ?? false,
+                    maxCustomForms: 0,
                     accentColorCustomizationAvailable:
                       overrides.orgAccentColorCustomizationAvailable ?? false,
                     componentAvailabilities: {
@@ -659,6 +667,153 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
       await expect(
         service.assertExchangeContactAllowed('SMART_CARD', null),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertCanCreateCustomForm', () => {
+    it('passes when under the custom-form cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        customFormIsAvailable: true,
+        maxCustomForms: 2,
+      });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateCustomForm(customer.id),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks when at the custom-form cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        customFormIsAvailable: true,
+        maxCustomForms: 1,
+      });
+      await assignPlan(customer.id, plan.id);
+      await prisma.exchangeContactForm.create({
+        data: { customerId: customer.id, name: 'Existing Form' },
+      });
+
+      await expect(
+        service.assertCanCreateCustomForm(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan has reached its customizable exchange contact form limit",
+      );
+    });
+
+    it('blocks when customizable forms are not available on the plan at all', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ customFormIsAvailable: false });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateCustomForm(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan does not include customizable exchange contact forms",
+      );
+    });
+  });
+
+  describe('assertCustomFormAccessAllowedForCard', () => {
+    it('passes when the personal plan grants access with no organisation', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ customFormIsAvailable: true });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCustomFormAccessAllowedForCard({
+          customerId: customer.id,
+          organisationId: null,
+        }),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks when neither the personal plan nor any org grants access', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ customFormIsAvailable: false });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCustomFormAccessAllowedForCard({
+          customerId: customer.id,
+          organisationId: null,
+        }),
+      ).rejects.toThrow(
+        "This customer's plan does not include customizable exchange contact forms",
+      );
+    });
+
+    it("passes via the organisation's boost even when the personal plan denies it", async () => {
+      const creator = await seedCustomer('Creator');
+      const creatorPlan = await seedPlan({ orgCustomFormIsAvailable: true });
+      await assignPlan(creator.id, creatorPlan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      const owner = await seedCustomer('Owner');
+      const ownerPlan = await seedPlan({ customFormIsAvailable: false });
+      await assignPlan(owner.id, ownerPlan.id);
+
+      await expect(
+        service.assertCustomFormAccessAllowedForCard({
+          customerId: owner.id,
+          organisationId: organisation.id,
+        }),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertCustomFormAccessAllowedForOrganisationTemplate', () => {
+    it("passes when the org creator's plan grants the org boost", async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan({ orgCustomFormIsAvailable: true });
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertCustomFormAccessAllowedForOrganisationTemplate(
+          organisation.id,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks when the org boost does not grant custom-form access', async () => {
+      const creator = await seedCustomer('Creator');
+      const plan = await seedPlan({ orgCustomFormIsAvailable: false });
+      await assignPlan(creator.id, plan.id);
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Acme', createdByCustomerId: creator.id },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertCustomFormAccessAllowedForOrganisationTemplate(
+          organisation.id,
+        ),
+      ).rejects.toThrow(
+        "This customer's plan does not include customizable exchange contact forms",
+      );
+    });
+
+    it('fails closed when the organisation has no resolvable creator', async () => {
+      const organisation = await prisma.organisation.create({
+        data: { name: 'Ownerless Org' },
+      });
+      seededOrganisationIds.push(organisation.id);
+
+      await expect(
+        service.assertCustomFormAccessAllowedForOrganisationTemplate(
+          organisation.id,
+        ),
+      ).rejects.toThrow(
+        "This customer's plan does not include customizable exchange contact forms",
+      );
     });
   });
 

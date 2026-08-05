@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CustomersModule } from '../customers/customers.module';
+import { ExchangeContactFormsModule } from '../exchange-contact-forms/exchange-contact-forms.module';
 import { PlansModule } from '../plans/plans.module';
 import { LeadsController } from './leads.controller';
 import { LeadFoldersController } from './lead-folders.controller';
@@ -12,7 +13,7 @@ import { LeadReferenceNotesService } from './services/lead-reference-notes.servi
 import { RemindersService } from './services/reminders.service';
 
 @Module({
-  imports: [CustomersModule, PlansModule],
+  imports: [CustomersModule, PlansModule, ExchangeContactFormsModule],
   controllers: [
     LeadsController,
     LeadFoldersController,

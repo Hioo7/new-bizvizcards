@@ -12,6 +12,7 @@ export const employeeStatements = {
   redirect: ['list', 'get', 'create', 'update', 'delete'],
   organisation: ['list', 'get', 'create', 'update', 'delete'],
   plan: ['list', 'get', 'create', 'update', 'delete'],
+  exchangeContactForm: ['list', 'get', 'create', 'update', 'delete'],
   event: ['list', 'get', 'create', 'update', 'delete'],
   product: ['list', 'get', 'create', 'update', 'delete'],
   order: ['list', 'get', 'update'],

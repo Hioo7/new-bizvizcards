@@ -13,9 +13,13 @@ import RedirectsPage from "@pages/RedirectsPage";
 import EcardsPage from "@pages/EcardsPage";
 import EcardListPage from "@pages/EcardListPage";
 import EcardBuilderPage from "@pages/EcardBuilderPage";
+import ExchangeContactFormsPage from "@pages/ExchangeContactFormsPage";
+import ExchangeContactFormListPage from "@pages/ExchangeContactFormListPage";
+import ExchangeContactFormBuilderPage from "@pages/ExchangeContactFormBuilderPage";
 import CustomerOrganisationManagementPage from "@pages/CustomerOrganisationManagementPage";
 import OrganisationDetailPage from "@pages/OrganisationDetailPage";
 import OrganisationEcardTemplatePage from "@pages/OrganisationEcardTemplatePage";
+import OrganisationExchangeContactFormTemplatePage from "@pages/OrganisationExchangeContactFormTemplatePage";
 import PlansPage from "@pages/PlansPage";
 import BusinessEventsPage from "@pages/BusinessEventsPage";
 import EventDetailPage from "@pages/EventDetailPage";
@@ -26,6 +30,8 @@ import OrderDetailPage from "@pages/OrderDetailPage";
 import SmartCardPublicPage from "@pages/SmartCardPublicPage";
 import EcardPublicPage from "@pages/EcardPublicPage";
 import UserDashboardPage from "@pages/UserDashboardPage";
+import UserExchangeContactFormsPage from "@pages/UserExchangeContactFormsPage";
+import UserExchangeContactFormBuilderPage from "@pages/UserExchangeContactFormBuilderPage";
 import OrgDashboardPage from "@pages/OrgDashboardPage";
 import DataMigrationPage from "@pages/DataMigrationPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
@@ -47,6 +53,14 @@ function App() {
 
       <Route element={<RequireAuth />}>
         <Route path={ROUTES.userDashboard} element={<UserDashboardPage />} />
+        <Route
+          path={ROUTES.userExchangeContactForms}
+          element={<UserExchangeContactFormsPage />}
+        />
+        <Route
+          path={ROUTES.userExchangeContactFormBuilder}
+          element={<UserExchangeContactFormBuilderPage />}
+        />
         <Route path={ROUTES.orgDashboard} element={<OrgDashboardPage />} />
       </Route>
 
@@ -65,6 +79,18 @@ function App() {
           <Route path={ROUTES.adminCustomerEcards} element={<EcardListPage />} />
           <Route path={ROUTES.adminEcardBuilder} element={<EcardBuilderPage />} />
           <Route
+            path={ROUTES.adminExchangeContactForms}
+            element={<ExchangeContactFormsPage />}
+          />
+          <Route
+            path={ROUTES.adminCustomerExchangeContactForms}
+            element={<ExchangeContactFormListPage />}
+          />
+          <Route
+            path={ROUTES.adminExchangeContactFormBuilder}
+            element={<ExchangeContactFormBuilderPage />}
+          />
+          <Route
             path={ROUTES.adminCustomerOrganisations}
             element={<CustomerOrganisationManagementPage />}
           />
@@ -75,6 +101,10 @@ function App() {
           <Route
             path={ROUTES.adminOrganisationEcardTemplate}
             element={<OrganisationEcardTemplatePage />}
+          />
+          <Route
+            path={ROUTES.adminOrganisationExchangeContactFormTemplate}
+            element={<OrganisationExchangeContactFormTemplatePage />}
           />
           <Route path={ROUTES.adminPlans} element={<PlansPage />} />
           <Route

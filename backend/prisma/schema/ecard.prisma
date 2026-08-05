@@ -104,6 +104,18 @@ model ECard {
   // requiring a manual "Save Contact" tap.
   autoDownloadContact      Boolean @default(false)
 
+  // The customizable exchange-contact form linked to this card, if any — no
+  // uniqueness constraint, since one form can be linked to multiple e-cards
+  // simultaneously (many-to-one), each e-card just has at most one at a
+  // time. Null (including via this onDelete: SetNull, if the linked form is
+  // ever deleted) means "render the legacy fixed exchange-contact form" —
+  // the default for every e-card today. Actual precedence against an
+  // organisation-level form template and plan-policy access is resolved
+  // read-time by ExchangeContactFormResolutionService, mirroring how
+  // OrganisationEcardTemplate overrides card content.
+  customFormId String?              @db.Uuid
+  customForm   ExchangeContactForm? @relation(fields: [customFormId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -117,6 +129,7 @@ model ECard {
   @@index([customerId])
   @@index([createdByEmployeeId])
   @@index([organisationId])
+  @@index([customFormId])
   @@map("ECard")
 }
 

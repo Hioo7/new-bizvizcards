@@ -37,6 +37,11 @@ export interface EffectiveEcardPolicy {
   isAvailable: boolean;
   maxEcards: number;
   exchangeContactAccess: boolean;
+  // Gates the customizable exchange-contact form feature — OR-boosted same
+  // as exchangeContactAccess.
+  isCustomFormAvailable: boolean;
+  // Personal-only cap, never boosted — same treatment as maxEcards.
+  maxCustomForms: number;
   components: Record<ECardComponentType, boolean>;
   galleryLimits: EffectiveGalleryLimits;
   videoGalleryLimits: EffectiveVideoGalleryLimits;
@@ -362,6 +367,8 @@ export class PlanPolicyResolverService {
       isAvailable: ecardPolicy.isAvailable,
       maxEcards: ecardPolicy.maxEcards,
       exchangeContactAccess: ecardPolicy.exchangeContactAccess,
+      isCustomFormAvailable: ecardPolicy.isCustomFormAvailable,
+      maxCustomForms: ecardPolicy.maxCustomForms,
       components,
       galleryLimits,
       videoGalleryLimits,
@@ -435,6 +442,10 @@ export class PlanPolicyResolverService {
       maxEcards: personal.maxEcards,
       exchangeContactAccess:
         personal.exchangeContactAccess || orgBoost.exchangeContactAccess,
+      isCustomFormAvailable:
+        personal.isCustomFormAvailable || orgBoost.isCustomFormAvailable,
+      // Never boosted — same personal-cap treatment as maxEcards above.
+      maxCustomForms: personal.maxCustomForms,
       components,
       heroLayouts,
       themes,

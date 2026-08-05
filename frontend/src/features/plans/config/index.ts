@@ -118,6 +118,10 @@ export const DEFAULT_VIDEO_GALLERY_LIMITS = {
   maxVideosPerGallery: 10,
 };
 
+// Sensible starting point for a new plan's custom-form cap — an admin
+// building a new plan can adjust before saving, mirrors DEFAULT_GALLERY_LIMITS.
+export const DEFAULT_MAX_CUSTOM_FORMS = 5;
+
 export const PLAN_FORM_STEPS = [
   { id: "basics", label: "Basics" },
   { id: "ecard", label: "E-card" },

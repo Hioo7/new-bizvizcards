@@ -13,6 +13,9 @@ import { ECardEventType } from '../../generated/prisma/client';
 import { EcardAnalyticsService } from '../ecard-analytics/services/ecard-analytics.service';
 import { recordViewDurationSchema } from '../ecard-analytics/dto/record-view-duration.dto';
 import type { RecordViewDurationDto } from '../ecard-analytics/dto/record-view-duration.dto';
+import { submitCustomFormExchangeContactSchema } from '../exchange-contact-forms/dto/submit-custom-form-exchange-contact.dto';
+import type { SubmitCustomFormExchangeContactDto } from '../exchange-contact-forms/dto/submit-custom-form-exchange-contact.dto';
+import { ExchangeContactFormResolutionService } from '../exchange-contact-forms/services/exchange-contact-form-resolution.service';
 import { exchangeContactSchema } from '../leads/dto/exchange-contact.dto';
 import type { ExchangeContactDto } from '../leads/dto/exchange-contact.dto';
 import { LeadsService } from '../leads/services/leads.service';
@@ -38,6 +41,7 @@ export class PublicEcardsController {
     private readonly leadsService: LeadsService,
     private readonly planPolicyResolverService: PlanPolicyResolverService,
     private readonly organisationEcardTemplateService: OrganisationEcardTemplateService,
+    private readonly exchangeContactFormResolutionService: ExchangeContactFormResolutionService,
   ) {}
 
   @Get(':endpoint')
@@ -76,10 +80,13 @@ export class PublicEcardsController {
       card.id,
       ECardEventType.VIEW,
     );
+    const exchangeContactForm =
+      await this.exchangeContactFormResolutionService.resolveForCard(card);
     return {
       card: filterEcardComponentsByPolicy(accentColorResolvedCard, policy),
       viewEventId: event.id,
       exchangeContactAllowed: policy.exchangeContactAccess,
+      exchangeContactForm,
     };
   }
 
@@ -108,6 +115,29 @@ export class PublicEcardsController {
       endpoint,
       dto,
     );
+    const card = await this.ecardsService.getByEndpoint(endpoint);
+    await this.ecardAnalyticsService.recordEvent(
+      card.id,
+      ECardEventType.EXCHANGE_CONTACT,
+    );
+    return lead;
+  }
+
+  // Left entirely separate from exchangeContact above (not a shared/branching
+  // handler) — this only runs when GET's exchangeContactForm was non-null;
+  // an e-card with no custom form resolved keeps using the legacy endpoint
+  // above unchanged.
+  @Post(':endpoint/custom-form-exchange-contact')
+  async customFormExchangeContact(
+    @Param('endpoint') endpoint: string,
+    @Body(new ZodValidationPipe(submitCustomFormExchangeContactSchema))
+    dto: SubmitCustomFormExchangeContactDto,
+  ) {
+    const lead =
+      await this.leadsService.createFromEcardCustomFormExchangeContact(
+        endpoint,
+        dto,
+      );
     const card = await this.ecardsService.getByEndpoint(endpoint);
     await this.ecardAnalyticsService.recordEvent(
       card.id,

@@ -9,6 +9,8 @@ function makePolicy(overrides: {
     isAvailable: true,
     maxEcards: 10,
     exchangeContactAccess: true,
+    isCustomFormAvailable: true,
+    maxCustomForms: 10,
     components: {} as EffectiveEcardPolicy['components'],
     galleryLimits: {
       maxGalleries: 1,

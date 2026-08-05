@@ -66,6 +66,11 @@ export interface EcardPolicy {
   isAvailable: boolean;
   maxEcards: number;
   exchangeContactAccess: boolean;
+  // Gates the customizable exchange-contact form feature — OR-boosted via
+  // an organisation's orgEcardPolicy same as exchangeContactAccess above.
+  isCustomFormAvailable: boolean;
+  // Personal-only cap, never org-boosted — same treatment as maxEcards.
+  maxCustomForms: number;
   // Full free-hex custom accent-color entry — independent of
   // accentColorPresets below, which don't require this to be true.
   accentColorCustomizationAvailable: boolean;
@@ -158,6 +163,11 @@ export interface EffectiveEcardPolicy {
   isAvailable: boolean;
   maxEcards: number;
   exchangeContactAccess: boolean;
+  // Gates the customizable exchange-contact form feature — already
+  // OR-boosted with any linked organisation's boost server-side.
+  isCustomFormAvailable: boolean;
+  // Personal-only cap, never org-boosted — same treatment as maxEcards.
+  maxCustomForms: number;
   components: Record<EcardComponentType, boolean>;
   galleryLimits: GalleryComponentLimits;
   videoGalleryLimits: VideoGalleryComponentLimits;

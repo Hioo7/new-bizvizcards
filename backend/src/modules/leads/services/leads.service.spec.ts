@@ -6,6 +6,7 @@ import {
   LeadSourceType,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
+import { ExchangeContactFormResolutionService } from '../../exchange-contact-forms/services/exchange-contact-form-resolution.service';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { LeadsService } from './leads.service';
@@ -23,9 +24,11 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
 
     appConfig = new AppConfigService();
     prisma = new PrismaService(appConfig);
+    const policyResolver = new PlanPolicyResolverService(prisma);
     service = new LeadsService(
       prisma,
-      new PlanEnforcementService(prisma, new PlanPolicyResolverService(prisma)),
+      new PlanEnforcementService(prisma, policyResolver),
+      new ExchangeContactFormResolutionService(prisma, policyResolver),
     );
 
     await prisma.smartCardTemplate.upsert({
@@ -333,6 +336,119 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
       await expect(service.delete(customerB.id, lead.id)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('createFromEcardCustomFormExchangeContact', () => {
+    async function seedLinkedForm(customerId: string, ecardId: string) {
+      const form = await prisma.exchangeContactForm.create({
+        data: { customerId, name: 'Test Form' },
+      });
+      const version = await prisma.exchangeContactFormVersion.create({
+        data: { formId: form.id, versionNumber: 1, isCurrent: true },
+      });
+      const nameField = await prisma.exchangeContactFormField.create({
+        data: {
+          versionId: version.id,
+          order: 0,
+          type: 'SHORT_TEXT',
+          tag: 'LEAD_NAME',
+          label: 'Name',
+          isRequired: true,
+        },
+      });
+      const questionField = await prisma.exchangeContactFormField.create({
+        data: {
+          versionId: version.id,
+          order: 1,
+          type: 'SHORT_TEXT',
+          label: 'Favourite colour?',
+          isRequired: false,
+        },
+      });
+      await prisma.eCard.update({
+        where: { id: ecardId },
+        data: { customFormId: form.id },
+      });
+      return { version, nameField, questionField };
+    }
+
+    it('creates a Lead with tag-mapped fields plus a submission and answer for the untagged question', async () => {
+      const customer = await seedCustomer();
+      const ecard = await seedEcard(customer.id);
+      const { version, nameField, questionField } = await seedLinkedForm(
+        customer.id,
+        ecard.id,
+      );
+
+      const lead = await service.createFromEcardCustomFormExchangeContact(
+        ecard.endpoint,
+        {
+          formVersionId: version.id,
+          answers: [
+            { fieldId: nameField.id, type: 'SHORT_TEXT', value: 'Visitor' },
+            {
+              fieldId: questionField.id,
+              type: 'SHORT_TEXT',
+              value: 'Blue',
+            },
+          ],
+        },
+      );
+
+      expect(lead.name).toBe('Visitor');
+      expect(lead.customerId).toBe(customer.id);
+      expect(lead.sourcedBy).toBe(LeadSourceType.E_CARD);
+      expect(lead.ecardId).toBe(ecard.id);
+
+      const submission = await prisma.exchangeContactFormSubmission.findUnique({
+        where: { leadId: lead.id },
+      });
+      expect(submission?.versionId).toBe(version.id);
+
+      const answer = await prisma.exchangeContactFormSubmissionAnswer.findFirst(
+        {
+          where: { submissionId: submission!.id, fieldId: questionField.id },
+          include: { textAnswer: true },
+        },
+      );
+      expect(answer?.textAnswer?.value).toBe('Blue');
+    });
+
+    it('rejects a submission against a stale (no longer current) version', async () => {
+      const customer = await seedCustomer();
+      const ecard = await seedEcard(customer.id);
+      const { nameField } = await seedLinkedForm(customer.id, ecard.id);
+
+      await expect(
+        service.createFromEcardCustomFormExchangeContact(ecard.endpoint, {
+          formVersionId: randomUUID(),
+          answers: [
+            { fieldId: nameField.id, type: 'SHORT_TEXT', value: 'Visitor' },
+          ],
+        }),
+      ).rejects.toThrow('This form has changed — please refresh and try again');
+    });
+
+    it('throws NotFoundException when the e-card has no custom form resolved', async () => {
+      const customer = await seedCustomer();
+      const ecard = await seedEcard(customer.id);
+
+      await expect(
+        service.createFromEcardCustomFormExchangeContact(ecard.endpoint, {
+          formVersionId: randomUUID(),
+          answers: [],
+        }),
+      ).rejects.toThrow('Exchange contact form not found');
+    });
+
+    it('throws NotFoundException when the e-card endpoint does not exist', async () => {
+      await expect(
+        service.createFromEcardCustomFormExchangeContact('does-not-exist', {
+          formVersionId: randomUUID(),
+          answers: [],
+        }),
+      ).rejects.toThrow('E-card not found');
     });
   });
 });

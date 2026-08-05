@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { getPublicEcard } from "@services/publicEcardService";
 import type { Ecard } from "@app-types/ecard";
+import type { PublicExchangeContactForm } from "@app-types/exchangeContactForm";
 
 export interface UsePublicEcardResult {
   card: Ecard | null;
   viewEventId: string | null;
   exchangeContactAllowed: boolean;
+  exchangeContactForm: PublicExchangeContactForm | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -14,6 +16,8 @@ export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResu
   const [card, setCard] = useState<Ecard | null>(null);
   const [viewEventId, setViewEventId] = useState<string | null>(null);
   const [exchangeContactAllowed, setExchangeContactAllowed] = useState(false);
+  const [exchangeContactForm, setExchangeContactForm] =
+    useState<PublicExchangeContactForm | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +34,7 @@ export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResu
           setCard(result.card);
           setViewEventId(result.viewEventId);
           setExchangeContactAllowed(result.exchangeContactAllowed);
+          setExchangeContactForm(result.exchangeContactForm);
         }
       } catch (err) {
         if (!cancelled) {
@@ -46,5 +51,12 @@ export function usePublicEcard(endpoint: string | undefined): UsePublicEcardResu
     };
   }, [endpoint]);
 
-  return { card, viewEventId, exchangeContactAllowed, isLoading, error };
+  return {
+    card,
+    viewEventId,
+    exchangeContactAllowed,
+    exchangeContactForm,
+    isLoading,
+    error,
+  };
 }

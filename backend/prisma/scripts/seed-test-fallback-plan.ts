@@ -38,6 +38,8 @@ function permissiveEcardPolicyCreateData() {
     isAvailable: true,
     maxEcards: GENEROUS_LIMIT,
     exchangeContactAccess: true,
+    isCustomFormAvailable: true,
+    maxCustomForms: GENEROUS_LIMIT,
     componentAvailabilities: {
       create: Object.values(ECardComponentType).map((type) => ({
         type,

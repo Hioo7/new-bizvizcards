@@ -10,6 +10,7 @@ import {
   ECARD_GATED_THEMES,
   ECARD_MAX_ACCENT_COLOR_PRESETS,
 } from '../../ecards/ecards.constants';
+import { PLAN_CUSTOM_FORM_REQUIRES_EXCHANGE_CONTACT_MESSAGE } from '../plans.constants';
 
 const galleryComponentLimitsSchema = z
   .object({
@@ -113,6 +114,11 @@ export const ecardPolicySchema = z
     isAvailable: z.boolean(),
     maxEcards: z.number().int().min(0),
     exchangeContactAccess: z.boolean(),
+    // Gates the customizable exchange-contact form feature — OR-boosted via
+    // an organisation's orgEcardPolicy same as exchangeContactAccess above.
+    isCustomFormAvailable: z.boolean(),
+    // Personal-only cap, never org-boosted — same treatment as maxEcards.
+    maxCustomForms: z.number().int().min(0),
     // Full free-hex custom accent-color entry — independent of
     // accentColorPresets below.
     accentColorCustomizationAvailable: z.boolean(),
@@ -184,6 +190,17 @@ export const ecardPolicySchema = z
       message:
         'iconShapeAvailabilities must include exactly one entry for every gated icon shape',
       path: ['iconShapeAvailabilities'],
+    },
+  )
+  // Custom forms are pointless without the base exchange-contact feature —
+  // nothing would ever render/resolve one (see
+  // ExchangeContactFormResolutionService.resolveForCard, which is only
+  // reached once the legacy exchange-contact popup path is itself allowed).
+  .refine(
+    (value) => !value.isCustomFormAvailable || value.exchangeContactAccess,
+    {
+      message: PLAN_CUSTOM_FORM_REQUIRES_EXCHANGE_CONTACT_MESSAGE,
+      path: ['isCustomFormAvailable'],
     },
   );
 

@@ -1,4 +1,5 @@
 import type { EmployeeAuthenticatedRequest } from '../../common/guards/employee-auth.guard';
+import type { ExchangeContactFormsService } from '../exchange-contact-forms/services/exchange-contact-forms.service';
 import { EmployeeOrganisationsController } from './employee-organisations.controller';
 import type { OrganisationEcardTemplateService } from './services/organisation-ecard-template.service';
 import type { OrganisationInvitesService } from './services/organisation-invites.service';
@@ -10,12 +11,14 @@ function makeController(
   organisationMembersService: Partial<OrganisationMembersService> = {},
   organisationEcardTemplateService: Partial<OrganisationEcardTemplateService> = {},
   organisationInvitesService: Partial<OrganisationInvitesService> = {},
+  exchangeContactFormsService: Partial<ExchangeContactFormsService> = {},
 ) {
   return new EmployeeOrganisationsController(
     organisationsService as OrganisationsService,
     organisationMembersService as OrganisationMembersService,
     organisationEcardTemplateService as OrganisationEcardTemplateService,
     organisationInvitesService as OrganisationInvitesService,
+    exchangeContactFormsService as ExchangeContactFormsService,
   );
 }
 
@@ -170,6 +173,63 @@ describe('EmployeeOrganisationsController', () => {
     await controller.deleteEcardTemplate('org-1');
 
     expect(deleteForEmployee).toHaveBeenCalledWith('org-1');
+  });
+
+  it('getExchangeContactFormTemplate forwards the organisationId', async () => {
+    const getByOrganisationId = jest.fn().mockResolvedValue(null);
+    const controller = makeController({}, {}, {}, {}, { getByOrganisationId });
+
+    const result = await controller.getExchangeContactFormTemplate('org-1');
+
+    expect(getByOrganisationId).toHaveBeenCalledWith('org-1');
+    expect(result).toBeNull();
+  });
+
+  it('upsertExchangeContactFormTemplate forwards the organisationId and parsed dto', async () => {
+    const upsertForOrganisation = jest
+      .fn()
+      .mockResolvedValue({ form: { id: 'form-1' }, forked: false });
+    const controller = makeController(
+      {},
+      {},
+      {},
+      {},
+      { upsertForOrganisation },
+    );
+    const dto = {
+      name: 'Org template',
+      fields: [
+        {
+          type: 'SHORT_TEXT' as const,
+          tag: 'LEAD_NAME' as const,
+          label: 'Name',
+          isRequired: true,
+        },
+      ],
+    };
+
+    const result = await controller.upsertExchangeContactFormTemplate(
+      'org-1',
+      dto,
+    );
+
+    expect(upsertForOrganisation).toHaveBeenCalledWith('org-1', dto);
+    expect(result).toEqual({ form: { id: 'form-1' }, forked: false });
+  });
+
+  it('deleteExchangeContactFormTemplate delegates to deleteForOrganisation', async () => {
+    const deleteForOrganisation = jest.fn().mockResolvedValue(undefined);
+    const controller = makeController(
+      {},
+      {},
+      {},
+      {},
+      { deleteForOrganisation },
+    );
+
+    await controller.deleteExchangeContactFormTemplate('org-1');
+
+    expect(deleteForOrganisation).toHaveBeenCalledWith('org-1');
   });
 
   it('listInvites forwards the organisationId', async () => {

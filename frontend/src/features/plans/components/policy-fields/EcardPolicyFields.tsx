@@ -55,14 +55,60 @@ export default function EcardPolicyFields({
               type="checkbox"
               className="toggle toggle-primary"
               checked={value.exchangeContactAccess}
-              onChange={(event) =>
+              onChange={(event) => {
+                const exchangeContactAccess = event.target.checked;
                 onChange({
                   ...value,
-                  exchangeContactAccess: event.target.checked,
-                })
-              }
+                  exchangeContactAccess,
+                  // Customizable forms are pointless without base exchange
+                  // contact — nothing would ever render/resolve one — so
+                  // turning this off always turns that off too.
+                  isCustomFormAvailable: exchangeContactAccess
+                    ? value.isCustomFormAvailable
+                    : false,
+                });
+              }}
             />
           </label>
+
+          {value.exchangeContactAccess && (
+            <label className="flex min-h-11 items-center justify-between gap-3 rounded-field border border-base-300 bg-base-200 px-4 py-2">
+              <span className="text-sm font-medium text-base-content">
+                Customizable exchange contact forms
+              </span>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary"
+                checked={value.isCustomFormAvailable}
+                onChange={(event) =>
+                  onChange({
+                    ...value,
+                    isCustomFormAvailable: event.target.checked,
+                  })
+                }
+              />
+            </label>
+          )}
+
+          {value.exchangeContactAccess && value.isCustomFormAvailable && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-base-content/60">
+                Max custom forms per customer
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={value.maxCustomForms}
+                onChange={(event) =>
+                  onChange({
+                    ...value,
+                    maxCustomForms: Number(event.target.value),
+                  })
+                }
+                className="min-h-11 w-full rounded-field border border-base-300 bg-base-200 px-3 text-sm text-base-content focus:border-primary focus:bg-base-100 focus:outline-none"
+              />
+            </label>
+          )}
 
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">

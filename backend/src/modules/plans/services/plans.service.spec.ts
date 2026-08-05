@@ -67,6 +67,8 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
       isAvailable: true,
       maxEcards: 3,
       exchangeContactAccess: false,
+      isCustomFormAvailable: false,
+      maxCustomForms: 0,
       componentAvailabilities: Object.values(ECardComponentType).map(
         (type) => ({
           type,

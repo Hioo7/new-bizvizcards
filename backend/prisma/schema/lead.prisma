@@ -77,6 +77,10 @@ model Lead {
 
   referenceNotes LeadReferenceNote[]
   reminders      LeadReminder[]
+  // Set only when this Lead was created via a custom (non-legacy)
+  // exchange-contact form submission — carries the custom-question answers
+  // that don't map to one of this model's own columns.
+  formSubmission ExchangeContactFormSubmission?
 
   @@index([customerId])
   @@index([folderId])

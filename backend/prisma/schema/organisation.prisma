@@ -45,6 +45,8 @@ model Organisation {
 
   ecardTemplate OrganisationEcardTemplate?
 
+  exchangeContactFormTemplate ExchangeContactForm?
+
   @@map("Organisation")
 }
 

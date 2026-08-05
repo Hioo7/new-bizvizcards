@@ -66,6 +66,14 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
               value={value.ecardPolicy.exchangeContactAccess ? "Yes" : "No"}
             />
             <SummaryRow
+              label="Customizable exchange contact forms"
+              value={
+                value.ecardPolicy.isCustomFormAvailable
+                  ? `Yes (max ${value.ecardPolicy.maxCustomForms})`
+                  : "No"
+              }
+            />
+            <SummaryRow
               label="Components"
               value={availableComponents.length > 0 ? availableComponents.join(", ") : "None"}
             />

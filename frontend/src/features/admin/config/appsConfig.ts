@@ -1,6 +1,7 @@
 import {
   Building2,
   CalendarDays,
+  ClipboardList,
   Contact,
   CreditCard,
   DatabaseZap,
@@ -67,6 +68,13 @@ export const ADMIN_APP_TILES: AdminAppTile[] = [
     icon: Contact,
     color: "secondary",
     route: ROUTES.adminEcards,
+  },
+  {
+    id: "exchange-contact-forms",
+    label: "Exchange Contact Forms",
+    icon: ClipboardList,
+    color: "accent",
+    route: ROUTES.adminExchangeContactForms,
   },
   {
     id: "customer-organisation-management",

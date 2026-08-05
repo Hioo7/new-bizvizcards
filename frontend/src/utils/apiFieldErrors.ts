@@ -1,21 +1,7 @@
-import { ApiError } from "@services/apiClient";
-
-interface ApiFieldError {
-  field: string;
-  message: string;
-}
+import { ApiError, isApiFieldError, type ApiFieldError } from "@services/apiClient";
 
 function isApiFieldErrorArray(value: unknown): value is ApiFieldError[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item): item is ApiFieldError =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as ApiFieldError).field === "string" &&
-        typeof (item as ApiFieldError).message === "string",
-    )
-  );
+  return Array.isArray(value) && value.every(isApiFieldError);
 }
 
 /** Reads the structured per-field validation errors the backend attaches to a failed

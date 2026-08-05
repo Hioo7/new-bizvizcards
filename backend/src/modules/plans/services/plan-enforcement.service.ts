@@ -13,6 +13,8 @@ import {
 } from '../../../generated/prisma/client';
 import {
   PLAN_ACCENT_COLOR_CUSTOMIZATION_NOT_ALLOWED_MESSAGE,
+  PLAN_CUSTOM_FORM_LIMIT_REACHED_MESSAGE,
+  PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE,
   PLAN_ECARD_LIMIT_REACHED_MESSAGE,
   PLAN_ECARD_NOT_AVAILABLE_MESSAGE,
   PLAN_EVENT_GUEST_LIMIT_REACHED_MESSAGE,
@@ -435,6 +437,59 @@ export class PlanEnforcementService {
 
     if (!allowed) {
       throw new ForbiddenException(PLAN_EXCHANGE_CONTACT_NOT_ALLOWED_MESSAGE);
+    }
+  }
+
+  async assertCanCreateCustomForm(customerId: string): Promise<void> {
+    const policy =
+      await this.policyResolver.getEffectivePolicyForCustomer(customerId);
+    if (!policy.ecard.isCustomFormAvailable) {
+      throw new ForbiddenException(PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE);
+    }
+
+    const currentCount = await this.prisma.exchangeContactForm.count({
+      where: { customerId },
+    });
+    if (currentCount >= policy.ecard.maxCustomForms) {
+      throw new ConflictException(PLAN_CUSTOM_FORM_LIMIT_REACHED_MESSAGE);
+    }
+  }
+
+  // Checked at the point a form is linked to an e-card. Read-side rendering
+  // (ExchangeContactFormResolutionService) makes its own equivalent check
+  // but degrades silently to the legacy form instead of throwing, per its
+  // own "plan access revoked later" fallback behavior — this assertion is
+  // only for the write-side link action.
+  async assertCustomFormAccessAllowedForCard(card: {
+    customerId: string;
+    organisationId: string | null;
+  }): Promise<void> {
+    const policy =
+      await this.policyResolver.getEffectiveEcardPolicyForCard(card);
+    if (!policy.isCustomFormAvailable) {
+      throw new ForbiddenException(PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE);
+    }
+  }
+
+  // Same fail-closed-on-unresolvable-creator reasoning as
+  // assertHeroLayoutAllowedForOrganisationTemplate above — the org
+  // template's own hard gate, not a permissive boost on top of something
+  // else.
+  async assertCustomFormAccessAllowedForOrganisationTemplate(
+    organisationId: string,
+  ): Promise<void> {
+    const organisation = await this.prisma.organisation.findUnique({
+      where: { id: organisationId },
+      select: { createdByCustomerId: true },
+    });
+    if (!organisation?.createdByCustomerId) {
+      throw new ForbiddenException(PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE);
+    }
+    const policy = await this.policyResolver.getEffectivePolicyForCustomer(
+      organisation.createdByCustomerId,
+    );
+    if (!policy.organisation.orgEcardPolicy.isCustomFormAvailable) {
+      throw new ForbiddenException(PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE);
     }
   }
 

@@ -4,6 +4,8 @@ export const ROUTES = {
   signup: "/signup",
   invite: "/invite/:token",
   userDashboard: "/user/dashboard",
+  userExchangeContactForms: "/user/apps/exchange-contact-forms",
+  userExchangeContactFormBuilder: "/user/apps/exchange-contact-forms/:formId",
   orgDashboard: "/org/dashboard",
   adminLogin: "/admin/login",
   adminHome: "/admin",
@@ -20,6 +22,12 @@ export const ROUTES = {
     "/admin/customers-organisations/organisations/:organisationId",
   adminOrganisationEcardTemplate:
     "/admin/customers-organisations/organisations/:organisationId/ecard-template",
+  adminOrganisationExchangeContactFormTemplate:
+    "/admin/customers-organisations/organisations/:organisationId/exchange-contact-form-template",
+  adminExchangeContactForms: "/admin/exchange-contact-forms",
+  adminCustomerExchangeContactForms: "/admin/exchange-contact-forms/:customerId",
+  adminExchangeContactFormBuilder:
+    "/admin/exchange-contact-forms/:customerId/:formId",
   adminPlans: "/admin/plans",
   adminBusinessEvents: "/admin/business-events",
   adminEventDetail: "/admin/business-events/:eventId",
@@ -42,6 +50,11 @@ export const INVITE_TOKEN_QUERY_PARAM = "invite";
 /** Literal `:ecardId` segment used in place of a real id when creating a new
  * e-card — the builder page branches on this to know it's in create mode. */
 export const ECARD_NEW_ID = "new";
+
+/** Literal `:formId` segment used in place of a real id when creating a new
+ * exchange-contact form — the builder page branches on this to know it's in
+ * create mode, mirroring ECARD_NEW_ID above. */
+export const EXCHANGE_CONTACT_FORM_NEW_ID = "new";
 
 export function adminSmartCardsListPath(templateKey: string): string {
   return `/admin/smart-cards/${templateKey}`;
@@ -75,6 +88,37 @@ export function adminOrganisationEcardTemplatePath(
   organisationId: string,
 ): string {
   return `/admin/customers-organisations/organisations/${organisationId}/ecard-template`;
+}
+
+export function adminOrganisationExchangeContactFormTemplatePath(
+  organisationId: string,
+): string {
+  return `/admin/customers-organisations/organisations/${organisationId}/exchange-contact-form-template`;
+}
+
+export function adminCustomerExchangeContactFormsPath(
+  customerId: string,
+): string {
+  return `/admin/exchange-contact-forms/${customerId}`;
+}
+
+export function adminNewExchangeContactFormPath(customerId: string): string {
+  return `/admin/exchange-contact-forms/${customerId}/${EXCHANGE_CONTACT_FORM_NEW_ID}`;
+}
+
+export function adminExchangeContactFormBuilderPath(
+  customerId: string,
+  formId: string,
+): string {
+  return `/admin/exchange-contact-forms/${customerId}/${formId}`;
+}
+
+export function userNewExchangeContactFormPath(): string {
+  return `/user/apps/exchange-contact-forms/${EXCHANGE_CONTACT_FORM_NEW_ID}`;
+}
+
+export function userExchangeContactFormBuilderPath(formId: string): string {
+  return `/user/apps/exchange-contact-forms/${formId}`;
 }
 
 export function adminEventDetailPath(eventId: string): string {

@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { EcardExchangeContactPopup } from "@features/public-ecard/components/EcardExchangeContactPopup";
+import { DynamicExchangeContactPopup } from "@features/public-ecard/components/DynamicExchangeContactPopup";
 import { useExchangeContactTimer } from "@hooks/useExchangeContactTimer";
-import { ecardVCardUrl, submitEcardExchangeContact } from "@services/publicEcardService";
+import {
+  ecardVCardUrl,
+  submitCustomFormExchangeContact,
+  submitEcardExchangeContact,
+} from "@services/publicEcardService";
 import { useAutoDownloadContact } from "@features/public-ecard/hooks/useAutoDownloadContact";
 import { buildEcardWhatsAppLink } from "@features/public-ecard/utils/buildEcardWhatsAppLink";
 import { HeroSection } from "@features/public-ecard/components/sections/HeroSection";
@@ -21,6 +26,7 @@ import { ReviewLinkSection } from "@features/public-ecard/components/sections/Re
 import { TestimonialsSection } from "@features/public-ecard/components/sections/TestimonialsSection";
 import { ECARD_THEME_TO_DAISYUI_THEME } from "@features/public-ecard/config";
 import type { Ecard, EcardComponent } from "@app-types/ecard";
+import type { PublicExchangeContactForm } from "@app-types/exchangeContactForm";
 import type { CSSProperties } from "react";
 
 interface HeroProps {
@@ -122,9 +128,14 @@ function EcardFooter({ whatsappHref }: EcardFooterProps) {
 interface EcardRendererProps {
   card: Ecard;
   exchangeContactAllowed: boolean;
+  exchangeContactForm: PublicExchangeContactForm | null;
 }
 
-export function EcardRenderer({ card, exchangeContactAllowed }: EcardRendererProps) {
+export function EcardRenderer({
+  card,
+  exchangeContactAllowed,
+  exchangeContactForm,
+}: EcardRendererProps) {
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
   const canExchangeContact =
     card.hero.isExchangeContactEnabled && exchangeContactAllowed;
@@ -186,12 +197,24 @@ export function EcardRenderer({ card, exchangeContactAllowed }: EcardRendererPro
         <EcardFooter whatsappHref={whatsappHref} />
       </div>
 
-      <EcardExchangeContactPopup
-        isOpen={isExchangeOpen}
-        vcardUrl={ecardVCardUrl(card.endpoint)}
-        onSubmit={(payload) => submitEcardExchangeContact(card.endpoint, payload)}
-        onClose={() => setIsExchangeOpen(false)}
-      />
+      {exchangeContactForm ? (
+        <DynamicExchangeContactPopup
+          isOpen={isExchangeOpen}
+          form={exchangeContactForm}
+          vcardUrl={ecardVCardUrl(card.endpoint)}
+          onSubmit={(payload) =>
+            submitCustomFormExchangeContact(card.endpoint, payload)
+          }
+          onClose={() => setIsExchangeOpen(false)}
+        />
+      ) : (
+        <EcardExchangeContactPopup
+          isOpen={isExchangeOpen}
+          vcardUrl={ecardVCardUrl(card.endpoint)}
+          onSubmit={(payload) => submitEcardExchangeContact(card.endpoint, payload)}
+          onClose={() => setIsExchangeOpen(false)}
+        />
+      )}
     </div>
   );
 }

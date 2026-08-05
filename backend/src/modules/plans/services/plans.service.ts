@@ -313,6 +313,8 @@ export class PlansService {
       isAvailable: dto.isAvailable,
       maxEcards: dto.maxEcards,
       exchangeContactAccess: dto.exchangeContactAccess,
+      isCustomFormAvailable: dto.isCustomFormAvailable,
+      maxCustomForms: dto.maxCustomForms,
       accentColorCustomizationAvailable: dto.accentColorCustomizationAvailable,
       componentAvailabilities: {
         create: dto.componentAvailabilities.map((component) => ({
@@ -381,6 +383,8 @@ export class PlansService {
         isAvailable: dto.isAvailable,
         maxEcards: dto.maxEcards,
         exchangeContactAccess: dto.exchangeContactAccess,
+        isCustomFormAvailable: dto.isCustomFormAvailable,
+        maxCustomForms: dto.maxCustomForms,
         accentColorCustomizationAvailable:
           dto.accentColorCustomizationAvailable,
       },
@@ -490,6 +494,8 @@ export class PlansService {
       isAvailable: ecardPolicy.isAvailable,
       maxEcards: ecardPolicy.maxEcards,
       exchangeContactAccess: ecardPolicy.exchangeContactAccess,
+      isCustomFormAvailable: ecardPolicy.isCustomFormAvailable,
+      maxCustomForms: ecardPolicy.maxCustomForms,
       accentColorCustomizationAvailable:
         ecardPolicy.accentColorCustomizationAvailable,
       componentAvailabilities: ecardPolicy.componentAvailabilities.map(

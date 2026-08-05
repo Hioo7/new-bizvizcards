@@ -1,0 +1,249 @@
+// Customizable exchange-contact forms — ECard-only. A form is a stable
+// parent entity (ExchangeContactForm) whose live definition is always one of
+// its versions (ExchangeContactFormVersion). Editing mutates the current
+// version in place until it receives its first submission, at which point it
+// becomes immutable and the next edit forks a new version — so a Lead's
+// captured answers always resolve against the exact version they were
+// submitted under, even after the form is edited later.
+//
+// Fields are either "core" (tag set, answer routes into a specific Lead
+// column at submission time — see ExchangeContactFieldTag) or "custom"
+// (tag null, answer captured in the strongly-typed submission-answer store
+// below, never in Lead). This mirrors this schema's established
+// enum-plus-explicit-join-table convention (see EcardComponentAvailability /
+// GalleryComponentLimits in plan.prisma) rather than a JSON column, so a
+// future workflow-automation engine can read submitted answers
+// deterministically and type-safely.
+
+enum ExchangeContactFieldType {
+  // Single-line text. Doubles as the type for the three core "plain text"
+  // tags (LEAD_NAME/LEAD_COMPANY/LEAD_PROFESSION, distinguished purely by
+  // their tag) and the untagged "Short answer" custom question — no
+  // duplication needed since the input shape is identical either way.
+  SHORT_TEXT
+  // Multi-line text — core only (LEAD_NOTE). Kept as its own enum value
+  // rather than a "SHORT_TEXT + multiline flag" to keep `type` the single
+  // source of input-shape truth, no ad-hoc boolean traits.
+  LONG_TEXT
+  // Composite dial-code + number pair — core only (LEAD_PHONE).
+  PHONE
+  // Format-validated single-line text — core only (LEAD_EMAIL).
+  EMAIL
+  // Captured only via the browser's Geolocation API, never a typed input —
+  // core only (LEAD_LOCATION). Same "no free-text address" reasoning as
+  // ECardLocationTileComponent in ecard.prisma.
+  LOCATION
+  // Single-select, closed option set (ExchangeContactFormFieldOption) — no
+  // core tag exists for this; custom questions only.
+  MULTIPLE_CHOICE
+  // Same as MULTIPLE_CHOICE, rendered as a dropdown instead of radio buttons.
+  DROPDOWN
+  // Custom questions only.
+  DATE
+  // A structural marker, not a question — splits the form into sequential
+  // stages for public rendering (see DynamicExchangeContactPopup). Carries
+  // no label/helpText/isRequired/tag/options; ExchangeContactFormsService
+  // writes fixed empty/false values for those columns rather than reading
+  // them from the client. Placement is constrained at the Zod layer (must
+  // have a real, non-BREAK, non-LOCATION field on both sides) so rendering
+  // can never end up with an empty or nonsensical stage.
+  BREAK
+
+  @@map("ExchangeContactFieldType")
+}
+
+// Which Lead column (or column pair) a field's submitted answer routes into.
+// A tag may only be assigned to a field whose type matches it (e.g.
+// LEAD_PHONE only on a PHONE field) — enforced via Zod at the DTO layer, not
+// a DB constraint, same convention as this schema's other cross-field rules.
+enum ExchangeContactFieldTag {
+  LEAD_NAME
+  LEAD_EMAIL
+  LEAD_PHONE
+  LEAD_NOTE
+  LEAD_LOCATION
+  LEAD_COMPANY
+  LEAD_PROFESSION
+
+  @@map("ExchangeContactFieldTag")
+}
+
+// Owned by exactly one of customerId (a customer's own form) or
+// organisationId (an org-wide template that overrides every member e-card's
+// own linked form — see ExchangeContactFormResolutionService). Enforced at
+// the service layer (Zod/service-level bound), not a DB CHECK constraint —
+// same convention as Plan.subscriptionDurationMonths's cross-field rule.
+model ExchangeContactForm {
+  id String @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+
+  customerId String?   @db.Uuid
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  organisationId String?       @unique @db.Uuid
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  // Staff-facing label only (e.g. "Trade show 2026") — never shown to the
+  // public visitor filling out the form.
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions     ExchangeContactFormVersion[]
+  linkedEcards ECard[]
+
+  @@index([customerId])
+  @@map("ExchangeContactForm")
+}
+
+model ExchangeContactFormVersion {
+  id     String              @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  formId String              @db.Uuid
+  form   ExchangeContactForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  // 1, 2, 3… monotonic per form — display/history only, no business logic
+  // depends on the numeric value itself.
+  versionNumber Int
+
+  // Exactly one version per form may be true at a time — the form's "live"
+  // definition for public rendering and new submissions. Enforced by
+  // ExchangeContactFormsService via a transactional unset-then-set, plus a
+  // hand-added partial unique index in this feature's migration (Prisma's
+  // schema DSL has no partial-unique-index syntax) as a DB-level backstop —
+  // same pattern as Plan.isFallbackPlan in plan.prisma.
+  isCurrent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fields      ExchangeContactFormField[]
+  submissions ExchangeContactFormSubmission[]
+
+  @@unique([formId, versionNumber])
+  @@index([formId])
+  @@map("ExchangeContactFormVersion")
+}
+
+model ExchangeContactFormField {
+  id        String                     @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  versionId String                     @db.Uuid
+  version   ExchangeContactFormVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  order Int                      @default(0)
+  type  ExchangeContactFieldType
+  // Null = custom/untagged field, answer goes to
+  // ExchangeContactFormSubmissionAnswer, never to Lead.
+  tag   ExchangeContactFieldTag?
+
+  // The question/prompt shown to the visitor.
+  label      String
+  helpText   String?
+  isRequired Boolean @default(false)
+
+  options ExchangeContactFormFieldOption[]
+  answers ExchangeContactFormSubmissionAnswer[]
+
+  // Postgres treats NULL as distinct in a unique index, so this gives "at
+  // most one field per non-null tag per version, unlimited untagged fields"
+  // for free — no partial-index workaround needed.
+  @@unique([versionId, tag])
+  @@index([versionId, order])
+  @@map("ExchangeContactFormField")
+}
+
+// Only populated for MULTIPLE_CHOICE/DROPDOWN fields — a closed option set
+// defined by whoever built the form (no "Other, please specify" fallback at
+// launch).
+model ExchangeContactFormFieldOption {
+  id      String                   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  fieldId String                   @db.Uuid
+  field   ExchangeContactFormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  label String
+  order Int    @default(0)
+
+  selectedInAnswers ExchangeContactFormSubmissionChoiceAnswer[]
+
+  @@index([fieldId, order])
+  @@map("ExchangeContactFormFieldOption")
+}
+
+// One row per public exchange-contact submission made through a custom form.
+// Tied to the exact version that was live at submission time, so editing the
+// form later never changes what a past submission looked like.
+model ExchangeContactFormSubmission {
+  id        String                     @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  versionId String                     @db.Uuid
+  // Restrict, not Cascade: a version with any submissions can never be
+  // deleted — the hard DB-level backstop behind
+  // ExchangeContactFormsService's own explicit submission-count guard, same
+  // "friendly ConflictException, DB Restrict as backstop" pairing as
+  // PlanPurchaseHistory.planId in plan.prisma.
+  version   ExchangeContactFormVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+
+  leadId String @unique @db.Uuid
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  answers ExchangeContactFormSubmissionAnswer[]
+
+  @@index([versionId])
+  @@map("ExchangeContactFormSubmission")
+}
+
+// One row per custom (untagged) field on the submitted form — core/tagged
+// fields' answers are written straight to Lead's own columns instead and
+// have no row here. Exactly one of the three satellite relations below is
+// ever populated, matching the answered field's type.
+model ExchangeContactFormSubmissionAnswer {
+  id           String                        @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  submissionId String                        @db.Uuid
+  submission   ExchangeContactFormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  fieldId      String                        @db.Uuid
+  // Restrict: a field that already has answers recorded against it can't be
+  // hard-deleted out from under them (it can still be dropped from a *new*
+  // forked version, which leaves old versions/fields/answers untouched).
+  field        ExchangeContactFormField      @relation(fields: [fieldId], references: [id], onDelete: Restrict)
+
+  textAnswer   ExchangeContactFormSubmissionTextAnswer?
+  choiceAnswer ExchangeContactFormSubmissionChoiceAnswer?
+  dateAnswer   ExchangeContactFormSubmissionDateAnswer?
+
+  @@index([submissionId])
+  @@index([fieldId])
+  @@map("ExchangeContactFormSubmissionAnswer")
+}
+
+// 1:1 satellite, only ever populated when the answered field's type is
+// SHORT_TEXT or LONG_TEXT (and the field is untagged — a tagged one routes
+// to Lead instead). Same "only populated for its one type" convention as
+// GalleryComponentLimits in plan.prisma.
+model ExchangeContactFormSubmissionTextAnswer {
+  answerId String                              @id @db.Uuid
+  answer   ExchangeContactFormSubmissionAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  value    String
+
+  @@map("ExchangeContactFormSubmissionTextAnswer")
+}
+
+// Only populated for MULTIPLE_CHOICE/DROPDOWN fields.
+model ExchangeContactFormSubmissionChoiceAnswer {
+  answerId         String                              @id @db.Uuid
+  answer           ExchangeContactFormSubmissionAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  selectedOptionId String                              @db.Uuid
+  // Restrict: an option that's already been selected by a past submission
+  // can't be hard-deleted (again, only droppable from a new forked version).
+  selectedOption   ExchangeContactFormFieldOption      @relation(fields: [selectedOptionId], references: [id], onDelete: Restrict)
+
+  @@map("ExchangeContactFormSubmissionChoiceAnswer")
+}
+
+// Only populated for DATE fields.
+model ExchangeContactFormSubmissionDateAnswer {
+  answerId String                              @id @db.Uuid
+  answer   ExchangeContactFormSubmissionAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  value    DateTime                            @db.Date
+
+  @@map("ExchangeContactFormSubmissionDateAnswer")
+}

@@ -27,6 +27,12 @@ const EMPLOYEE_ORGANISATION_ACTIONS = [
   'update',
 ] as const;
 const EMPLOYEE_PLAN_ACTIONS = ['list', 'get', 'create', 'update'] as const;
+const EMPLOYEE_EXCHANGE_CONTACT_FORM_ACTIONS = [
+  'list',
+  'get',
+  'create',
+  'update',
+] as const;
 const EMPLOYEE_EVENT_ACTIONS = ['list', 'get', 'create', 'update'] as const;
 const EMPLOYEE_PRODUCT_ACTIONS = ['list', 'get', 'create', 'update'] as const;
 // No ADMIN_EXTRA_ORDER_ACTIONS exists — status changes (including
@@ -55,6 +61,7 @@ const ADMIN_EXTRA_CUSTOMER_ACTIONS = ['ban'] as const;
 const ADMIN_EXTRA_REDIRECT_ACTIONS = ['create', 'update', 'delete'] as const;
 const ADMIN_EXTRA_ORGANISATION_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_PLAN_ACTIONS = ['delete'] as const;
+const ADMIN_EXTRA_EXCHANGE_CONTACT_FORM_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_EVENT_ACTIONS = ['delete'] as const;
 const ADMIN_EXTRA_PRODUCT_ACTIONS = ['delete'] as const;
 
@@ -76,6 +83,7 @@ export const employeeRole = employeeAccessControl.newRole({
   redirect: [...EMPLOYEE_REDIRECT_ACTIONS],
   organisation: [...EMPLOYEE_ORGANISATION_ACTIONS],
   plan: [...EMPLOYEE_PLAN_ACTIONS],
+  exchangeContactForm: [...EMPLOYEE_EXCHANGE_CONTACT_FORM_ACTIONS],
   event: [...EMPLOYEE_EVENT_ACTIONS],
   product: [...EMPLOYEE_PRODUCT_ACTIONS],
   order: [...EMPLOYEE_ORDER_ACTIONS],
@@ -98,6 +106,10 @@ export const adminRole = employeeAccessControl.newRole({
     ...ADMIN_EXTRA_ORGANISATION_ACTIONS,
   ],
   plan: [...EMPLOYEE_PLAN_ACTIONS, ...ADMIN_EXTRA_PLAN_ACTIONS],
+  exchangeContactForm: [
+    ...EMPLOYEE_EXCHANGE_CONTACT_FORM_ACTIONS,
+    ...ADMIN_EXTRA_EXCHANGE_CONTACT_FORM_ACTIONS,
+  ],
   event: [...EMPLOYEE_EVENT_ACTIONS, ...ADMIN_EXTRA_EVENT_ACTIONS],
   product: [...EMPLOYEE_PRODUCT_ACTIONS, ...ADMIN_EXTRA_PRODUCT_ACTIONS],
   // admin gets the same order actions as employee — no admin-only order
@@ -151,6 +163,14 @@ export const superAdminRole = employeeAccessControl.newRole({
   // plan action exists, so it's spread from the same admin-tier const rather
   // than duplicated, keeping super_admin ⊇ admin by construction.
   plan: [...EMPLOYEE_PLAN_ACTIONS, ...ADMIN_EXTRA_PLAN_ACTIONS],
+  // super_admin gets the same exchangeContactForm actions as admin — no
+  // super-admin-only action exists, so it's spread from the same admin-tier
+  // const rather than duplicated, keeping super_admin ⊇ admin by
+  // construction.
+  exchangeContactForm: [
+    ...EMPLOYEE_EXCHANGE_CONTACT_FORM_ACTIONS,
+    ...ADMIN_EXTRA_EXCHANGE_CONTACT_FORM_ACTIONS,
+  ],
   // super_admin gets the same event actions as admin — no super-admin-only
   // event action exists, so it's spread from the same admin-tier const
   // rather than duplicated, keeping super_admin ⊇ admin by construction.

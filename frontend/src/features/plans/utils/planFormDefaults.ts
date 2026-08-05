@@ -8,6 +8,7 @@ import type {
 import {
   DEFAULT_ECARD_ACCENT_COLOR_PRESETS,
   DEFAULT_GALLERY_LIMITS,
+  DEFAULT_MAX_CUSTOM_FORMS,
   DEFAULT_VIDEO_GALLERY_LIMITS,
   ECARD_COMPONENT_TYPES,
   ECARD_GATED_HERO_LAYOUTS,
@@ -20,6 +21,8 @@ export function createDefaultEcardPolicy(): EcardPolicy {
     isAvailable: true,
     maxEcards: 1,
     exchangeContactAccess: true,
+    isCustomFormAvailable: false,
+    maxCustomForms: DEFAULT_MAX_CUSTOM_FORMS,
     accentColorCustomizationAvailable: false,
     componentAvailabilities: ECARD_COMPONENT_TYPES.map((type) => ({
       type,

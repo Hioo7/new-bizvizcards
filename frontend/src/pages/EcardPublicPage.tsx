@@ -8,8 +8,14 @@ import {
 
 export default function EcardPublicPage() {
   const { endpoint } = useParams<{ endpoint: string }>();
-  const { card, viewEventId, exchangeContactAllowed, isLoading, error } =
-    usePublicEcard(endpoint);
+  const {
+    card,
+    viewEventId,
+    exchangeContactAllowed,
+    exchangeContactForm,
+    isLoading,
+    error,
+  } = usePublicEcard(endpoint);
   useEcardDocumentMeta(card);
   useEcardViewDurationTracker(endpoint, viewEventId);
 
@@ -30,6 +36,10 @@ export default function EcardPublicPage() {
   }
 
   return (
-    <EcardRenderer card={card} exchangeContactAllowed={exchangeContactAllowed} />
+    <EcardRenderer
+      card={card}
+      exchangeContactAllowed={exchangeContactAllowed}
+      exchangeContactForm={exchangeContactForm}
+    />
   );
 }

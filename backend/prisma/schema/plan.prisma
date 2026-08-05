@@ -78,6 +78,17 @@ model EcardPolicy {
   // Full free-hex custom accent-color entry — independent of
   // accentColorPresets below, which don't require this to be true.
   accentColorCustomizationAvailable Boolean @default(false)
+  // Gates the customizable exchange-contact form feature (building forms,
+  // having one rendered on a card in place of the legacy fixed form). OR-
+  // boosted via OrganisationPolicy.orgEcardPolicy same as
+  // exchangeContactAccess above — an org's plan can grant this even if a
+  // member's own personal plan doesn't.
+  isCustomFormAvailable             Boolean @default(false)
+  // Max customizable forms a customer may own. Personal-only cap — unlike
+  // isCustomFormAvailable, this is never boosted by an organisation's policy
+  // (same treatment as maxEcards, not exchangeContactAccess), see
+  // PlanPolicyResolverService.mergeEcardPolicyBoost.
+  maxCustomForms                    Int     @default(0)
 
   componentAvailabilities  EcardComponentAvailability[]
   heroLayoutAvailabilities EcardHeroLayoutAvailability[]

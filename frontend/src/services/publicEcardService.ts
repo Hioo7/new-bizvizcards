@@ -2,6 +2,7 @@ import { PUBLIC_ECARDS_BASE_PATH } from "@config/api";
 import { apiRequest } from "@services/apiClient";
 import type { GetPublicEcardResponse } from "@app-types/ecard";
 import type { ExchangeContactSubmission } from "@app-types/lead";
+import type { SubmitCustomFormExchangeContactPayload } from "@app-types/exchangeContactForm";
 
 export function getPublicEcard(
   endpoint: string,
@@ -41,6 +42,16 @@ export function submitEcardExchangeContact(
 ): Promise<void> {
   return apiRequest<void>(
     `${PUBLIC_ECARDS_BASE_PATH}/${endpoint}/exchange-contact`,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export function submitCustomFormExchangeContact(
+  endpoint: string,
+  payload: SubmitCustomFormExchangeContactPayload,
+): Promise<void> {
+  return apiRequest<void>(
+    `${PUBLIC_ECARDS_BASE_PATH}/${endpoint}/custom-form-exchange-contact`,
     { method: "POST", body: JSON.stringify(payload) },
   );
 }

@@ -28,6 +28,9 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { parseMultipartJson } from '../../common/validators/parse-multipart-json';
 import { createCustomerSchema } from '../customers/dto/create-customer.dto';
 import type { CreateCustomerDto } from '../customers/dto/create-customer.dto';
+import { upsertOrganisationExchangeContactFormTemplateSchema } from '../exchange-contact-forms/dto/upsert-organisation-exchange-contact-form-template.dto';
+import type { UpsertOrganisationExchangeContactFormTemplateDto } from '../exchange-contact-forms/dto/upsert-organisation-exchange-contact-form-template.dto';
+import { ExchangeContactFormsService } from '../exchange-contact-forms/services/exchange-contact-forms.service';
 import { addOrganisationMemberAsEmployeeSchema } from './dto/add-organisation-member-as-employee.dto';
 import type { AddOrganisationMemberAsEmployeeDto } from './dto/add-organisation-member-as-employee.dto';
 import { createOrganisationAsEmployeeSchema } from './dto/create-organisation-as-employee.dto';
@@ -66,6 +69,7 @@ export class EmployeeOrganisationsController {
     private readonly organisationMembersService: OrganisationMembersService,
     private readonly organisationEcardTemplateService: OrganisationEcardTemplateService,
     private readonly organisationInvitesService: OrganisationInvitesService,
+    private readonly exchangeContactFormsService: ExchangeContactFormsService,
   ) {}
 
   @Get()
@@ -146,6 +150,41 @@ export class EmployeeOrganisationsController {
     @Param('organisationId') organisationId: string,
   ): Promise<void> {
     await this.organisationEcardTemplateService.deleteForEmployee(
+      organisationId,
+    );
+  }
+
+  @Get(':organisationId/exchange-contact-form-template')
+  @RequirePermissions({ organisation: ['get'] })
+  getExchangeContactFormTemplate(
+    @Param('organisationId') organisationId: string,
+  ) {
+    return this.exchangeContactFormsService.getByOrganisationId(organisationId);
+  }
+
+  @Put(':organisationId/exchange-contact-form-template')
+  @RequirePermissions({ organisation: ['update'] })
+  upsertExchangeContactFormTemplate(
+    @Param('organisationId') organisationId: string,
+    @Body(
+      new ZodValidationPipe(
+        upsertOrganisationExchangeContactFormTemplateSchema,
+      ),
+    )
+    dto: UpsertOrganisationExchangeContactFormTemplateDto,
+  ) {
+    return this.exchangeContactFormsService.upsertForOrganisation(
+      organisationId,
+      dto,
+    );
+  }
+
+  @Delete(':organisationId/exchange-contact-form-template')
+  @RequirePermissions({ organisation: ['update'] })
+  async deleteExchangeContactFormTemplate(
+    @Param('organisationId') organisationId: string,
+  ): Promise<void> {
+    await this.exchangeContactFormsService.deleteForOrganisation(
       organisationId,
     );
   }

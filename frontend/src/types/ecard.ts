@@ -1,3 +1,5 @@
+import type { PublicExchangeContactForm } from "@app-types/exchangeContactForm";
+
 export type ECardHeroLayout =
   | "DEFAULT"
   | "BANNER"
@@ -184,6 +186,11 @@ export interface GetPublicEcardResponse {
   card: Ecard;
   viewEventId: string;
   exchangeContactAllowed: boolean;
+  // Non-null when a customizable form (the card's own linked form, or an
+  // organisation template override) is currently resolved for this card —
+  // renders in place of the fixed legacy exchange-contact form. Null for
+  // every existing production e-card today.
+  exchangeContactForm: PublicExchangeContactForm | null;
 }
 
 export interface EcardListResponse {

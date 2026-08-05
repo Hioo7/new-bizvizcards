@@ -1,7 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { LeadSourceType } from '../../../generated/prisma/client';
 import type { LeadModel } from '../../../generated/prisma/models';
+import type { SubmitCustomFormExchangeContactDto } from '../../exchange-contact-forms/dto/submit-custom-form-exchange-contact.dto';
+import {
+  EXCHANGE_CONTACT_FORM_NOT_FOUND_MESSAGE,
+  EXCHANGE_CONTACT_FORM_SUBMISSION_MISSING_REQUIRED_MESSAGE,
+  EXCHANGE_CONTACT_FORM_SUBMISSION_VERSION_STALE_MESSAGE,
+} from '../../exchange-contact-forms/exchange-contact-forms.constants';
+import { ExchangeContactFormResolutionService } from '../../exchange-contact-forms/services/exchange-contact-form-resolution.service';
+import { mapCustomFormAnswersToLeadFields } from '../../exchange-contact-forms/utils/map-custom-form-answers.util';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import type { CreateLeadDto } from '../dto/create-lead.dto';
 import type { ExchangeContactDto } from '../dto/exchange-contact.dto';
@@ -13,6 +26,7 @@ export class LeadsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly planEnforcementService: PlanEnforcementService,
+    private readonly exchangeContactFormResolutionService: ExchangeContactFormResolutionService,
   ) {}
 
   async createFromExchangeContact(
@@ -76,6 +90,115 @@ export class LeadsService {
       dto,
       ecard.id,
     );
+  }
+
+  // Parallel to createFromEcardExchangeContact above, for a custom
+  // (non-legacy) form. Independently re-resolves the card's currently
+  // effective form/version server-side — dto.formVersionId is only ever
+  // used to detect a race against a concurrent edit, never trusted as
+  // authoritative — and creates the Lead plus the submission/answer rows
+  // atomically in one transaction.
+  async createFromEcardCustomFormExchangeContact(
+    endpoint: string,
+    dto: SubmitCustomFormExchangeContactDto,
+  ): Promise<LeadModel> {
+    const ecard = await this.prisma.eCard.findUnique({
+      where: { endpoint },
+      select: {
+        id: true,
+        customerId: true,
+        organisationId: true,
+        customFormId: true,
+        customer: { select: { defaultLeadFolderId: true } },
+      },
+    });
+
+    if (!ecard) {
+      throw new NotFoundException('E-card not found');
+    }
+
+    await this.planEnforcementService.assertExchangeContactAllowed(
+      'ECARD',
+      ecard.customerId,
+      ecard.organisationId,
+    );
+
+    const resolved =
+      await this.exchangeContactFormResolutionService.resolveForCard(ecard);
+    if (!resolved) {
+      throw new NotFoundException(EXCHANGE_CONTACT_FORM_NOT_FOUND_MESSAGE);
+    }
+    if (resolved.versionId !== dto.formVersionId) {
+      throw new ConflictException(
+        EXCHANGE_CONTACT_FORM_SUBMISSION_VERSION_STALE_MESSAGE,
+      );
+    }
+
+    const { leadFields, customAnswers } = mapCustomFormAnswersToLeadFields(
+      resolved.fields,
+      dto.answers,
+    );
+    if (!leadFields.name) {
+      // Belt-and-suspenders: exchangeContactFormFieldsSchema already forces
+      // exactly one required LEAD_NAME-tagged field at form-save time, so
+      // this should be unreachable — but Lead.name is non-nullable at the
+      // DB level, so this is verified again right before the write.
+      throw new BadRequestException(
+        EXCHANGE_CONTACT_FORM_SUBMISSION_MISSING_REQUIRED_MESSAGE,
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const lead = await tx.lead.create({
+        data: {
+          customerId: ecard.customerId,
+          sourcedBy: LeadSourceType.E_CARD,
+          folderId: ecard.customer.defaultLeadFolderId ?? undefined,
+          ecardId: ecard.id,
+          name: leadFields.name!,
+          email: leadFields.email,
+          countryDialCode: leadFields.countryDialCode,
+          phoneNumber: leadFields.phoneNumber,
+          note: leadFields.note,
+          company: leadFields.company,
+          profession: leadFields.profession,
+          locationLatitude: leadFields.locationLatitude,
+          locationLongitude: leadFields.locationLongitude,
+        },
+      });
+
+      const submission = await tx.exchangeContactFormSubmission.create({
+        data: { versionId: resolved.versionId, leadId: lead.id },
+      });
+
+      for (const answer of customAnswers) {
+        const answerRow = await tx.exchangeContactFormSubmissionAnswer.create({
+          data: { submissionId: submission.id, fieldId: answer.fieldId },
+        });
+        switch (answer.kind) {
+          case 'TEXT':
+            await tx.exchangeContactFormSubmissionTextAnswer.create({
+              data: { answerId: answerRow.id, value: answer.value },
+            });
+            break;
+          case 'CHOICE':
+            await tx.exchangeContactFormSubmissionChoiceAnswer.create({
+              data: {
+                answerId: answerRow.id,
+                selectedOptionId: answer.selectedOptionId,
+              },
+            });
+            break;
+          case 'DATE':
+            await tx.exchangeContactFormSubmissionDateAnswer.create({
+              data: { answerId: answerRow.id, value: answer.value },
+            });
+            break;
+        }
+      }
+
+      return lead;
+    });
   }
 
   private createLeadFromExchange(

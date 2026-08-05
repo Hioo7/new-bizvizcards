@@ -12,6 +12,7 @@ import { StaffModule } from './modules/staff/staff.module';
 import { SmartCardsModule } from './modules/smart-cards/smart-cards.module';
 import { OrganisationsModule } from './modules/organisations/organisations.module';
 import { EcardsModule } from './modules/ecards/ecards.module';
+import { ExchangeContactFormsModule } from './modules/exchange-contact-forms/exchange-contact-forms.module';
 import { RedirectsModule } from './modules/redirects/redirects.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { BusinessEventsModule } from './modules/business-events/business-events.module';
@@ -36,6 +37,7 @@ import { MigrationModule } from './modules/migration/migration.module';
     SmartCardsModule,
     OrganisationsModule,
     EcardsModule,
+    ExchangeContactFormsModule,
     RedirectsModule,
     PlansModule,
     BusinessEventsModule,

@@ -20,6 +20,9 @@ interface PlanOverrides {
   isFallbackPlan?: boolean;
   maxEcards?: number;
   ecardExchangeContactAccess?: boolean;
+  customFormIsAvailable?: boolean;
+  maxCustomForms?: number;
+  orgCustomFormIsAvailable?: boolean;
   galleryLimits?: {
     maxGalleries: number;
     maxImagesPerGallery: number;
@@ -179,6 +182,10 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
       exchangeContactAccess: isOrgBundle
         ? (overrides.orgEcardExchangeContactAccess ?? false)
         : (overrides.ecardExchangeContactAccess ?? false),
+      isCustomFormAvailable: isOrgBundle
+        ? (overrides.orgCustomFormIsAvailable ?? false)
+        : (overrides.customFormIsAvailable ?? false),
+      maxCustomForms: isOrgBundle ? 0 : (overrides.maxCustomForms ?? 3),
       accentColorCustomizationAvailable,
       componentAvailabilities: {
         create: Object.values(ECardComponentType).map((type) => ({
@@ -531,6 +538,40 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
       });
 
       expect(effective.maxEcards).toBe(1);
+    });
+
+    it('ORs isCustomFormAvailable from the org creator plan onto a linked card', async () => {
+      const owner = await seedCustomer();
+      const ownerPlan = await seedPlan({ customFormIsAvailable: false });
+      await assignPlan(owner.id, ownerPlan.id);
+
+      const organisation = await seedOrgWithCreatorPlan({
+        orgCustomFormIsAvailable: true,
+      });
+
+      const effective = await service.getEffectiveEcardPolicyForCard({
+        customerId: owner.id,
+        organisationId: organisation.id,
+      });
+
+      expect(effective.isCustomFormAvailable).toBe(true);
+    });
+
+    it('never boosts maxCustomForms even when the org grants a higher value', async () => {
+      const owner = await seedCustomer();
+      const ownerPlan = await seedPlan({ maxCustomForms: 1 });
+      await assignPlan(owner.id, ownerPlan.id);
+
+      const organisation = await seedOrgWithCreatorPlan({
+        maxCustomForms: 999,
+      });
+
+      const effective = await service.getEffectiveEcardPolicyForCard({
+        customerId: owner.id,
+        organisationId: organisation.id,
+      });
+
+      expect(effective.maxCustomForms).toBe(1);
     });
 
     it('never revokes a personally-granted capability the org policy lacks', async () => {

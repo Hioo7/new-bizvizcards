@@ -33,6 +33,13 @@ export const EMPLOYEE_ECARDS_BASE_PATH = "/api/employee/ecards";
 
 export const PUBLIC_ECARDS_BASE_PATH = "/api/public/ecards";
 
+export const EMPLOYEE_EXCHANGE_CONTACT_FORMS_BASE_PATH =
+  "/api/employee/exchange-contact-forms";
+
+// Customer-facing (own-forms) exchange-contact-forms routes — distinct from
+// the employee-facing base path above.
+export const EXCHANGE_CONTACT_FORMS_BASE_PATH = "/api/exchange-contact-forms";
+
 export const EMPLOYEE_ORGANISATIONS_BASE_PATH = "/api/employee/organisations";
 
 // Customer-facing (member-read) organisations routes — distinct from the

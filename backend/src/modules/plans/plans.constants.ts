@@ -29,6 +29,7 @@ export const PLAN_FALLBACK_MAX_ORGS_CAN_JOIN = 1;
 export const PLAN_FALLBACK_MAX_ORGS_CAN_CREATE = 0;
 export const PLAN_FALLBACK_MAX_EVENTS = 100;
 export const PLAN_FALLBACK_MAX_GUESTS_PER_EVENT = 500;
+export const PLAN_FALLBACK_MAX_CUSTOM_FORMS = 0;
 
 // An empty SmartCardPolicy.whitelistedTemplates means no templates are
 // permitted (strict allowlist) — not "no restriction". Documented here since
@@ -71,6 +72,12 @@ export const PLAN_SMART_CARD_TEMPLATE_NOT_ALLOWED_MESSAGE =
   "This customer's plan does not allow this smart card template";
 export const PLAN_EXCHANGE_CONTACT_NOT_ALLOWED_MESSAGE =
   "This customer's plan does not include exchange contact";
+export const PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE =
+  "This customer's plan does not include customizable exchange contact forms";
+export const PLAN_CUSTOM_FORM_LIMIT_REACHED_MESSAGE =
+  "This customer's plan has reached its customizable exchange contact form limit";
+export const PLAN_CUSTOM_FORM_REQUIRES_EXCHANGE_CONTACT_MESSAGE =
+  'Customizable exchange contact forms can only be enabled when exchange contact itself is enabled';
 export const PLAN_ORGANISATION_NOT_AVAILABLE_MESSAGE =
   "This customer's plan does not include organisations";
 export const PLAN_ORGANISATION_JOIN_LIMIT_MESSAGE =

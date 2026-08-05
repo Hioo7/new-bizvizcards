@@ -23,6 +23,8 @@ model Customer {
   leadFolders LeadFolder[] @relation("CustomerLeadFolders")
   leads       Lead[]
 
+  exchangeContactForms ExchangeContactForm[]
+
   organisationMemberships OrganisationMember[]
   createdOrganisations    Organisation[]       @relation("OrganisationCreatedBy")
   sentInvites             OrganisationInvite[] @relation("OrganisationInvitesSent")

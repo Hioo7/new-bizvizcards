@@ -1,6 +1,13 @@
 // Dashboard section types
 export type DashboardSection = "profile" | "leads" | "analytics" | "cart" | "apps" | "settings";
 
+/** react-router `navigate(ROUTES.userDashboard, { state })` shape — lets a
+ * page reached from a dashboard tab (e.g. a mini-app) send the user back to
+ * that same tab instead of always landing on Home. */
+export interface UserDashboardLocationState {
+  section?: DashboardSection;
+}
+
 // ── Leads ────────────────────────────────────────────────────────────────────
 
 export const LEAD_SOURCE_TYPES = [

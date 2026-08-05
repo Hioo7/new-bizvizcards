@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CustomersModule } from '../customers/customers.module';
+import { ExchangeContactFormsModule } from '../exchange-contact-forms/exchange-contact-forms.module';
 import { LeadsModule } from '../leads/leads.module';
 import { OrganisationsModule } from '../organisations/organisations.module';
 import { EcardAnalyticsModule } from '../ecard-analytics/ecard-analytics.module';
@@ -22,6 +23,7 @@ import { EcardAppleWalletService } from './services/ecard-apple-wallet.service';
     EcardAnalyticsModule,
     OrganisationsModule,
     PlansModule,
+    ExchangeContactFormsModule,
   ],
   controllers: [
     EcardsController,

@@ -3,23 +3,8 @@ import { StickyNote, Trash2 } from "lucide-react";
 import { useAsyncAction } from "@hooks/useAsyncAction";
 import EcardExchangeContactLocationStage from "@features/public-ecard/components/EcardExchangeContactLocationStage";
 import type { GeolocationCoords } from "@features/public-ecard/components/EcardExchangeContactLocationStage";
+import { COUNTRIES, isoToFlag } from "@features/public-ecard/config/phoneCountries.config";
 import type { ExchangeContactSubmission } from "@app-types/lead";
-
-interface Country {
-  iso: string;
-  name: string;
-  dial: string;
-}
-
-const COUNTRIES: Country[] = [
-  { iso: "IN", name: "India", dial: "91" },
-  { iso: "US", name: "United States", dial: "1" },
-  { iso: "GB", name: "United Kingdom", dial: "44" },
-  { iso: "CA", name: "Canada", dial: "1" },
-  { iso: "AU", name: "Australia", dial: "61" },
-  { iso: "SG", name: "Singapore", dial: "65" },
-  { iso: "AE", name: "United Arab Emirates", dial: "971" },
-];
 
 interface FormState {
   name: string;
@@ -41,14 +26,6 @@ function isValidEmail(email: string): boolean {
 
 function normalizePhone(raw: string): string {
   return raw.replace(/[^\d]/g, "");
-}
-
-function isoToFlag(code: string): string {
-  if (!/^[A-Za-z]{2}$/.test(code)) return code;
-  const base = 0x1f1e6;
-  const first = code.toUpperCase().charCodeAt(0) - 65;
-  const second = code.toUpperCase().charCodeAt(1) - 65;
-  return String.fromCodePoint(base + first, base + second);
 }
 
 function validate(form: FormState): FieldErrors {

@@ -73,6 +73,7 @@ function makeCard(hero: Partial<PublicEcard['hero']> = {}): PublicEcard {
     endpoint: 'jane-doe',
     customerId: 'customer-id',
     organisationId: null,
+    customFormId: null,
     createdByEmployeeId: null,
     createdAt: new Date(),
     updatedAt: new Date(),

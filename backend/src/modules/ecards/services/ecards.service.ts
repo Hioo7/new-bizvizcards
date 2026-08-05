@@ -1220,6 +1220,7 @@ export class EcardsService {
       endpoint: card.endpoint,
       customerId: card.customerId,
       organisationId: card.organisationId,
+      customFormId: card.customFormId,
       createdByEmployeeId: card.createdByEmployeeId,
       createdAt: card.createdAt,
       updatedAt: card.updatedAt,

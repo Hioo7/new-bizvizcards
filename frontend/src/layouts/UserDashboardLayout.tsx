@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@hooks/useAuth";
 import { useMyEffectivePolicy } from "@hooks/useMyEffectivePolicy";
 import { ROUTES } from "@config/routes";
-import type { DashboardSection } from "@features/user-dashboard/types";
+import type {
+  DashboardSection,
+  UserDashboardLocationState,
+} from "@features/user-dashboard/types";
 import { useLeads } from "@features/user-dashboard/hooks/useLeads";
 import { useCustomerEcards } from "@features/user-dashboard/hooks/useCustomerEcards";
 import NavigationBar from "@features/user-dashboard/components/NavigationBar";
@@ -17,8 +20,12 @@ import AppsSection from "@features/user-dashboard/components/sections/AppsSectio
 export default function UserDashboardLayout() {
   const { user, isLoading: authLoading, signOut } = useAuth();
   const { policy, isLoading: policyLoading } = useMyEffectivePolicy();
+  const location = useLocation();
+  const initialSection =
+    (location.state as UserDashboardLocationState | null)?.section ??
+    "profile";
   const [activeSection, setActiveSection] =
-    useState<DashboardSection>("profile");
+    useState<DashboardSection>(initialSection);
 
   const {
     leads,

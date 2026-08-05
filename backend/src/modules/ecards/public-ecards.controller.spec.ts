@@ -5,6 +5,7 @@ import type { EcardVCardService } from './services/ecard-vcard.service';
 import type { EcardOgPreviewService } from './services/ecard-og-preview.service';
 import { ECardEventType } from '../../generated/prisma/client';
 import type { EcardAnalyticsService } from '../ecard-analytics/services/ecard-analytics.service';
+import type { ExchangeContactFormResolutionService } from '../exchange-contact-forms/services/exchange-contact-form-resolution.service';
 import type { LeadsService } from '../leads/services/leads.service';
 import type { OrganisationEcardTemplateService } from '../organisations/services/organisation-ecard-template.service';
 import type { PlanPolicyResolverService } from '../plans/services/plan-policy-resolver.service';
@@ -43,6 +44,15 @@ function makeOrganisationEcardTemplateService() {
   } as unknown as OrganisationEcardTemplateService;
 }
 
+// null in every test below unless a specific test overrides it — matches
+// resolveForCard's own "no custom form resolved" default, distinct from the
+// unrelated legacy exchangeContactAllowed flag these tests already cover.
+function makeExchangeContactFormResolutionService(
+  resolveForCard: jest.Mock = jest.fn().mockResolvedValue(null),
+) {
+  return { resolveForCard } as unknown as ExchangeContactFormResolutionService;
+}
+
 function makeResponse() {
   const setHeader = jest.fn();
   const send = jest.fn();
@@ -75,6 +85,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as LeadsService,
       makeAvailablePolicyResolver(),
       makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
     );
 
     const result = await controller.get('my-card');
@@ -85,6 +96,7 @@ describe('PublicEcardsController', () => {
       card,
       viewEventId: 'event-1',
       exchangeContactAllowed: true,
+      exchangeContactForm: null,
     });
   });
 
@@ -129,6 +141,7 @@ describe('PublicEcardsController', () => {
         getEffectiveEcardPolicyForCard,
       } as unknown as PlanPolicyResolverService,
       makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
     );
 
     const result = await controller.get('my-card');
@@ -160,6 +173,7 @@ describe('PublicEcardsController', () => {
         getEffectiveEcardPolicyForCard,
       } as unknown as PlanPolicyResolverService,
       makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
     );
 
     await expect(controller.get('my-card')).rejects.toThrow('E-card not found');
@@ -213,6 +227,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as LeadsService,
       makeAvailablePolicyResolver(),
       { getByOrganisationId } as unknown as OrganisationEcardTemplateService,
+      makeExchangeContactFormResolutionService(),
     );
 
     const result = await controller.get('my-card');
@@ -248,6 +263,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as LeadsService,
       makeAvailablePolicyResolver(),
       { getByOrganisationId } as unknown as OrganisationEcardTemplateService,
+      makeExchangeContactFormResolutionService(),
     );
 
     await controller.get('my-card');
@@ -267,6 +283,7 @@ describe('PublicEcardsController', () => {
         {} as unknown as LeadsService,
         {} as unknown as PlanPolicyResolverService,
         makeOrganisationEcardTemplateService(),
+        makeExchangeContactFormResolutionService(),
       );
 
       await controller.recordViewDuration('my-card', 'event-1', {
@@ -295,6 +312,7 @@ describe('PublicEcardsController', () => {
       { createFromEcardExchangeContact } as unknown as LeadsService,
       {} as unknown as PlanPolicyResolverService,
       makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
     );
     const dto = { name: 'Jane', phoneNumber: '5551234567' } as never;
 
@@ -331,6 +349,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as LeadsService,
       {} as unknown as PlanPolicyResolverService,
       makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
     );
     const { res, setHeader, send } = makeResponse();
 
@@ -372,6 +391,7 @@ describe('PublicEcardsController', () => {
       {} as unknown as LeadsService,
       {} as unknown as PlanPolicyResolverService,
       makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
     );
     const { res, setHeader, send } = makeResponse();
 
