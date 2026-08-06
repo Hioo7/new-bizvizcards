@@ -61,6 +61,8 @@ export default function CustomerTable({
           <tr className="border-b border-base-300 text-xs uppercase tracking-wide text-base-content/50">
             <th className="py-2 pl-4 pr-3 font-semibold">Customer</th>
             <th className="px-3 py-2 font-semibold">Status</th>
+            <th className="px-3 py-2 font-semibold">Views</th>
+            <th className="px-3 py-2 font-semibold">Leads</th>
             <th className="py-2 pl-3 pr-4 font-semibold">
               <span className="sr-only">Actions</span>
             </th>

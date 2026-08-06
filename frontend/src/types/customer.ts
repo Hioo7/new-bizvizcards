@@ -7,6 +7,8 @@ export interface Customer {
   banReason: string | null;
   banExpires: string | null;
   currentPlan: { id: string; name: string } | null;
+  totalViews: number;
+  totalLeads: number;
 }
 
 export interface CustomerListResponse {

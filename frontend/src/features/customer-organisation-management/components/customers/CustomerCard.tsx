@@ -3,12 +3,15 @@ import {
   CircleCheck,
   Contact,
   CreditCard,
+  Eye,
   KeyRound,
   Pencil,
   User,
+  UserPlus,
 } from "lucide-react";
 import type { Customer } from "@app-types/customer";
 import BannedStatusBadge from "@components/BannedStatusBadge";
+import CustomerStatBadge from "@features/customer-organisation-management/components/customers/CustomerStatBadge";
 
 interface CustomerCardProps {
   customer: Customer;
@@ -49,8 +52,20 @@ export default function CustomerCard({
         </div>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 flex items-center justify-between gap-2">
         <BannedStatusBadge banned={customer.banned} />
+        <div className="flex items-center gap-3">
+          <CustomerStatBadge
+            icon={Eye}
+            value={customer.totalViews}
+            label={`${customer.totalViews} total views`}
+          />
+          <CustomerStatBadge
+            icon={UserPlus}
+            value={customer.totalLeads}
+            label={`${customer.totalLeads} total leads`}
+          />
+        </div>
       </div>
 
       <div className="mt-3 flex items-center gap-2 border-t border-base-300 pt-3">

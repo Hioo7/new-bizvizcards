@@ -8,7 +8,7 @@ import type { CustomerAuth } from '../../../common/auth/customer-auth.factory';
 import { PRISMA_ERROR_CODES } from '../../../common/constants/prisma-error-codes.constants';
 import { MediaService } from '../../../common/media/media.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { Prisma } from '../../../generated/prisma/client';
+import { ECardEventType, Prisma } from '../../../generated/prisma/client';
 import { CustomerModel } from '../../../generated/prisma/models';
 import {
   CUSTOMER_DEFAULT_BAN_REASON,
@@ -53,6 +53,8 @@ export interface CustomerListItem {
   banReason: string | null;
   banExpires: Date | null;
   currentPlan: { id: string; name: string } | null;
+  totalViews: number;
+  totalLeads: number;
 }
 
 export interface CustomerListResult {
@@ -144,12 +146,73 @@ export class CustomersService {
       this.prisma.customer.count({ where }),
     ]);
 
+    const customerIds = customers.map((customer) => customer.id);
+    const [leadCounts, viewCounts] = await Promise.all([
+      this.getLeadCountsByCustomerId(customerIds),
+      this.getViewCountsByCustomerId(customerIds),
+    ]);
+
     return {
-      customers: customers.map((customer) => this.toListItem(customer)),
+      customers: customers.map((customer) =>
+        this.toListItem(customer, {
+          totalLeads: leadCounts.get(customer.id) ?? 0,
+          totalViews: viewCounts.get(customer.id) ?? 0,
+        }),
+      ),
       total,
       page,
       pageSize,
     };
+  }
+
+  private async getLeadCountsByCustomerId(
+    customerIds: string[],
+  ): Promise<Map<string, number>> {
+    if (customerIds.length === 0) return new Map();
+
+    const grouped = await this.prisma.lead.groupBy({
+      by: ['customerId'],
+      where: { customerId: { in: customerIds } },
+      _count: { _all: true },
+    });
+
+    return new Map(grouped.map((g) => [g.customerId, g._count._all]));
+  }
+
+  private async getViewCountsByCustomerId(
+    customerIds: string[],
+  ): Promise<Map<string, number>> {
+    if (customerIds.length === 0) return new Map();
+
+    const ecards = await this.prisma.eCard.findMany({
+      where: { customerId: { in: customerIds } },
+      select: { id: true, customerId: true },
+    });
+    if (ecards.length === 0) return new Map();
+
+    const customerIdByEcardId = new Map(
+      ecards.map((ecard) => [ecard.id, ecard.customerId]),
+    );
+
+    const grouped = await this.prisma.eCardEvent.groupBy({
+      by: ['ecardId'],
+      where: {
+        ecardId: { in: ecards.map((ecard) => ecard.id) },
+        type: ECardEventType.VIEW,
+      },
+      _count: { _all: true },
+    });
+
+    const viewCounts = new Map<string, number>();
+    for (const group of grouped) {
+      const customerId = customerIdByEcardId.get(group.ecardId);
+      if (!customerId) continue;
+      viewCounts.set(
+        customerId,
+        (viewCounts.get(customerId) ?? 0) + group._count._all,
+      );
+    }
+    return viewCounts;
   }
 
   /**
@@ -354,7 +417,14 @@ export class CustomersService {
         currentPlan: { select: { id: true, name: true } },
       },
     });
-    return this.toListItem(customer);
+    const [leadCounts, viewCounts] = await Promise.all([
+      this.getLeadCountsByCustomerId([customerId]),
+      this.getViewCountsByCustomerId([customerId]),
+    ]);
+    return this.toListItem(customer, {
+      totalLeads: leadCounts.get(customerId) ?? 0,
+      totalViews: viewCounts.get(customerId) ?? 0,
+    });
   }
 
   private toListItem(
@@ -369,6 +439,7 @@ export class CustomersService {
       pfpMedia: Parameters<MediaService['getPublicUrl']>[0] | null;
       currentPlan: { id: string; name: string } | null;
     },
+    stats: { totalLeads: number; totalViews: number },
   ): CustomerListItem {
     return {
       id: customer.id,
@@ -383,6 +454,8 @@ export class CustomersService {
       banned: customer.account.banned,
       banReason: customer.account.banReason,
       banExpires: customer.account.banExpires,
+      totalLeads: stats.totalLeads,
+      totalViews: stats.totalViews,
     };
   }
 }

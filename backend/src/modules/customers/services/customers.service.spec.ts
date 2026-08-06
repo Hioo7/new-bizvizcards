@@ -5,7 +5,7 @@ import { createCustomerAuth } from '../../../common/auth/customer-auth.factory';
 import type { CustomerAuth } from '../../../common/auth/customer-auth.factory';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaService } from '../../../common/media/media.service';
-import { MediaSource } from '../../../generated/prisma/client';
+import { ECardEventType, MediaSource } from '../../../generated/prisma/client';
 import type {
   MediaStorageProvider,
   UploadMediaParams,
@@ -104,6 +104,20 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
     });
     seededPlanIds.push(plan.id);
     return plan;
+  }
+
+  // ECard/ECardEvent/Lead rows all cascade-delete from CustomerAccount
+  // (via Customer), so no separate cleanup is needed for them beyond the
+  // existing seededAccountIds afterEach.
+  function seedEcard(customerId: string) {
+    return prisma.eCard.create({
+      data: {
+        customerId,
+        endpoint: `customers-service-${randomUUID()}`,
+        heroName: 'Test Hero',
+        heroEmail: `customers-service-hero-${randomUUID()}@example.com`,
+      },
+    });
   }
 
   it('resolves a customer by accountId', async () => {
@@ -273,6 +287,79 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
 
       const found = result.customers.find((c) => c.id === customer.id);
       expect(found?.currentPlan).toBeNull();
+    });
+
+    it('returns 0 totalViews and 0 totalLeads for a customer with neither', async () => {
+      const suffix = randomUUID();
+      const customer = await seedCustomer({ name: `NoActivity ${suffix}` });
+
+      const result = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: suffix,
+      });
+
+      const found = result.customers.find((c) => c.id === customer.id);
+      expect(found?.totalViews).toBe(0);
+      expect(found?.totalLeads).toBe(0);
+    });
+
+    it('sums total leads across a customer, and counts them independently per customer', async () => {
+      const suffix = randomUUID();
+      const customerA = await seedCustomer({ name: `LeadsA ${suffix}` });
+      const customerB = await seedCustomer({ name: `LeadsB ${suffix}` });
+      await prisma.lead.createMany({
+        data: [
+          { customerId: customerA.id, name: 'Lead 1' },
+          { customerId: customerA.id, name: 'Lead 2' },
+          { customerId: customerB.id, name: 'Lead 3' },
+        ],
+      });
+
+      const result = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: suffix,
+      });
+
+      expect(
+        result.customers.find((c) => c.id === customerA.id)?.totalLeads,
+      ).toBe(2);
+      expect(
+        result.customers.find((c) => c.id === customerB.id)?.totalLeads,
+      ).toBe(1);
+    });
+
+    it("sums VIEW events across all of a customer's e-cards, ignoring non-VIEW event types", async () => {
+      const suffix = randomUUID();
+      const customerA = await seedCustomer({ name: `ViewsA ${suffix}` });
+      const customerB = await seedCustomer({ name: `ViewsB ${suffix}` });
+      const cardA1 = await seedEcard(customerA.id);
+      const cardA2 = await seedEcard(customerA.id);
+      const cardB1 = await seedEcard(customerB.id);
+
+      await prisma.eCardEvent.createMany({
+        data: [
+          { ecardId: cardA1.id, type: ECardEventType.VIEW },
+          { ecardId: cardA1.id, type: ECardEventType.VIEW },
+          { ecardId: cardA2.id, type: ECardEventType.VIEW },
+          { ecardId: cardA1.id, type: ECardEventType.WALLET_SAVE },
+          { ecardId: cardB1.id, type: ECardEventType.VIEW },
+        ],
+      });
+
+      const result = await service.list({
+        page: 1,
+        pageSize: 20,
+        search: suffix,
+      });
+
+      expect(
+        result.customers.find((c) => c.id === customerA.id)?.totalViews,
+      ).toBe(3);
+      expect(
+        result.customers.find((c) => c.id === customerB.id)?.totalViews,
+      ).toBe(1);
     });
   });
 
@@ -455,6 +542,25 @@ describe('CustomersService (integration, TEST_DATABASE_URL only)', () => {
       });
 
       expect(banned.banReason).toBe('Fraudulent activity');
+    });
+
+    it('includes totalViews and totalLeads in the returned summary', async () => {
+      const customer = await seedCustomer();
+      const card = await seedEcard(customer.id);
+      await prisma.eCardEvent.createMany({
+        data: [
+          { ecardId: card.id, type: ECardEventType.VIEW },
+          { ecardId: card.id, type: ECardEventType.VIEW },
+        ],
+      });
+      await prisma.lead.create({
+        data: { customerId: customer.id, name: 'Existing Lead' },
+      });
+
+      const banned = await service.ban(customer.id, {});
+
+      expect(banned.totalViews).toBe(2);
+      expect(banned.totalLeads).toBe(1);
     });
 
     it('unban clears ban fields, including for an already-unbanned customer', async () => {

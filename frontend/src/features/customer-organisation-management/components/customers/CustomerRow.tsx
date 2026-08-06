@@ -3,12 +3,15 @@ import {
   CircleCheck,
   Contact,
   CreditCard,
+  Eye,
   KeyRound,
   Pencil,
   User,
+  UserPlus,
 } from "lucide-react";
 import type { Customer } from "@app-types/customer";
 import BannedStatusBadge from "@components/BannedStatusBadge";
+import CustomerStatBadge from "@features/customer-organisation-management/components/customers/CustomerStatBadge";
 
 interface CustomerRowProps {
   customer: Customer;
@@ -52,6 +55,20 @@ export default function CustomerRow({
       </td>
       <td className="px-3 py-3">
         <BannedStatusBadge banned={customer.banned} />
+      </td>
+      <td className="px-3 py-3">
+        <CustomerStatBadge
+          icon={Eye}
+          value={customer.totalViews}
+          label={`${customer.totalViews} total views`}
+        />
+      </td>
+      <td className="px-3 py-3">
+        <CustomerStatBadge
+          icon={UserPlus}
+          value={customer.totalLeads}
+          label={`${customer.totalLeads} total leads`}
+        />
       </td>
       <td className="py-3 pl-3 pr-4">
         <div className="flex items-center justify-end gap-1">
