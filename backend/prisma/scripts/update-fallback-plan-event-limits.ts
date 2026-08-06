@@ -29,7 +29,9 @@ async function main() {
 
   const eventPolicy = fallback.policy?.eventPolicy;
   if (!eventPolicy) {
-    console.error('Fallback plan has no eventPolicy. Run seed:event-policy-defaults first.');
+    console.error(
+      'Fallback plan has no eventPolicy. Run seed:plan-policy-defaults first.',
+    );
     process.exitCode = 1;
     return;
   }

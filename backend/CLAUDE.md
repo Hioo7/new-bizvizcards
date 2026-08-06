@@ -85,6 +85,7 @@ Before writing implementation code for a feature, work through these steps in or
 - Each file groups models that are conceptually related but should stay decoupled from other groups.
 - Avoid tightly coupling models across concerns. When a concept needs to combine multiple independent models, add a dedicated "assembler" model that references the independent ones — composition over one giant model.
 - Before adding a new model, check existing schema files for one that already fits or can be reasonably extended.
+- Adding a new required (`NOT NULL`) FK column to a table that already has production rows: write the backfill as raw SQL directly inside that same migration's `migration.sql` (an `UPDATE`/`INSERT` ahead of the `ALTER COLUMN ... SET NOT NULL`, in the same transaction) — never split it into a nullable-migration followed by a separate TS backfill script followed by a NOT-NULL migration. Nothing in the deploy pipeline guarantees a standalone script runs between two migrations that ship in the same deploy; a `prisma migrate deploy` run unattended (as ours is, on every container start) applies all pending migrations back to back with no gap for a manual step. Backfills for things that are *not* a NOT-NULL constraint (a new optional default, a new gated feature row) still belong in `backend/prisma/scripts/seed-plan-policy-defaults.ts`, which runs automatically on every backend startup.
 
 ## Environment variables
 

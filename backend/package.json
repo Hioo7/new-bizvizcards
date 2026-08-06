@@ -27,12 +27,9 @@
     "seed:og-preview-image": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-og-preview-image.ts",
     "seed:fallback-plan": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-fallback-plan.ts",
     "seed:dummy-members": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-dummy-members.ts",
-    "seed:event-policy-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-event-policy-defaults.ts",
-    "seed:email-signature-policy-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-email-signature-policy-defaults.ts",
+    "seed:plan-policy-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-plan-policy-defaults.ts",
     "seed:email-signature-icons": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-email-signature-icons.ts",
-    "seed:ecard-accent-color-preset-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-ecard-accent-color-preset-defaults.ts",
-    "seed:video-gallery-component-availability-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-video-gallery-component-availability-defaults.ts",
-    "seed:location-review-testimonials-component-availability-defaults": "ts-node -r ./prisma/scripts/resolve-ts-extensions.js prisma/scripts/seed-location-review-testimonials-component-availability-defaults.ts",
+    "seed:bootstrap": "npm run seed:super-admin && npm run seed:fallback-plan && npm run seed:plan-policy-defaults && npm run seed:smart-card-templates && npm run seed:og-preview-image && npm run seed:email-signature-icons",
     "generate:legacy-prisma": "prisma generate --config prisma/legacy.config.ts"
   },
   "dependencies": {

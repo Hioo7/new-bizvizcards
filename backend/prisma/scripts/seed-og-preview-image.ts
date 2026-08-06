@@ -9,7 +9,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, extname } from 'path';
 import { AppConfigService } from '../../src/common/config/app-config.service';
 import { MinioMediaStorageProvider } from '../../src/common/media/storage/minio-media-storage-provider.service';
-import { DEFAULT_OG_IMAGE_STORAGE_KEY } from '../../src/modules/smart-cards/smart-card-og-preview.constants';
+import { DEFAULT_OG_IMAGE_STORAGE_KEY } from '../../src/common/constants/og-preview.constants';
 
 const SOURCE_IMAGE_PATH = join(
   __dirname,

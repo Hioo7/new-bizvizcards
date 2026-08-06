@@ -33,4 +33,4 @@ COPY --from=build /app/package.json ./package.json
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma generate && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma generate && npm run seed:plan-policy-defaults && node dist/main.js"]
