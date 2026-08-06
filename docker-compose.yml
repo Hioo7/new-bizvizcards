@@ -81,6 +81,12 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    # Lets the backend reach services published on the VPS host itself (e.g.
+    # the legacy app's Postgres/MinIO host ports) via LEGACY_DATABASE_URL /
+    # the one-off `mc mirror` migration step, without joining any other
+    # Compose project's network or aliasing its containers into app-network.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
