@@ -14,6 +14,7 @@ import PlanToolbar from "@features/plans/components/PlanToolbar";
 import PlanTable from "@features/plans/components/PlanTable";
 import PlanFormModal from "@features/plans/components/PlanFormModal";
 import BulkAssignCustomersToPlanModal from "@features/plans/components/BulkAssignCustomersToPlanModal";
+import VirtualBackgroundTemplateManagerModal from "@features/plans/components/VirtualBackgroundTemplateManagerModal";
 
 export default function PlansApp() {
   const { staffUser } = useStaffAuth();
@@ -39,6 +40,8 @@ export default function PlansApp() {
     null,
   );
   const bulkAssignAction = useAsyncAction();
+
+  const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
 
   function handleCreateSubmit(draft: CreatePlanPayload) {
     void createAction.run(
@@ -119,6 +122,7 @@ export default function PlansApp() {
           createAction.reset();
           setIsCreateOpen(true);
         }}
+        onManageVirtualBackgroundTemplates={() => setIsTemplateManagerOpen(true)}
       />
 
       {loadEditAction.error && (
@@ -172,6 +176,11 @@ export default function PlansApp() {
         error={editAction.error}
         onCancel={() => setIsEditOpen(false)}
         onSubmit={handleEditSubmit}
+      />
+
+      <VirtualBackgroundTemplateManagerModal
+        open={isTemplateManagerOpen}
+        onClose={() => setIsTemplateManagerOpen(false)}
       />
 
       <BulkAssignCustomersToPlanModal

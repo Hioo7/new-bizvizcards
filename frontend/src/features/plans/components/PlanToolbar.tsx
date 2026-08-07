@@ -1,15 +1,17 @@
-import { Plus, Search } from "lucide-react";
+import { ImagePlus, Plus, Search } from "lucide-react";
 
 interface PlanToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
   onAddPlan: () => void;
+  onManageVirtualBackgroundTemplates: () => void;
 }
 
 export default function PlanToolbar({
   search,
   onSearchChange,
   onAddPlan,
+  onManageVirtualBackgroundTemplates,
 }: PlanToolbarProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -25,14 +27,25 @@ export default function PlanToolbar({
         />
       </div>
 
-      <button
-        type="button"
-        aria-label="Add plan"
-        onClick={onAddPlan}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-content hover:bg-primary/90"
-      >
-        <Plus className="h-5 w-5" />
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Manage virtual background templates"
+          title="Manage virtual background templates"
+          onClick={onManageVirtualBackgroundTemplates}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-base-300 text-base-content hover:bg-base-200"
+        >
+          <ImagePlus className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          aria-label="Add plan"
+          onClick={onAddPlan}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-content hover:bg-primary/90"
+        >
+          <Plus className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   );
 }

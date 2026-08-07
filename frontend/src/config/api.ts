@@ -74,6 +74,11 @@ export const PAYMENTS_BASE_PATH = "/api/payments";
 
 export const MIGRATION_BASE_PATH = "/api/migration";
 
+export const EMPLOYEE_VIRTUAL_BACKGROUND_TEMPLATES_BASE_PATH =
+  "/api/employee/virtual-background-templates";
+
+export const VIRTUAL_BACKGROUNDS_BASE_PATH = "/api/customer/virtual-backgrounds";
+
 export const CUSTOMER_ENDPOINTS = {
   me: `${CUSTOMERS_BASE_PATH}/me`,
   updateProfilePicture: `${CUSTOMERS_BASE_PATH}/me/profile-picture`,

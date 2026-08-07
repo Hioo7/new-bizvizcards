@@ -1,4 +1,4 @@
-import { ClipboardList, Mail } from "lucide-react";
+import { ClipboardList, ImageIcon, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { EffectivePolicy } from "@app-types/plan";
 import { ROUTES } from "@config/routes";
@@ -27,5 +27,12 @@ export const USER_APP_TILES: UserAppTile[] = [
     icon: Mail,
     route: ROUTES.userEmailSignatures,
     isLocked: (policy) => !policy.emailSignature.isAvailable,
+  },
+  {
+    id: "virtual-backgrounds",
+    label: "Virtual Backgrounds",
+    icon: ImageIcon,
+    route: ROUTES.userVirtualBackgrounds,
+    isLocked: (policy) => !policy.virtualBackground.isAvailable,
   },
 ];

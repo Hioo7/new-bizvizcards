@@ -132,5 +132,6 @@ export const PLAN_FORM_STEPS = [
   { id: "organisation", label: "Organisation" },
   { id: "event", label: "Events" },
   { id: "email-signature", label: "Email Signatures" },
+  { id: "virtual-background", label: "Virtual Backgrounds" },
   { id: "review", label: "Review" },
 ] as const;

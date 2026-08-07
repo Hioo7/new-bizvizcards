@@ -6,6 +6,7 @@ export interface UploadMediaParams {
 
 export interface MediaStorageProvider {
   upload(params: UploadMediaParams): Promise<void>;
+  download(key: string): Promise<Buffer>;
   delete(key: string): Promise<void>;
   getPublicUrl(key: string): string;
 }

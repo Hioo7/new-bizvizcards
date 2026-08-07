@@ -4,6 +4,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   ECardAccentColorPresetThemeAffinity,
   ECardComponentType,
+  MediaSource,
   PlanBusinessModelType,
 } from '../../../generated/prisma/client';
 import {
@@ -16,6 +17,7 @@ import type { EcardPolicyDto } from '../dto/ecard-policy.dto';
 import type { EventPolicyDto } from '../dto/event-policy.dto';
 import type { EmailSignaturePolicyDto } from '../dto/email-signature-policy.dto';
 import type { SmartCardPolicyDto } from '../dto/smart-card-policy.dto';
+import type { VirtualBackgroundPolicyDto } from '../dto/virtual-background-policy.dto';
 import { PlansService } from './plans.service';
 
 describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
@@ -25,6 +27,7 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
   const seededAccountIds: string[] = [];
   const seededEmployeeAccountIds: string[] = [];
   const seededPlanIds: string[] = [];
+  const seededMediaIds: string[] = [];
 
   beforeAll(() => {
     originalDatabaseUrl = process.env.DATABASE_URL;
@@ -41,6 +44,13 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   afterEach(async () => {
+    if (seededMediaIds.length > 0) {
+      // Cascades away any VirtualBackgroundTemplate referencing this media.
+      await prisma.media.deleteMany({
+        where: { id: { in: seededMediaIds } },
+      });
+      seededMediaIds.length = 0;
+    }
     if (seededAccountIds.length > 0) {
       await prisma.customerAccount.deleteMany({
         where: { id: { in: seededAccountIds } },
@@ -140,6 +150,18 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
     };
   }
 
+  function buildVirtualBackgroundPolicyDto(
+    overrides: Partial<VirtualBackgroundPolicyDto> = {},
+  ): VirtualBackgroundPolicyDto {
+    return {
+      isAvailable: false,
+      maxVirtualBackgrounds: 0,
+      allowCustomBackground: false,
+      whitelistedTemplateIds: [],
+      ...overrides,
+    };
+  }
+
   function buildCreatePlanDto(
     overrides: Partial<CreatePlanDto> = {},
   ): CreatePlanDto {
@@ -159,6 +181,7 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
       },
       eventPolicy: buildEventPolicyDto(),
       emailSignaturePolicy: buildEmailSignaturePolicyDto(),
+      virtualBackgroundPolicy: buildVirtualBackgroundPolicyDto(),
       ...overrides,
     };
   }
@@ -167,6 +190,22 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
     const plan = await service.create(buildCreatePlanDto(overrides));
     seededPlanIds.push(plan.id);
     return plan;
+  }
+
+  async function createVirtualBackgroundTemplate(name = 'Office') {
+    const media = await prisma.media.create({
+      data: {
+        id: randomUUID(),
+        source: MediaSource.MINIO,
+        storageKey: `test/${randomUUID()}.png`,
+        originalName: 'test.png',
+        extension: 'png',
+      },
+    });
+    seededMediaIds.push(media.id);
+    return prisma.virtualBackgroundTemplate.create({
+      data: { name, mediaId: media.id },
+    });
   }
 
   async function seedCustomer(name = 'Test Customer') {
@@ -318,6 +357,53 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
       await expect(service.getByIdOrThrow(randomUUID())).rejects.toThrow(
         'Plan not found',
       );
+    });
+  });
+
+  describe('virtualBackgroundPolicy', () => {
+    it('creates a plan with the virtual background policy and its template whitelist', async () => {
+      const template = await createVirtualBackgroundTemplate();
+      const plan = await createPlan({
+        virtualBackgroundPolicy: buildVirtualBackgroundPolicyDto({
+          isAvailable: true,
+          maxVirtualBackgrounds: 5,
+          allowCustomBackground: true,
+          whitelistedTemplateIds: [template.id],
+        }),
+      });
+
+      expect(plan.virtualBackgroundPolicy).toEqual({
+        isAvailable: true,
+        maxVirtualBackgrounds: 5,
+        allowCustomBackground: true,
+        whitelistedTemplateIds: [template.id],
+      });
+    });
+
+    it('full-replaces the whitelist on update, not merging with the previous one', async () => {
+      const templateA = await createVirtualBackgroundTemplate('A');
+      const templateB = await createVirtualBackgroundTemplate('B');
+      const plan = await createPlan({
+        virtualBackgroundPolicy: buildVirtualBackgroundPolicyDto({
+          whitelistedTemplateIds: [templateA.id],
+        }),
+      });
+
+      const updated = await service.update(plan.id, {
+        virtualBackgroundPolicy: buildVirtualBackgroundPolicyDto({
+          isAvailable: true,
+          maxVirtualBackgrounds: 10,
+          allowCustomBackground: true,
+          whitelistedTemplateIds: [templateB.id],
+        }),
+      });
+
+      expect(updated.virtualBackgroundPolicy).toEqual({
+        isAvailable: true,
+        maxVirtualBackgrounds: 10,
+        allowCustomBackground: true,
+        whitelistedTemplateIds: [templateB.id],
+      });
     });
   });
 

@@ -186,6 +186,34 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
           />
         )}
       </div>
+
+      <div className="rounded-box border border-base-300 p-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+          Virtual background policy
+        </p>
+        <SummaryRow
+          label="Available"
+          value={value.virtualBackgroundPolicy.isAvailable ? "Yes" : "No"}
+        />
+        {value.virtualBackgroundPolicy.isAvailable && (
+          <>
+            <SummaryRow
+              label="Max virtual backgrounds"
+              value={String(value.virtualBackgroundPolicy.maxVirtualBackgrounds)}
+            />
+            <SummaryRow
+              label="Custom background uploads"
+              value={value.virtualBackgroundPolicy.allowCustomBackground ? "Yes" : "No"}
+            />
+            <SummaryRow
+              label="Whitelisted templates"
+              value={String(
+                value.virtualBackgroundPolicy.whitelistedTemplateIds.length,
+              )}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }

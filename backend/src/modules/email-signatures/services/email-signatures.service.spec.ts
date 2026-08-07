@@ -169,6 +169,13 @@ describe('EmailSignaturesService (integration, TEST_DATABASE_URL only)', () => {
                 maxEmailSignatures: overrides.maxEmailSignatures ?? 5,
               },
             },
+            virtualBackgroundPolicy: {
+              create: {
+                isAvailable: false,
+                maxVirtualBackgrounds: 0,
+                allowCustomBackground: false,
+              },
+            },
           },
         },
       },

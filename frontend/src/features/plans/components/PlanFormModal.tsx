@@ -11,6 +11,7 @@ import SmartCardPolicyFields from "@features/plans/components/policy-fields/Smar
 import OrganisationPolicyFields from "@features/plans/components/policy-fields/OrganisationPolicyFields";
 import EventPolicyFields from "@features/plans/components/policy-fields/EventPolicyFields";
 import EmailSignaturePolicyFields from "@features/plans/components/policy-fields/EmailSignaturePolicyFields";
+import VirtualBackgroundPolicyFields from "@features/plans/components/policy-fields/VirtualBackgroundPolicyFields";
 
 interface PlanFormModalProps {
   mode: "create" | "edit";
@@ -34,6 +35,7 @@ function planToDraft(plan: PlanDetail): CreatePlanPayload {
     organisationPolicy: plan.organisationPolicy,
     eventPolicy: plan.eventPolicy,
     emailSignaturePolicy: plan.emailSignaturePolicy,
+    virtualBackgroundPolicy: plan.virtualBackgroundPolicy,
   };
 }
 
@@ -157,6 +159,14 @@ export default function PlanFormModal({
               value={draft.emailSignaturePolicy}
               onChange={(emailSignaturePolicy) =>
                 setDraft({ ...draft, emailSignaturePolicy })
+              }
+            />
+          )}
+          {stepId === "virtual-background" && (
+            <VirtualBackgroundPolicyFields
+              value={draft.virtualBackgroundPolicy}
+              onChange={(virtualBackgroundPolicy) =>
+                setDraft({ ...draft, virtualBackgroundPolicy })
               }
             />
           )}

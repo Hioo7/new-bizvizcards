@@ -31,6 +31,12 @@ export const PLAN_FALLBACK_MAX_EVENTS = 100;
 export const PLAN_FALLBACK_MAX_GUESTS_PER_EVENT = 500;
 export const PLAN_FALLBACK_MAX_CUSTOM_FORMS = 0;
 export const PLAN_FALLBACK_MAX_EMAIL_SIGNATURES = 0;
+export const PLAN_FALLBACK_MAX_VIRTUAL_BACKGROUNDS = 0;
+
+// An empty VirtualBackgroundPolicy.whitelistedTemplates means no shared-
+// library templates are offered (strict allowlist) — not "no restriction".
+// Same convention as PLAN_EMPTY_TEMPLATE_WHITELIST_MEANS_NONE_ALLOWED above.
+export const PLAN_EMPTY_VIRTUAL_BACKGROUND_WHITELIST_MEANS_NONE_ALLOWED = true;
 
 // An empty SmartCardPolicy.whitelistedTemplates means no templates are
 // permitted (strict allowlist) — not "no restriction". Documented here since
@@ -105,3 +111,11 @@ export const PLAN_EMAIL_SIGNATURE_NOT_AVAILABLE_MESSAGE =
   "This customer's plan does not include email signatures";
 export const PLAN_EMAIL_SIGNATURE_LIMIT_REACHED_MESSAGE =
   "This customer's plan has reached its email signature limit";
+export const PLAN_VIRTUAL_BACKGROUND_NOT_AVAILABLE_MESSAGE =
+  "This customer's plan does not include virtual backgrounds";
+export const PLAN_VIRTUAL_BACKGROUND_LIMIT_REACHED_MESSAGE =
+  "This customer's plan has reached its virtual background limit";
+export const PLAN_VIRTUAL_BACKGROUND_TEMPLATE_NOT_ALLOWED_MESSAGE =
+  "This customer's plan does not include this virtual background template";
+export const PLAN_VIRTUAL_BACKGROUND_CUSTOM_NOT_ALLOWED_MESSAGE =
+  "This customer's plan does not allow uploading a custom virtual background";

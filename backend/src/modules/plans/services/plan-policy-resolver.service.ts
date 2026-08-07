@@ -85,6 +85,18 @@ export interface EffectiveEmailSignaturePolicy {
   maxEmailSignatures: number;
 }
 
+export interface EffectiveVirtualBackgroundTemplate {
+  id: string;
+  name: string;
+}
+
+export interface EffectiveVirtualBackgroundPolicy {
+  isAvailable: boolean;
+  maxVirtualBackgrounds: number;
+  allowCustomBackground: boolean;
+  availableTemplates: EffectiveVirtualBackgroundTemplate[];
+}
+
 export interface EffectivePolicy {
   planId: string;
   isFallback: boolean;
@@ -93,6 +105,7 @@ export interface EffectivePolicy {
   organisation: EffectiveOrganisationPolicy;
   event: EffectiveEventPolicy;
   emailSignature: EffectiveEmailSignaturePolicy;
+  virtualBackground: EffectiveVirtualBackgroundPolicy;
 }
 
 // Exported for reuse by PlansService, which needs the identical nested
@@ -119,6 +132,15 @@ export type SmartCardPolicyWithRelations = Prisma.SmartCardPolicyGetPayload<{
   include: typeof smartCardPolicyInclude;
 }>;
 
+export const virtualBackgroundPolicyInclude = {
+  whitelistedTemplates: { include: { template: true } },
+} satisfies Prisma.VirtualBackgroundPolicyInclude;
+
+export type VirtualBackgroundPolicyWithRelations =
+  Prisma.VirtualBackgroundPolicyGetPayload<{
+    include: typeof virtualBackgroundPolicyInclude;
+  }>;
+
 export const planPolicyInclude = {
   ecardPolicy: { include: ecardPolicyInclude },
   smartCardPolicy: { include: smartCardPolicyInclude },
@@ -130,6 +152,7 @@ export const planPolicyInclude = {
   },
   eventPolicy: true,
   emailSignaturePolicy: true,
+  virtualBackgroundPolicy: { include: virtualBackgroundPolicyInclude },
 } satisfies Prisma.PlanPolicyInclude;
 
 /**
@@ -296,6 +319,25 @@ export class PlanPolicyResolverService {
         isAvailable: policy.emailSignaturePolicy.isAvailable,
         maxEmailSignatures: policy.emailSignaturePolicy.maxEmailSignatures,
       },
+      virtualBackground: this.mapVirtualBackgroundPolicy(
+        policy.virtualBackgroundPolicy,
+      ),
+    };
+  }
+
+  private mapVirtualBackgroundPolicy(
+    virtualBackgroundPolicy: VirtualBackgroundPolicyWithRelations,
+  ): EffectiveVirtualBackgroundPolicy {
+    return {
+      isAvailable: virtualBackgroundPolicy.isAvailable,
+      maxVirtualBackgrounds: virtualBackgroundPolicy.maxVirtualBackgrounds,
+      allowCustomBackground: virtualBackgroundPolicy.allowCustomBackground,
+      availableTemplates: virtualBackgroundPolicy.whitelistedTemplates.map(
+        (whitelisted) => ({
+          id: whitelisted.template.id,
+          name: whitelisted.template.name,
+        }),
+      ),
     };
   }
 

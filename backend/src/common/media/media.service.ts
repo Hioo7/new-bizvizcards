@@ -43,6 +43,12 @@ export class MediaService {
     });
   }
 
+  async downloadBuffer(
+    media: Pick<MediaModel, 'source' | 'storageKey'>,
+  ): Promise<Buffer> {
+    return this.providers[media.source].download(media.storageKey);
+  }
+
   async delete(mediaId: string): Promise<void> {
     const media = await this.prisma.media.findUniqueOrThrow({
       where: { id: mediaId },

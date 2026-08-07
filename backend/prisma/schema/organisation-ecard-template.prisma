@@ -252,13 +252,13 @@ model OrganisationEcardTemplateTestimonialsComponent {
 }
 
 model OrganisationEcardTemplateTestimonialEntry {
-  id                      String                                          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
-  testimonialsComponentId String                                          @db.Uuid
+  id                      String                                         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  testimonialsComponentId String                                         @db.Uuid
   testimonialsComponent   OrganisationEcardTemplateTestimonialsComponent @relation(fields: [testimonialsComponentId], references: [templateComponentId], onDelete: Cascade)
   name                    String
   rating                  Int
   text                    String
-  order                   Int                                             @default(0)
+  order                   Int                                            @default(0)
 
   @@index([testimonialsComponentId])
   @@map("OrganisationEcardTemplateTestimonialEntry")

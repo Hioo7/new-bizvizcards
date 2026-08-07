@@ -34,6 +34,10 @@ import {
   PLAN_SMART_CARD_TEMPLATE_NOT_ALLOWED_MESSAGE,
   PLAN_THEME_NOT_AVAILABLE_MESSAGE,
   PLAN_VIDEO_GALLERY_LIMIT_REACHED_MESSAGE,
+  PLAN_VIRTUAL_BACKGROUND_CUSTOM_NOT_ALLOWED_MESSAGE,
+  PLAN_VIRTUAL_BACKGROUND_LIMIT_REACHED_MESSAGE,
+  PLAN_VIRTUAL_BACKGROUND_NOT_AVAILABLE_MESSAGE,
+  PLAN_VIRTUAL_BACKGROUND_TEMPLATE_NOT_ALLOWED_MESSAGE,
 } from '../plans.constants';
 import { PlanPolicyResolverService } from './plan-policy-resolver.service';
 
@@ -555,6 +559,53 @@ export class PlanEnforcementService {
     });
     if (currentCount >= policy.emailSignature.maxEmailSignatures) {
       throw new ConflictException(PLAN_EMAIL_SIGNATURE_LIMIT_REACHED_MESSAGE);
+    }
+  }
+
+  async assertCanCreateVirtualBackground(customerId: string): Promise<void> {
+    const policy =
+      await this.policyResolver.getEffectivePolicyForCustomer(customerId);
+    if (!policy.virtualBackground.isAvailable) {
+      throw new ForbiddenException(
+        PLAN_VIRTUAL_BACKGROUND_NOT_AVAILABLE_MESSAGE,
+      );
+    }
+
+    const currentCount = await this.prisma.virtualBackground.count({
+      where: { customerId },
+    });
+    if (currentCount >= policy.virtualBackground.maxVirtualBackgrounds) {
+      throw new ConflictException(
+        PLAN_VIRTUAL_BACKGROUND_LIMIT_REACHED_MESSAGE,
+      );
+    }
+  }
+
+  async assertVirtualBackgroundTemplateAllowed(
+    customerId: string,
+    templateId: string,
+  ): Promise<void> {
+    const policy =
+      await this.policyResolver.getEffectivePolicyForCustomer(customerId);
+    const isAllowed = policy.virtualBackground.availableTemplates.some(
+      (template) => template.id === templateId,
+    );
+    if (!isAllowed) {
+      throw new ForbiddenException(
+        PLAN_VIRTUAL_BACKGROUND_TEMPLATE_NOT_ALLOWED_MESSAGE,
+      );
+    }
+  }
+
+  async assertCustomVirtualBackgroundAllowed(
+    customerId: string,
+  ): Promise<void> {
+    const policy =
+      await this.policyResolver.getEffectivePolicyForCustomer(customerId);
+    if (!policy.virtualBackground.allowCustomBackground) {
+      throw new ForbiddenException(
+        PLAN_VIRTUAL_BACKGROUND_CUSTOM_NOT_ALLOWED_MESSAGE,
+      );
     }
   }
 

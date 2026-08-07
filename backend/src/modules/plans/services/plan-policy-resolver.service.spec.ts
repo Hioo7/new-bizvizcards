@@ -70,6 +70,9 @@ interface PlanOverrides {
   eventIsAvailable?: boolean;
   maxEvents?: number;
   maxGuestsPerEvent?: number;
+  virtualBackgroundIsAvailable?: boolean;
+  maxVirtualBackgrounds?: number;
+  allowCustomBackground?: boolean;
 }
 
 describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () => {
@@ -271,6 +274,13 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
                 maxGuestsPerEvent: overrides.maxGuestsPerEvent ?? 5,
               },
             },
+            virtualBackgroundPolicy: {
+              create: {
+                isAvailable: overrides.virtualBackgroundIsAvailable ?? true,
+                maxVirtualBackgrounds: overrides.maxVirtualBackgrounds ?? 2,
+                allowCustomBackground: overrides.allowCustomBackground ?? false,
+              },
+            },
           },
         },
       },
@@ -387,6 +397,27 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
         isAvailable: false,
         maxEvents: 4,
         maxGuestsPerEvent: 50,
+      });
+    });
+
+    it('resolves the virtual background policy with its whitelisted templates', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        virtualBackgroundIsAvailable: true,
+        maxVirtualBackgrounds: 3,
+        allowCustomBackground: true,
+      });
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.virtualBackground).toEqual({
+        isAvailable: true,
+        maxVirtualBackgrounds: 3,
+        allowCustomBackground: true,
+        availableTemplates: [],
       });
     });
 

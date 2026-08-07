@@ -5,6 +5,7 @@ import type {
   EventPolicy,
   OrganisationPolicy,
   SmartCardPolicy,
+  VirtualBackgroundPolicy,
 } from "@app-types/plan";
 import {
   DEFAULT_ECARD_ACCENT_COLOR_PRESETS,
@@ -86,6 +87,15 @@ export function createDefaultEmailSignaturePolicy(): EmailSignaturePolicy {
   };
 }
 
+export function createDefaultVirtualBackgroundPolicy(): VirtualBackgroundPolicy {
+  return {
+    isAvailable: false,
+    maxVirtualBackgrounds: 0,
+    allowCustomBackground: false,
+    whitelistedTemplateIds: [],
+  };
+}
+
 export function createDefaultPlanDraft(): CreatePlanPayload {
   return {
     name: "",
@@ -97,5 +107,6 @@ export function createDefaultPlanDraft(): CreatePlanPayload {
     organisationPolicy: createDefaultOrganisationPolicy(),
     eventPolicy: createDefaultEventPolicy(),
     emailSignaturePolicy: createDefaultEmailSignaturePolicy(),
+    virtualBackgroundPolicy: createDefaultVirtualBackgroundPolicy(),
   };
 }

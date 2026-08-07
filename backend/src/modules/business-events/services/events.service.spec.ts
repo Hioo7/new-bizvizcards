@@ -139,6 +139,13 @@ describe('EventsService (integration, TEST_DATABASE_URL only)', () => {
             emailSignaturePolicy: {
               create: { isAvailable: true, maxEmailSignatures: 0 },
             },
+            virtualBackgroundPolicy: {
+              create: {
+                isAvailable: false,
+                maxVirtualBackgrounds: 0,
+                allowCustomBackground: false,
+              },
+            },
           },
         },
       },

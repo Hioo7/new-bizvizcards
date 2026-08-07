@@ -109,6 +109,21 @@ export interface EmailSignaturePolicy {
   maxEmailSignatures: number;
 }
 
+export type VirtualBackgroundQrCorner =
+  | "TOP_LEFT"
+  | "TOP_RIGHT"
+  | "BOTTOM_LEFT"
+  | "BOTTOM_RIGHT";
+
+export interface VirtualBackgroundPolicy {
+  isAvailable: boolean;
+  maxVirtualBackgrounds: number;
+  allowCustomBackground: boolean;
+  // Empty array means no shared-library templates are offered (strict
+  // allowlist), not "no restriction".
+  whitelistedTemplateIds: string[];
+}
+
 export interface PlanSummary {
   id: string;
   name: string;
@@ -127,6 +142,7 @@ export interface PlanDetail extends PlanSummary {
   organisationPolicy: OrganisationPolicy;
   eventPolicy: EventPolicy;
   emailSignaturePolicy: EmailSignaturePolicy;
+  virtualBackgroundPolicy: VirtualBackgroundPolicy;
 }
 
 export interface PlanListResponse {
@@ -148,6 +164,7 @@ export interface PlanPolicyPayload {
   organisationPolicy: OrganisationPolicy;
   eventPolicy: EventPolicy;
   emailSignaturePolicy: EmailSignaturePolicy;
+  virtualBackgroundPolicy: VirtualBackgroundPolicy;
 }
 
 export interface CreatePlanPayload extends PlanPolicyPayload {
@@ -212,6 +229,18 @@ export interface EffectiveEmailSignaturePolicy {
   maxEmailSignatures: number;
 }
 
+export interface EffectiveVirtualBackgroundTemplate {
+  id: string;
+  name: string;
+}
+
+export interface EffectiveVirtualBackgroundPolicy {
+  isAvailable: boolean;
+  maxVirtualBackgrounds: number;
+  allowCustomBackground: boolean;
+  availableTemplates: EffectiveVirtualBackgroundTemplate[];
+}
+
 export interface EffectivePolicy {
   planId: string;
   isFallback: boolean;
@@ -220,6 +249,7 @@ export interface EffectivePolicy {
   organisation: EffectiveOrganisationPolicy;
   event: EffectiveEventPolicy;
   emailSignature: EffectiveEmailSignaturePolicy;
+  virtualBackground: EffectiveVirtualBackgroundPolicy;
   leadsViewAccess: boolean;
 }
 

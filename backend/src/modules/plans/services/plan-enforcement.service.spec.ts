@@ -9,6 +9,7 @@ import {
   ECardTheme,
   EmailSignatureTemplateKey,
   EventMemberRole,
+  MediaSource,
   PlanBusinessModelType,
   SmartCardTemplateKey,
 } from '../../../generated/prisma/client';
@@ -70,6 +71,10 @@ interface PlanOverrides {
   maxGuestsPerEvent?: number;
   emailSignatureIsAvailable?: boolean;
   maxEmailSignatures?: number;
+  virtualBackgroundIsAvailable?: boolean;
+  maxVirtualBackgrounds?: number;
+  allowCustomBackground?: boolean;
+  virtualBackgroundWhitelistedTemplateIds?: string[];
 }
 
 describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
@@ -82,6 +87,7 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
   const seededPlanIds: string[] = [];
   const seededOrganisationIds: string[] = [];
   const seededEventIds: string[] = [];
+  const seededMediaIds: string[] = [];
 
   beforeAll(() => {
     originalDatabaseUrl = process.env.DATABASE_URL;
@@ -99,6 +105,14 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   afterEach(async () => {
+    if (seededMediaIds.length > 0) {
+      // Deleting Media first cascades away any VirtualBackground row that
+      // references it, ahead of the Customer cleanup below.
+      await prisma.media.deleteMany({
+        where: { id: { in: seededMediaIds } },
+      });
+      seededMediaIds.length = 0;
+    }
     if (seededEventIds.length > 0) {
       await prisma.businessEvent.deleteMany({
         where: { id: { in: seededEventIds } },
@@ -139,6 +153,40 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
     });
     seededAccountIds.push(account.id);
     return prisma.customer.create({ data: { accountId: account.id } });
+  }
+
+  async function createTestMedia() {
+    const media = await prisma.media.create({
+      data: {
+        id: randomUUID(),
+        source: MediaSource.MINIO,
+        storageKey: `test/${randomUUID()}.png`,
+        originalName: 'test.png',
+        extension: 'png',
+      },
+    });
+    seededMediaIds.push(media.id);
+    return media;
+  }
+
+  async function seedVirtualBackground(customerId: string) {
+    const ecard = await prisma.eCard.create({
+      data: {
+        customerId,
+        endpoint: `enforcement-test-vb-${randomUUID()}`,
+        heroName: 'Test',
+        heroEmail: 'test@example.com',
+      },
+    });
+    const composedMedia = await createTestMedia();
+
+    return prisma.virtualBackground.create({
+      data: {
+        customerId,
+        ecardId: ecard.id,
+        composedMediaId: composedMedia.id,
+      },
+    });
   }
 
   function ecardPolicyCreateData(
@@ -322,6 +370,18 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                 isAvailable: overrides.eventIsAvailable ?? true,
                 maxEvents: overrides.maxEvents ?? 2,
                 maxGuestsPerEvent: overrides.maxGuestsPerEvent ?? 5,
+              },
+            },
+            virtualBackgroundPolicy: {
+              create: {
+                isAvailable: overrides.virtualBackgroundIsAvailable ?? true,
+                maxVirtualBackgrounds: overrides.maxVirtualBackgrounds ?? 2,
+                allowCustomBackground: overrides.allowCustomBackground ?? false,
+                whitelistedTemplates: {
+                  create: (
+                    overrides.virtualBackgroundWhitelistedTemplateIds ?? []
+                  ).map((templateId) => ({ templateId })),
+                },
               },
             },
           },
@@ -966,6 +1026,109 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
         service.assertCanCreateEmailSignature(customer.id),
       ).rejects.toThrow(
         "This customer's plan does not include email signatures",
+      );
+    });
+  });
+
+  describe('assertCanCreateVirtualBackground', () => {
+    it('passes when under the virtual background cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ maxVirtualBackgrounds: 2 });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateVirtualBackground(customer.id),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks once at the virtual background cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ maxVirtualBackgrounds: 1 });
+      await assignPlan(customer.id, plan.id);
+      await seedVirtualBackground(customer.id);
+
+      await expect(
+        service.assertCanCreateVirtualBackground(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan has reached its virtual background limit",
+      );
+    });
+
+    it('blocks entirely when virtual backgrounds are not available on the plan', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ virtualBackgroundIsAvailable: false });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateVirtualBackground(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan does not include virtual backgrounds",
+      );
+    });
+  });
+
+  describe('assertCustomVirtualBackgroundAllowed', () => {
+    it('passes when the plan allows custom backgrounds', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ allowCustomBackground: true });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCustomVirtualBackgroundAllowed(customer.id),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks when the plan does not allow custom backgrounds', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ allowCustomBackground: false });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCustomVirtualBackgroundAllowed(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan does not allow uploading a custom virtual background",
+      );
+    });
+  });
+
+  describe('assertVirtualBackgroundTemplateAllowed', () => {
+    it('passes when the template is whitelisted for the plan', async () => {
+      const customer = await seedCustomer();
+      const media = await createTestMedia();
+      const template = await prisma.virtualBackgroundTemplate.create({
+        data: { name: 'Office', mediaId: media.id },
+      });
+      const plan = await seedPlan({
+        virtualBackgroundWhitelistedTemplateIds: [template.id],
+      });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertVirtualBackgroundTemplateAllowed(
+          customer.id,
+          template.id,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks when the template is not whitelisted for the plan', async () => {
+      const customer = await seedCustomer();
+      const media = await createTestMedia();
+      const template = await prisma.virtualBackgroundTemplate.create({
+        data: { name: 'Office', mediaId: media.id },
+      });
+      const plan = await seedPlan({
+        virtualBackgroundWhitelistedTemplateIds: [],
+      });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertVirtualBackgroundTemplateAllowed(
+          customer.id,
+          template.id,
+        ),
+      ).rejects.toThrow(
+        "This customer's plan does not include this virtual background template",
       );
     });
   });

@@ -10,8 +10,9 @@ model Customer {
   phoneCountryDialCode String?
   phoneNumber          String?
 
-  smartCards SmartCard[]
-  ecards     ECard[]
+  smartCards         SmartCard[]
+  ecards             ECard[]
+  virtualBackgrounds VirtualBackground[]
 
   currentPlanId       String?               @db.Uuid
   currentPlan         Plan?                 @relation(fields: [currentPlanId], references: [id], onDelete: SetNull)

@@ -24,6 +24,7 @@ import type { ListPlansQueryDto } from '../dto/list-plans-query.dto';
 import type { OrganisationPolicyDto } from '../dto/organisation-policy.dto';
 import type { SmartCardPolicyDto } from '../dto/smart-card-policy.dto';
 import type { UpdatePlanDto } from '../dto/update-plan.dto';
+import type { VirtualBackgroundPolicyDto } from '../dto/virtual-background-policy.dto';
 import {
   PLAN_DELETE_ORPHAN_ONLY_MESSAGE,
   PLAN_LIST_DEFAULT_PAGE,
@@ -34,6 +35,7 @@ import { planPolicyInclude } from './plan-policy-resolver.service';
 import type {
   EcardPolicyWithRelations,
   SmartCardPolicyWithRelations,
+  VirtualBackgroundPolicyWithRelations,
 } from './plan-policy-resolver.service';
 
 export interface PlanSummary {
@@ -54,6 +56,7 @@ export interface PlanDetail extends PlanSummary {
   organisationPolicy: OrganisationPolicyDto;
   eventPolicy: EventPolicyDto;
   emailSignaturePolicy: EmailSignaturePolicyDto;
+  virtualBackgroundPolicy: VirtualBackgroundPolicyDto;
 }
 
 export interface PlanListResult {
@@ -112,6 +115,11 @@ export class PlansService {
                 isAvailable: dto.emailSignaturePolicy.isAvailable,
                 maxEmailSignatures: dto.emailSignaturePolicy.maxEmailSignatures,
               },
+            },
+            virtualBackgroundPolicy: {
+              create: this.buildVirtualBackgroundPolicyCreateData(
+                dto.virtualBackgroundPolicy,
+              ),
             },
           },
         },
@@ -182,6 +190,9 @@ export class PlansService {
         isAvailable: plan.policy.emailSignaturePolicy.isAvailable,
         maxEmailSignatures: plan.policy.emailSignaturePolicy.maxEmailSignatures,
       },
+      virtualBackgroundPolicy: this.toVirtualBackgroundPolicyDto(
+        plan.policy.virtualBackgroundPolicy,
+      ),
     };
   }
 
@@ -196,6 +207,7 @@ export class PlansService {
             organisationPolicyId: true,
             eventPolicyId: true,
             emailSignaturePolicyId: true,
+            virtualBackgroundPolicyId: true,
           },
         },
       },
@@ -284,6 +296,13 @@ export class PlansService {
             maxEmailSignatures: dto.emailSignaturePolicy.maxEmailSignatures,
           },
         });
+      }
+      if (dto.virtualBackgroundPolicy) {
+        await this.replaceVirtualBackgroundPolicy(
+          tx,
+          plan.policy!.virtualBackgroundPolicyId,
+          dto.virtualBackgroundPolicy,
+        );
       }
     });
 
@@ -386,6 +405,21 @@ export class PlansService {
       isAvailable: dto.isAvailable,
       maxSmartCards: dto.maxSmartCards,
       exchangeContactAccess: dto.exchangeContactAccess,
+      whitelistedTemplates: {
+        create: dto.whitelistedTemplateIds.map((templateId) => ({
+          templateId,
+        })),
+      },
+    };
+  }
+
+  private buildVirtualBackgroundPolicyCreateData(
+    dto: VirtualBackgroundPolicyDto,
+  ): Prisma.VirtualBackgroundPolicyCreateWithoutPlanPolicyInput {
+    return {
+      isAvailable: dto.isAvailable,
+      maxVirtualBackgrounds: dto.maxVirtualBackgrounds,
+      allowCustomBackground: dto.allowCustomBackground,
       whitelistedTemplates: {
         create: dto.whitelistedTemplateIds.map((templateId) => ({
           templateId,
@@ -509,6 +543,32 @@ export class PlansService {
     }
   }
 
+  private async replaceVirtualBackgroundPolicy(
+    tx: Prisma.TransactionClient,
+    virtualBackgroundPolicyId: string,
+    dto: VirtualBackgroundPolicyDto,
+  ): Promise<void> {
+    await tx.virtualBackgroundPolicy.update({
+      where: { id: virtualBackgroundPolicyId },
+      data: {
+        isAvailable: dto.isAvailable,
+        maxVirtualBackgrounds: dto.maxVirtualBackgrounds,
+        allowCustomBackground: dto.allowCustomBackground,
+      },
+    });
+    await tx.virtualBackgroundPolicyTemplate.deleteMany({
+      where: { virtualBackgroundPolicyId },
+    });
+    if (dto.whitelistedTemplateIds.length > 0) {
+      await tx.virtualBackgroundPolicyTemplate.createMany({
+        data: dto.whitelistedTemplateIds.map((templateId) => ({
+          virtualBackgroundPolicyId,
+          templateId,
+        })),
+      });
+    }
+  }
+
   private toEcardPolicyDto(
     ecardPolicy: EcardPolicyWithRelations,
   ): EcardPolicyDto {
@@ -588,6 +648,19 @@ export class PlansService {
       maxSmartCards: smartCardPolicy.maxSmartCards,
       exchangeContactAccess: smartCardPolicy.exchangeContactAccess,
       whitelistedTemplateIds: smartCardPolicy.whitelistedTemplates.map(
+        (whitelisted) => whitelisted.templateId,
+      ),
+    };
+  }
+
+  private toVirtualBackgroundPolicyDto(
+    virtualBackgroundPolicy: VirtualBackgroundPolicyWithRelations,
+  ): VirtualBackgroundPolicyDto {
+    return {
+      isAvailable: virtualBackgroundPolicy.isAvailable,
+      maxVirtualBackgrounds: virtualBackgroundPolicy.maxVirtualBackgrounds,
+      allowCustomBackground: virtualBackgroundPolicy.allowCustomBackground,
+      whitelistedTemplateIds: virtualBackgroundPolicy.whitelistedTemplates.map(
         (whitelisted) => whitelisted.templateId,
       ),
     };

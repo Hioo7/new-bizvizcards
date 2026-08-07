@@ -32,6 +32,7 @@ import {
   PLAN_FALLBACK_MAX_SMART_CARDS,
   PLAN_FALLBACK_MAX_VIDEO_GALLERIES,
   PLAN_FALLBACK_MAX_VIDEOS_PER_GALLERY,
+  PLAN_FALLBACK_MAX_VIRTUAL_BACKGROUNDS,
   PLAN_FALLBACK_NAME,
 } from '../../src/modules/plans/plans.constants';
 
@@ -144,6 +145,13 @@ async function main() {
             create: {
               isAvailable: true,
               maxEmailSignatures: PLAN_FALLBACK_MAX_EMAIL_SIGNATURES,
+            },
+          },
+          virtualBackgroundPolicy: {
+            create: {
+              isAvailable: false,
+              maxVirtualBackgrounds: PLAN_FALLBACK_MAX_VIRTUAL_BACKGROUNDS,
+              allowCustomBackground: false,
             },
           },
         },

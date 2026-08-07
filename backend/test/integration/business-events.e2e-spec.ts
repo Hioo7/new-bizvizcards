@@ -258,6 +258,12 @@ describe('Business Events (e2e, TEST_DATABASE_URL only)', () => {
         },
         eventPolicy: { isAvailable: true, maxEvents: 10, maxGuestsPerEvent },
         emailSignaturePolicy: { isAvailable: true, maxEmailSignatures: 0 },
+        virtualBackgroundPolicy: {
+          isAvailable: false,
+          maxVirtualBackgrounds: 0,
+          allowCustomBackground: false,
+          whitelistedTemplateIds: [],
+        },
       })
       .expect(201);
     const id = (response.body as { id: string }).id;

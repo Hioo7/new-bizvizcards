@@ -24,6 +24,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { MigrationModule } from './modules/migration/migration.module';
+import { VirtualBackgroundsModule } from './modules/virtual-backgrounds/virtual-backgrounds.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { MigrationModule } from './modules/migration/migration.module';
     OrdersModule,
     PaymentsModule,
     MigrationModule,
+    VirtualBackgroundsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

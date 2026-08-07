@@ -1,6 +1,7 @@
 import {
   CreateBucketCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   PutBucketPolicyCommand,
   PutObjectCommand,
@@ -45,6 +46,38 @@ describe('MinioMediaStorageProvider', () => {
       Key: 'pfp/customer-1/abc.jpg',
       Body: Buffer.from('data'),
       ContentType: 'image/jpeg',
+    });
+  });
+
+  it('downloads an object by key as a buffer', async () => {
+    const bodyChunks = [Buffer.from('hello '), Buffer.from('world')];
+    const fakeBody = {
+      [Symbol.asyncIterator]: () => {
+        let index = 0;
+        return {
+          next: () =>
+            Promise.resolve(
+              index < bodyChunks.length
+                ? { value: bodyChunks[index++], done: false }
+                : { value: undefined, done: true },
+            ),
+        };
+      },
+    };
+    const sendSpy = jest
+      .spyOn(S3Client.prototype, 'send')
+      .mockResolvedValue({ Body: fakeBody } as never);
+    const provider = new MinioMediaStorageProvider(createAppConfig());
+
+    const buffer = await provider.download('pfp/customer-1/abc.jpg');
+
+    expect(buffer).toEqual(Buffer.from('hello world'));
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    const command = sendSpy.mock.calls[0][0] as GetObjectCommand;
+    expect(command).toBeInstanceOf(GetObjectCommand);
+    expect(command.input).toEqual({
+      Bucket: 'test-bucket',
+      Key: 'pfp/customer-1/abc.jpg',
     });
   });
 

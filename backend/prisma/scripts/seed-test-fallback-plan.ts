@@ -139,6 +139,13 @@ async function main() {
               maxEmailSignatures: GENEROUS_LIMIT,
             },
           },
+          virtualBackgroundPolicy: {
+            create: {
+              isAvailable: true,
+              maxVirtualBackgrounds: GENEROUS_LIMIT,
+              allowCustomBackground: true,
+            },
+          },
         },
       },
     },

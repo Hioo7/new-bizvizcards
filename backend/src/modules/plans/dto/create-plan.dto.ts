@@ -11,6 +11,7 @@ import { smartCardPolicySchema } from './smart-card-policy.dto';
 import { organisationPolicySchema } from './organisation-policy.dto';
 import { eventPolicySchema } from './event-policy.dto';
 import { emailSignaturePolicySchema } from './email-signature-policy.dto';
+import { virtualBackgroundPolicySchema } from './virtual-background-policy.dto';
 
 export const createPlanShape = {
   name: z.string().trim().min(1).max(PLAN_NAME_MAX_LENGTH),
@@ -30,6 +31,7 @@ export const createPlanShape = {
   organisationPolicy: organisationPolicySchema,
   eventPolicy: eventPolicySchema,
   emailSignaturePolicy: emailSignaturePolicySchema,
+  virtualBackgroundPolicy: virtualBackgroundPolicySchema,
 };
 
 export const createPlanSchema = z

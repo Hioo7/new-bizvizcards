@@ -119,9 +119,10 @@ model ECard {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  components ECardComponent[]
-  events     ECardEvent[]
-  leads      Lead[]
+  components         ECardComponent[]
+  events             ECardEvent[]
+  leads              Lead[]
+  virtualBackgrounds VirtualBackground[]
 
   linkedProductUnits ProductUnitLink[]
 
@@ -318,7 +319,7 @@ model ECardLocationTileComponent {
   ecardComponentId String         @id @db.Uuid
   ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
 
-  label String
+  label     String
   // Captured only via the browser's Geolocation API in the builder — never
   // typed manually, so there's no separate free-text address field (compare
   // Lead.location/locationLatitude/locationLongitude, where the address
@@ -352,15 +353,15 @@ model ECardTestimonialsComponent {
 }
 
 model ECardTestimonialEntry {
-  id                      String                      @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
-  testimonialsComponentId String                      @db.Uuid
-  testimonialsComponent   ECardTestimonialsComponent  @relation(fields: [testimonialsComponentId], references: [ecardComponentId], onDelete: Cascade)
+  id                      String                     @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  testimonialsComponentId String                     @db.Uuid
+  testimonialsComponent   ECardTestimonialsComponent @relation(fields: [testimonialsComponentId], references: [ecardComponentId], onDelete: Cascade)
   name                    String
   // 1-5, bounds enforced at the DTO layer (no DB check constraint — matches
   // this schema's convention of validating bounds in Zod, not Postgres).
   rating                  Int
   text                    String
-  order                   Int                         @default(0)
+  order                   Int                        @default(0)
 
   @@index([testimonialsComponentId])
   @@map("ECardTestimonialEntry")

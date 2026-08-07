@@ -17,6 +17,11 @@ class FakeMediaStorageProvider implements MediaStorageProvider {
     return Promise.resolve();
   }
 
+  download(key: string): Promise<Buffer> {
+    const uploaded = this.uploads.find((upload) => upload.key === key);
+    return Promise.resolve(uploaded?.buffer ?? Buffer.alloc(0));
+  }
+
   delete(key: string): Promise<void> {
     this.deletedKeys.push(key);
     return Promise.resolve();
@@ -124,5 +129,20 @@ describe('MediaService (integration, TEST_DATABASE_URL only)', () => {
     const url = service.getPublicUrl(media);
 
     expect(url).toBe(`http://localhost:9000/test-bucket/${media.storageKey}`);
+  });
+
+  it('downloads the buffer via the provider matching the media source', async () => {
+    const media = await service.upload({
+      buffer: Buffer.from('fake-image-bytes'),
+      contentType: 'image/png',
+      originalName: 'avatar.png',
+      extension: 'png',
+      keyPrefix: 'pfp/customer-1',
+    });
+    seededIds.push(media.id);
+
+    const buffer = await service.downloadBuffer(media);
+
+    expect(buffer).toEqual(Buffer.from('fake-image-bytes'));
   });
 });

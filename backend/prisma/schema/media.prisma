@@ -37,5 +37,9 @@ model Media {
   emailSignatureCompanyLogo  EmailSignature? @relation("EmailSignatureCompanyLogo")
   emailSignatureBannerImage  EmailSignature? @relation("EmailSignatureBannerImage")
 
+  virtualBackgroundTemplate   VirtualBackgroundTemplate?
+  virtualBackgroundCustomBase VirtualBackground?         @relation("VirtualBackgroundCustomBase")
+  virtualBackgroundComposed   VirtualBackground?         @relation("VirtualBackgroundComposed")
+
   @@map("Media")
 }

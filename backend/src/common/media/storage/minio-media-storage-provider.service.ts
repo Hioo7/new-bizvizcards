@@ -2,11 +2,13 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   CreateBucketCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import type { Readable } from 'stream';
 import { AppConfigService } from '../../config/app-config.service';
 import {
   MEDIA_PUBLIC_PATH_PREFIX,
@@ -74,6 +76,18 @@ export class MinioMediaStorageProvider
         ContentType: contentType,
       }),
     );
+  }
+
+  async download(key: string): Promise<Buffer> {
+    const response = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+    const stream = response.Body as Readable;
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk as Buffer);
+    }
+    return Buffer.concat(chunks);
   }
 
   async delete(key: string): Promise<void> {

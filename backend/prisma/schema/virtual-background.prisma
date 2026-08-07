@@ -1,0 +1,94 @@
+enum VirtualBackgroundQrCorner {
+  TOP_LEFT
+  TOP_RIGHT
+  BOTTOM_LEFT
+  BOTTOM_RIGHT
+
+  @@map("VirtualBackgroundQrCorner")
+}
+
+// A plan's virtual-background policy — same standalone shape as
+// EventPolicy/EmailSignaturePolicy (a toggle + a numeric limit), plus a
+// whitelist of shared-library templates (same explicit-join convention as
+// SmartCardPolicyTemplateWhitelist). Only ever owned by a PlanPolicy
+// directly, no OrganisationPolicy-level boost.
+model VirtualBackgroundPolicy {
+  id                    String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable           Boolean  @default(false)
+  maxVirtualBackgrounds Int      @default(0)
+  allowCustomBackground Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  whitelistedTemplates VirtualBackgroundPolicyTemplate[]
+  planPolicy           PlanPolicy?
+
+  @@map("VirtualBackgroundPolicy")
+}
+
+// Shared library of admin-uploaded base images (1920x1080), independent of
+// any plan — attached to one or more plans via VirtualBackgroundPolicyTemplate,
+// never duplicated per plan.
+model VirtualBackgroundTemplate {
+  id        String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  mediaId   String   @unique @db.Uuid
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  name      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  policies           VirtualBackgroundPolicyTemplate[]
+  virtualBackgrounds VirtualBackground[]
+
+  @@map("VirtualBackgroundTemplate")
+}
+
+// Explicit join model for the templates a plan whitelists — same convention
+// as SmartCardPolicyTemplateWhitelist. An empty whitelist means no templates
+// are offered (strict allowlist), not "no restriction".
+model VirtualBackgroundPolicyTemplate {
+  id                        String                    @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  virtualBackgroundPolicyId String                    @db.Uuid
+  virtualBackgroundPolicy   VirtualBackgroundPolicy   @relation(fields: [virtualBackgroundPolicyId], references: [id], onDelete: Cascade)
+  templateId                String                    @db.Uuid
+  template                  VirtualBackgroundTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([virtualBackgroundPolicyId, templateId])
+  @@index([virtualBackgroundPolicyId])
+  @@map("VirtualBackgroundPolicyTemplate")
+}
+
+// A customer's saved virtual background: a 1920x1080 base image (either a
+// shared-library template or the customer's own upload) with a QR code
+// (linking to one of their ecards) and an optional caption composited onto
+// one corner. Exactly one of sourceTemplateId/customBaseMediaId is set —
+// enforced at the service layer (Zod refine + service check), not a DB
+// constraint, same convention as other "exactly one of" rules in this schema.
+// composedMedia is the final rendered PNG, generated once and cached (never
+// re-rendered on view).
+model VirtualBackground {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId String   @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  ecardId    String   @db.Uuid
+  ecard      ECard    @relation(fields: [ecardId], references: [id], onDelete: Cascade)
+
+  sourceTemplateId  String?                    @db.Uuid
+  sourceTemplate    VirtualBackgroundTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  customBaseMediaId String?                    @unique @db.Uuid
+  customBaseMedia   Media?                     @relation("VirtualBackgroundCustomBase", fields: [customBaseMediaId], references: [id], onDelete: SetNull)
+
+  qrCorner    VirtualBackgroundQrCorner @default(BOTTOM_RIGHT)
+  captionText String?
+
+  composedMediaId String @unique @db.Uuid
+  composedMedia   Media  @relation("VirtualBackgroundComposed", fields: [composedMediaId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([ecardId])
+  @@index([sourceTemplateId])
+  @@map("VirtualBackground")
+}

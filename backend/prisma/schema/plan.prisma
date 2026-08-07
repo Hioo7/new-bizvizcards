@@ -63,6 +63,14 @@ model PlanPolicy {
   emailSignaturePolicyId String               @unique @db.Uuid
   emailSignaturePolicy   EmailSignaturePolicy @relation(fields: [emailSignaturePolicyId], references: [id], onDelete: Cascade)
 
+  // Added after PlanPolicy already had rows in production — unlike
+  // eventPolicyId/emailSignaturePolicyId above, backfilled with raw SQL
+  // directly inside the same migration that adds this column and sets it
+  // NOT NULL (current backend/CLAUDE.md convention), not a separate
+  // nullable-migration + TS script + NOT-NULL-migration sequence.
+  virtualBackgroundPolicyId String                  @unique @db.Uuid
+  virtualBackgroundPolicy   VirtualBackgroundPolicy @relation(fields: [virtualBackgroundPolicyId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
