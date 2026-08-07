@@ -4,6 +4,7 @@ import { useAsyncAction } from "@hooks/useAsyncAction";
 import SmartCardExchangeContactLocationStage from "@features/public-smart-card/components/SmartCardExchangeContactLocationStage";
 import type { GeolocationCoords } from "@features/public-smart-card/components/SmartCardExchangeContactLocationStage";
 import type { ExchangeContactSubmission } from "@app-types/lead";
+import { downloadFile } from "@utils/downloadFile";
 
 interface Country {
   iso: string;
@@ -139,7 +140,7 @@ export function SmartCardExchangeContactPopup({
           locationLongitude: coords?.longitude,
         }),
       () => {
-        window.location.href = vcardUrl;
+        downloadFile(vcardUrl);
         handleClose();
       },
     );

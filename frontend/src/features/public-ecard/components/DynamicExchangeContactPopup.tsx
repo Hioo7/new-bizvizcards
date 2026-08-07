@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAsyncAction } from "@hooks/useAsyncAction";
+import { downloadFile } from "@utils/downloadFile";
 import EcardExchangeContactLocationStage from "@features/public-ecard/components/EcardExchangeContactLocationStage";
 import type { GeolocationCoords } from "@features/public-ecard/components/EcardExchangeContactLocationStage";
 import { COUNTRIES, isoToFlag } from "@features/public-ecard/config/phoneCountries.config";
@@ -193,7 +194,7 @@ export function DynamicExchangeContactPopup({
     void submitAction.run(
       () => onSubmit({ formVersionId: form.versionId, answers }),
       () => {
-        window.location.href = vcardUrl;
+        downloadFile(vcardUrl);
         handleClose();
       },
     );

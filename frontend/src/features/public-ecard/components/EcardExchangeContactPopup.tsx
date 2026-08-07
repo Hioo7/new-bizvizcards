@@ -5,6 +5,7 @@ import EcardExchangeContactLocationStage from "@features/public-ecard/components
 import type { GeolocationCoords } from "@features/public-ecard/components/EcardExchangeContactLocationStage";
 import { COUNTRIES, isoToFlag } from "@features/public-ecard/config/phoneCountries.config";
 import type { ExchangeContactSubmission } from "@app-types/lead";
+import { downloadFile } from "@utils/downloadFile";
 
 interface FormState {
   name: string;
@@ -116,7 +117,7 @@ export function EcardExchangeContactPopup({
           locationLongitude: coords?.longitude,
         }),
       () => {
-        window.location.href = vcardUrl;
+        downloadFile(vcardUrl);
         handleClose();
       },
     );

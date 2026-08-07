@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { LocationMapEmbed } from "@components/LocationMapEmbed";
-import type { Lead, UpdateLeadPayload } from "@features/user-dashboard/types";
+import type {
+  Lead,
+  LeadFormAnswer,
+  UpdateLeadPayload,
+} from "@features/user-dashboard/types";
 import {
   OPPORTUNITY_STAGES,
   OPPORTUNITY_STAGE_LABELS,
@@ -9,6 +13,9 @@ import {
 } from "@features/user-dashboard/types";
 import { useLeadReferenceNotes } from "@features/user-dashboard/hooks/useLeadReferenceNotes";
 import { useLeadReminders } from "@features/user-dashboard/hooks/useLeadReminders";
+import { userDashboardService } from "@features/user-dashboard/services/UserDashboardService";
+import FieldCard from "./FieldCard";
+import LeadFormAnswers from "./LeadFormAnswers";
 import LeadNotesTab from "./LeadNotesTab";
 import LeadRemindersTab from "./LeadRemindersTab";
 
@@ -52,29 +59,6 @@ function downloadVCard(lead: Lead) {
   URL.revokeObjectURL(url);
 }
 
-interface FieldCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | null | undefined;
-  empty?: string;
-}
-
-function FieldCard({ icon, label, value, empty = "Not added" }: FieldCardProps) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-base-300 bg-base-100 px-4 py-3 shadow-sm">
-      <span className="shrink-0 text-base-content/40">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-base-content/50">{label}</p>
-        {value ? (
-          <p className="text-sm font-medium text-base-content break-all">{value}</p>
-        ) : (
-          <p className="text-sm italic text-base-content/40">{empty}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function LeadDetailModal({
   lead,
   onClose,
@@ -109,11 +93,28 @@ export default function LeadDetailModal({
 
   const notes = useLeadReferenceNotes(lead?.id ?? "");
   const reminders = useLeadReminders(lead?.id ?? "");
+  // The leads list (and therefore the `lead` prop, which is looked up from
+  // it) never carries form answers — that join is only ever made for a
+  // single lead's own detail fetch — so it's loaded separately here. Keyed
+  // by leadId (same pattern as tabState/editingLeadId above) so it reads as
+  // empty for a newly selected lead until its own fetch resolves, rather
+  // than briefly showing the previous lead's answers.
+  const [formAnswersState, setFormAnswersState] = useState<{
+    leadId: string;
+    answers: LeadFormAnswer[];
+  } | null>(null);
+  const formAnswers =
+    formAnswersState !== null && formAnswersState.leadId === lead?.id
+      ? formAnswersState.answers
+      : [];
 
   useEffect(() => {
     if (!lead) return;
     void notes.load();
     void reminders.load();
+    void userDashboardService.getLead(lead.id).then((full) => {
+      setFormAnswersState({ leadId: lead.id, answers: full.formAnswers ?? [] });
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead?.id]);
 
@@ -569,6 +570,8 @@ export default function LeadDetailModal({
                     label="Sourced by"
                     value={LEAD_SOURCE_LABELS[lead.sourcedBy]}
                   />
+
+                  <LeadFormAnswers answers={formAnswers} />
                 </>
               )}
 

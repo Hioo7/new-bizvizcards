@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ecardVCardUrl } from "@services/publicEcardService";
 import type { Ecard } from "@app-types/ecard";
+import { downloadFile } from "@utils/downloadFile";
 
 /**
  * When the card owner has enabled it, automatically save a vCard for
@@ -16,11 +17,6 @@ export function useAutoDownloadContact(card: Ecard | null): void {
     if (!card?.hero.autoDownloadContact || hasTriggeredRef.current) return;
     hasTriggeredRef.current = true;
 
-    const link = document.createElement("a");
-    link.href = ecardVCardUrl(card.endpoint);
-    link.download = `${card.endpoint}.vcf`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    downloadFile(ecardVCardUrl(card.endpoint), `${card.endpoint}.vcf`);
   }, [card]);
 }

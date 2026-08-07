@@ -1,3 +1,5 @@
+import type { ExchangeContactFieldType } from "@app-types/exchangeContactForm";
+
 // Dashboard section types
 export type DashboardSection = "profile" | "leads" | "analytics" | "cart" | "apps" | "settings";
 
@@ -65,6 +67,17 @@ export const OPPORTUNITY_STAGE_COLORS: Record<OpportunityStage, string> = {
   CHURNED_CLOSED_LOST: "bg-error/15 text-error",
 };
 
+// One submitted answer to a custom exchange-contact-form question, resolved
+// to a display-ready value by the backend (selected option's label for
+// choice fields, ISO date string for date fields).
+export interface LeadFormAnswer {
+  fieldId: string;
+  label: string;
+  type: ExchangeContactFieldType;
+  order: number;
+  value: string;
+}
+
 // Lead model (matches backend LeadModel)
 export interface Lead {
   id: string;
@@ -83,6 +96,7 @@ export interface Lead {
   ecardId: string | null;
   createdAt: string;
   updatedAt: string;
+  formAnswers?: LeadFormAnswer[];
 }
 
 // Lead folder

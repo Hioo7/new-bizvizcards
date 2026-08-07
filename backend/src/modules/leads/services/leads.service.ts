@@ -5,7 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { LeadSourceType } from '../../../generated/prisma/client';
+import {
+  ExchangeContactFieldType,
+  LeadSourceType,
+  Prisma,
+} from '../../../generated/prisma/client';
 import type { LeadModel } from '../../../generated/prisma/models';
 import type { SubmitCustomFormExchangeContactDto } from '../../exchange-contact-forms/dto/submit-custom-form-exchange-contact.dto';
 import {
@@ -20,6 +24,36 @@ import type { CreateLeadDto } from '../dto/create-lead.dto';
 import type { ExchangeContactDto } from '../dto/exchange-contact.dto';
 import type { ListLeadsQueryDto } from '../dto/list-leads-query.dto';
 import type { UpdateLeadDto } from '../dto/update-lead.dto';
+
+// The lead-detail view (getById) needs every custom-question answer alongside
+// the lead's own columns; list/update/delete never do, so this include stays
+// scoped to getById's own query rather than living on a shared base query.
+const LEAD_DETAIL_INCLUDE = {
+  formSubmission: {
+    include: {
+      answers: {
+        include: {
+          field: true,
+          textAnswer: true,
+          choiceAnswer: { include: { selectedOption: true } },
+          dateAnswer: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.LeadInclude;
+
+export interface LeadFormAnswerResponse {
+  fieldId: string;
+  label: string;
+  type: ExchangeContactFieldType;
+  order: number;
+  value: string;
+}
+
+export type LeadDetailResponse = LeadModel & {
+  formAnswers: LeadFormAnswerResponse[];
+};
 
 @Injectable()
 export class LeadsService {
@@ -235,12 +269,9 @@ export class LeadsService {
     });
   }
 
-  async getById(customerId: string, id: string): Promise<LeadModel> {
-    const lead = await this.prisma.lead.findUnique({ where: { id } });
-    if (!lead || lead.customerId !== customerId) {
-      throw new NotFoundException('Lead not found');
-    }
-    return lead;
+  async getById(customerId: string, id: string): Promise<LeadDetailResponse> {
+    const lead = await this.findWithFormSubmission(customerId, id);
+    return this.toDetailResponse(lead);
   }
 
   async create(customerId: string, dto: CreateLeadDto): Promise<LeadModel> {
@@ -272,7 +303,7 @@ export class LeadsService {
     id: string,
     dto: UpdateLeadDto,
   ): Promise<LeadModel> {
-    await this.getById(customerId, id);
+    await this.findOwnedLeadOrThrow(customerId, id);
 
     if (dto.folderId) {
       await this.assertFolderOwnership(customerId, dto.folderId);
@@ -285,8 +316,50 @@ export class LeadsService {
   }
 
   async delete(customerId: string, id: string): Promise<void> {
-    await this.getById(customerId, id);
+    await this.findOwnedLeadOrThrow(customerId, id);
     await this.prisma.lead.delete({ where: { id } });
+  }
+
+  private async findOwnedLeadOrThrow(
+    customerId: string,
+    id: string,
+  ): Promise<LeadModel> {
+    const lead = await this.prisma.lead.findUnique({ where: { id } });
+    if (!lead || lead.customerId !== customerId) {
+      throw new NotFoundException('Lead not found');
+    }
+    return lead;
+  }
+
+  private async findWithFormSubmission(customerId: string, id: string) {
+    const lead = await this.prisma.lead.findUnique({
+      where: { id },
+      include: LEAD_DETAIL_INCLUDE,
+    });
+    if (!lead || lead.customerId !== customerId) {
+      throw new NotFoundException('Lead not found');
+    }
+    return lead;
+  }
+
+  private toDetailResponse(
+    lead: NonNullable<
+      Awaited<ReturnType<LeadsService['findWithFormSubmission']>>
+    >,
+  ): LeadDetailResponse {
+    const { formSubmission, ...scalarFields } = lead;
+    const formAnswers: LeadFormAnswerResponse[] = (
+      formSubmission?.answers ?? []
+    )
+      .map((answer) => ({
+        fieldId: answer.field.id,
+        label: answer.field.label,
+        type: answer.field.type,
+        order: answer.field.order,
+        value: resolveFormAnswerValue(answer),
+      }))
+      .sort((a, b) => a.order - b.order);
+    return { ...scalarFields, formAnswers };
   }
 
   private async assertFolderOwnership(
@@ -300,4 +373,15 @@ export class LeadsService {
       throw new NotFoundException('Lead folder not found');
     }
   }
+}
+
+type FullFormAnswer = NonNullable<
+  Awaited<ReturnType<LeadsService['findWithFormSubmission']>>['formSubmission']
+>['answers'][number];
+
+function resolveFormAnswerValue(answer: FullFormAnswer): string {
+  if (answer.textAnswer) return answer.textAnswer.value;
+  if (answer.choiceAnswer) return answer.choiceAnswer.selectedOption.label;
+  if (answer.dateAnswer) return answer.dateAnswer.value.toISOString();
+  return '';
 }

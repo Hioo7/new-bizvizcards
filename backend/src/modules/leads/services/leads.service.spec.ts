@@ -247,6 +247,96 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
         NotFoundException,
       );
     });
+
+    it('returns an empty formAnswers array for a lead with no form submission', async () => {
+      const customer = await seedCustomer();
+      const lead = await service.create(customer.id, { name: 'Lead' });
+
+      const result = await service.getById(customer.id, lead.id);
+
+      expect(result.formAnswers).toEqual([]);
+    });
+
+    it('returns formAnswers resolved from the submission, ordered by field order', async () => {
+      const customer = await seedCustomer();
+      const ecard = await seedEcard(customer.id);
+      const form = await prisma.exchangeContactForm.create({
+        data: { customerId: customer.id, name: 'Detail Form' },
+      });
+      const version = await prisma.exchangeContactFormVersion.create({
+        data: { formId: form.id, versionNumber: 1, isCurrent: true },
+      });
+      const nameField = await prisma.exchangeContactFormField.create({
+        data: {
+          versionId: version.id,
+          order: 0,
+          type: 'SHORT_TEXT',
+          tag: 'LEAD_NAME',
+          label: 'Name',
+          isRequired: true,
+        },
+      });
+      const choiceField = await prisma.exchangeContactFormField.create({
+        data: {
+          versionId: version.id,
+          order: 1,
+          type: 'DROPDOWN',
+          label: 'Favourite colour',
+          isRequired: false,
+        },
+      });
+      const option = await prisma.exchangeContactFormFieldOption.create({
+        data: { fieldId: choiceField.id, order: 0, label: 'Blue' },
+      });
+      const dateField = await prisma.exchangeContactFormField.create({
+        data: {
+          versionId: version.id,
+          order: 2,
+          type: 'DATE',
+          label: 'Preferred date',
+          isRequired: false,
+        },
+      });
+      await prisma.eCard.update({
+        where: { id: ecard.id },
+        data: { customFormId: form.id },
+      });
+
+      const lead = await service.createFromEcardCustomFormExchangeContact(
+        ecard.endpoint,
+        {
+          formVersionId: version.id,
+          answers: [
+            { fieldId: nameField.id, type: 'SHORT_TEXT', value: 'Visitor' },
+            {
+              fieldId: choiceField.id,
+              type: 'DROPDOWN',
+              optionId: option.id,
+            },
+            {
+              fieldId: dateField.id,
+              type: 'DATE',
+              value: new Date('2026-01-15'),
+            },
+          ],
+        },
+      );
+
+      const result = await service.getById(customer.id, lead.id);
+
+      expect(result.formAnswers.map((answer) => answer.label)).toEqual([
+        'Favourite colour',
+        'Preferred date',
+      ]);
+      expect(result.formAnswers[0]).toMatchObject({
+        fieldId: choiceField.id,
+        type: 'DROPDOWN',
+        value: 'Blue',
+      });
+      expect(result.formAnswers[1].fieldId).toBe(dateField.id);
+      expect(result.formAnswers[1].type).toBe('DATE');
+      expect(result.formAnswers[1].value.slice(0, 10)).toBe('2026-01-15');
+    });
   });
 
   describe('create', () => {
