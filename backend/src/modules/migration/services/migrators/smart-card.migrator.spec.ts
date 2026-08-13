@@ -273,16 +273,20 @@ describe('SmartCardMigrator', () => {
     expect(recordSuccess).toHaveBeenCalled(); // card itself still succeeds
   });
 
-  it.each([
+  const logoShapeCases: [string | null, string][] = [
     ['circle', 'CIRCLE'],
     ['rectangle', 'RECTANGLE'],
     ['free', 'FREEFORM'],
     [null, 'CIRCLE'],
     ['some-unrecognized-value', 'CIRCLE'],
-  ])(
+  ];
+
+  it.each(logoShapeCases)(
     'maps legacy profile.logoShape %s to %s on the created SmartCardProfile',
-    async (legacyLogoShape, expectedLogoShape) => {
-      const profileCreate = jest.fn().mockResolvedValue({});
+    async (legacyLogoShape: string | null, expectedLogoShape: string) => {
+      const profileCreate = jest
+        .fn<Promise<object>, [{ data: { logoShape: string } }]>()
+        .mockResolvedValue({});
       const transaction = jest
         .fn()
         .mockImplementation((fn: (tx: unknown) => Promise<unknown>) => {
@@ -315,10 +319,8 @@ describe('SmartCardMigrator', () => {
 
       await migrator.migrate('job-1');
 
-      expect(profileCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ logoShape: expectedLogoShape }),
-        }),
+      expect(profileCreate.mock.calls[0][0].data.logoShape).toBe(
+        expectedLogoShape,
       );
     },
   );
