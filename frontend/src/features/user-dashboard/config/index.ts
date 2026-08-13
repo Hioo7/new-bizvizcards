@@ -1,6 +1,7 @@
 export const DASHBOARD_API = {
   leads: "/api/leads",
   lead: (id: string) => `/api/leads/${id}`,
+  leadsExport: "/api/leads/export",
   leadFolders: "/api/lead-folders",
   leadFolder: (id: string) => `/api/lead-folders/${id}`,
   leadFolderDefault: "/api/lead-folders/default",
@@ -49,3 +50,5 @@ export const DASHBOARD_APP_VERSION = "v1.0.0";
 export const SHOP_PAGE_SIZE = 20;
 export const CART_ITEM_MAX_QUANTITY = 99;
 export const ADDRESSES_MAX = 5;
+
+export const LEADS_EXPORT_UNCATEGORISED_LABEL = "Uncategorised";

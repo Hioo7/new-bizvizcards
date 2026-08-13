@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { userDashboardService } from "@features/user-dashboard/services/UserDashboardService";
+import { downloadLeadsExportFile } from "@features/user-dashboard/utils/downloadLeadsExportFile";
 import type {
   Lead,
   LeadFolder,
@@ -17,6 +18,7 @@ interface UseLeadsReturn {
   createLead: (payload: CreateLeadPayload) => Promise<void>;
   updateLead: (id: string, payload: UpdateLeadPayload) => Promise<void>;
   deleteLead: (id: string) => Promise<void>;
+  exportLeads: (leadIds: string[]) => Promise<void>;
   createFolder: (name: string) => Promise<void>;
   renameFolder: (id: string, name: string) => Promise<void>;
   deleteFolder: (id: string, mode: "move" | "delete") => Promise<void>;
@@ -77,6 +79,11 @@ export function useLeads(): UseLeadsReturn {
     [loadAll],
   );
 
+  const exportLeads = useCallback(async (leadIds: string[]) => {
+    const blob = await userDashboardService.exportLeads(leadIds);
+    downloadLeadsExportFile(blob);
+  }, []);
+
   const createFolder = useCallback(
     async (name: string) => {
       await userDashboardService.createFolder({ name });
@@ -116,6 +123,7 @@ export function useLeads(): UseLeadsReturn {
     createLead,
     updateLead,
     deleteLead,
+    exportLeads,
     createFolder,
     renameFolder,
     deleteFolder,

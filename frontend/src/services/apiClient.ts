@@ -97,3 +97,34 @@ export async function apiRequest<TResponse>(
 
   return data as TResponse;
 }
+
+// Sibling to apiRequest for endpoints that return a binary payload (e.g. a
+// generated file download) rather than JSON — apiRequest always attempts a
+// JSON parse of the response body, which a blob response can't satisfy.
+export async function apiRequestBlob(
+  path: string,
+  init?: RequestInit,
+): Promise<Blob> {
+  const response = await fetch(path, {
+    ...init,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...init?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") ?? "";
+    const data = contentType.includes("application/json")
+      ? await response.json().catch(() => null)
+      : null;
+    throw new ApiError(
+      response.status,
+      extractErrorMessage(data, response.statusText),
+      data,
+    );
+  }
+
+  return response.blob();
+}

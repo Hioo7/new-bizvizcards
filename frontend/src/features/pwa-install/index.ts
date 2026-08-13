@@ -1,4 +1,5 @@
 export { default as PWAInstallModal } from "@features/pwa-install/components/PWAInstallModal";
+export { default as PWAInstallFab } from "@features/pwa-install/components/PWAInstallFab";
 export { usePWAInstall } from "@features/pwa-install/hooks/usePWAInstall";
 export type { UsePWAInstallResult } from "@features/pwa-install/hooks/usePWAInstall";
 export {

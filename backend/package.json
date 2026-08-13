@@ -41,6 +41,7 @@
     "@prisma/client": "^7.8.0",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.6.23",
+    "exceljs": "^4.4.0",
     "google-auth-library": "^10.9.0",
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",

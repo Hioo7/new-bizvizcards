@@ -30,3 +30,28 @@ export const LEAD_REMINDER_TEXT_MAX_LENGTH = 2000;
 
 export const REMINDER_DUE_WINDOW_DEFAULT_MINUTES = 0;
 export const REMINDER_DUE_WINDOW_MAX_MINUTES = 10080;
+
+export const LEAD_EXPORT_MAX_IDS = 2000;
+export const LEAD_EXPORT_CONTENT_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+export const LEAD_EXPORT_FILENAME_PREFIX = 'leads-';
+export const LEAD_EXPORT_SHEET_NAME = 'Leads';
+export const LEAD_EXPORT_UNCATEGORISED_FOLDER_LABEL = 'Uncategorised';
+
+export interface LeadExportColumn {
+  header: string;
+  key: string;
+  width: number;
+}
+
+export const LEAD_EXPORT_COLUMNS: LeadExportColumn[] = [
+  { header: 'Name', key: 'name', width: 24 },
+  { header: 'Email', key: 'email', width: 28 },
+  { header: 'Phone', key: 'phone', width: 18 },
+  { header: 'Company', key: 'company', width: 24 },
+  { header: 'Profession', key: 'profession', width: 20 },
+  { header: 'Location', key: 'location', width: 24 },
+  { header: 'Folder', key: 'folder', width: 18 },
+  { header: 'Note', key: 'note', width: 32 },
+  { header: 'Created At', key: 'createdAt', width: 14 },
+];

@@ -37,6 +37,7 @@ export default function UserDashboardLayout() {
     createLead,
     updateLead,
     deleteLead,
+    exportLeads,
     createFolder,
     renameFolder,
     deleteFolder,
@@ -103,6 +104,7 @@ export default function UserDashboardLayout() {
             onCreateLead={createLead}
             onUpdateLead={updateLead}
             onDeleteLead={deleteLead}
+            onExportLeads={exportLeads}
             onCreateFolder={createFolder}
             onSetDefaultFolder={setDefaultFolder}
             onRenameFolder={renameFolder}

@@ -4,6 +4,7 @@ import type { Ecard } from "@app-types/ecard";
 import { getCustomerProfile } from "@services/authService";
 import { useOrganisation } from "@features/user-dashboard/hooks/useOrganisation";
 import { useCustomerEcards } from "@features/user-dashboard/hooks/useCustomerEcards";
+import { PWAInstallFab, PWAInstallModal, usePWAInstall } from "@features/pwa-install";
 import ProfileBanner from "./ProfileBanner";
 import OrgDashboardCard from "./OrgDashboardCard";
 import EditProfileModal from "./EditProfileModal";
@@ -36,6 +37,8 @@ export default function ProfileSection({
   const [dialCode, setDialCode] = useState<string | undefined>(undefined);
   const org = useOrganisation();
   const customerEcards = useCustomerEcards();
+  const { canInstall, triggerInstall } = usePWAInstall();
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
   const refreshPhone = useCallback(() => {
     getCustomerProfile()
@@ -152,6 +155,18 @@ export default function ProfileSection({
         onClose={() => setBuilderOpen(false)}
         onSaved={() => {
           void customerEcards.load();
+        }}
+      />
+
+      {canInstall && (
+        <PWAInstallFab onClick={() => setIsInstallModalOpen(true)} />
+      )}
+      <PWAInstallModal
+        open={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        onInstall={async () => {
+          await triggerInstall();
+          setIsInstallModalOpen(false);
         }}
       />
     </div>

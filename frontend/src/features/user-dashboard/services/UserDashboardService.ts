@@ -1,4 +1,4 @@
-import { apiRequest } from "@services/apiClient";
+import { apiRequest, apiRequestBlob } from "@services/apiClient";
 import { DASHBOARD_API } from "@features/user-dashboard/config";
 import type {
   Lead,
@@ -76,6 +76,13 @@ export class UserDashboardService {
   async deleteLead(id: string): Promise<void> {
     await apiRequest<void>(DASHBOARD_API.lead(id), {
       method: "DELETE",
+    });
+  }
+
+  async exportLeads(leadIds: string[]): Promise<Blob> {
+    return apiRequestBlob(DASHBOARD_API.leadsExport, {
+      method: "POST",
+      body: JSON.stringify({ leadIds }),
     });
   }
 

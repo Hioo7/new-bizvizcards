@@ -16,6 +16,7 @@ import CreateFolderModal from "./CreateFolderModal";
 import RenameFolderModal from "./RenameFolderModal";
 import DeleteFolderModal from "./DeleteFolderModal";
 import LeadDetailModal from "./LeadDetailModal";
+import ExportLeadsModal from "./ExportLeadsModal";
 
 interface LeadsSectionProps {
   leads: Lead[];
@@ -27,6 +28,7 @@ interface LeadsSectionProps {
   onCreateLead: (payload: CreateLeadPayload) => Promise<void>;
   onUpdateLead: (id: string, payload: UpdateLeadPayload) => Promise<void>;
   onDeleteLead: (id: string) => Promise<void>;
+  onExportLeads: (leadIds: string[]) => Promise<void>;
   onCreateFolder: (name: string) => Promise<void>;
   onSetDefaultFolder: (id: string | null) => Promise<void>;
   onRenameFolder: (id: string, name: string) => Promise<void>;
@@ -45,6 +47,7 @@ export default function LeadsSection({
   onCreateLead,
   onUpdateLead,
   onDeleteLead,
+  onExportLeads,
   onCreateFolder,
   onSetDefaultFolder,
   onRenameFolder,
@@ -56,6 +59,7 @@ export default function LeadsSection({
   const [showFolderDropdown, setShowFolderDropdown] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   // Derive from the leads prop so the detail view always reflects the latest state
   // after any update (e.g. stage change) without needing a separate sync.
@@ -210,6 +214,7 @@ export default function LeadsSection({
           <button
             type="button"
             aria-label="Export"
+            onClick={() => setShowExportModal(true)}
             className="flex h-10 w-10 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-white/30 text-white"
           >
             <svg
@@ -709,6 +714,14 @@ export default function LeadsSection({
         onClose={() => setSelectedLeadId(null)}
         onDelete={onDeleteLead}
         onUpdate={onUpdateLead}
+      />
+
+      <ExportLeadsModal
+        open={showExportModal}
+        leads={leads}
+        folders={folders}
+        onClose={() => setShowExportModal(false)}
+        onExport={onExportLeads}
       />
     </div>
   );
