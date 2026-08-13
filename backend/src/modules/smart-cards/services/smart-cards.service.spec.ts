@@ -172,9 +172,31 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
 
       expect(created.profile?.companyName).toBe('Acme');
       expect(created.profile?.logoUrl).not.toBeNull();
+      expect(created.profile?.logoShape).toBe('CIRCLE');
       expect(created.services).toHaveLength(1);
       expect(created.services[0].imageUrl).not.toBeNull();
       expect(fakeProvider.uploadedKeys).toHaveLength(2);
+    });
+
+    it('stores an explicit logoShape on the profile', async () => {
+      const employeeId = await seedEmployee();
+      const endpoint = `test-card-${randomUUID()}`;
+
+      const created = await service.create(
+        SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE,
+        employeeId,
+        {
+          endpoint,
+          profile: { companyName: 'Acme', logoShape: 'FREEFORM' },
+          services: [],
+          testimonials: [],
+          galleries: [],
+        },
+        [],
+      );
+      seededCardIds.push(created.id);
+
+      expect(created.profile?.logoShape).toBe('FREEFORM');
     });
 
     it('rejects creating a card with a duplicate endpoint', async () => {
@@ -262,6 +284,33 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
         where: { id: firstMediaId },
       });
       expect(oldMedia).toBeNull();
+    });
+
+    it('changes logoShape on an existing profile', async () => {
+      const employeeId = await seedEmployee();
+      const created = await service.create(
+        SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE,
+        employeeId,
+        {
+          endpoint: `test-card-${randomUUID()}`,
+          profile: { companyName: 'Acme', logoShape: 'CIRCLE' },
+          services: [],
+          testimonials: [],
+          galleries: [],
+        },
+        [],
+      );
+      seededCardIds.push(created.id);
+      expect(created.profile?.logoShape).toBe('CIRCLE');
+
+      const updated = await service.update(
+        SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE,
+        created.id,
+        { profile: { companyName: 'Acme', logoShape: 'RECTANGLE' } },
+        [],
+      );
+
+      expect(updated.profile?.logoShape).toBe('RECTANGLE');
     });
 
     it('keeps an existing image via {action:"keep"} while another slot is dropped', async () => {

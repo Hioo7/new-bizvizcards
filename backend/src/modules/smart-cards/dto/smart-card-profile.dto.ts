@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SmartCardLogoShape } from '../../../generated/prisma/client';
 import {
   SMART_CARD_TEXT_LONG_MAX_LENGTH,
   SMART_CARD_TEXT_MEDIUM_MAX_LENGTH,
@@ -22,6 +23,9 @@ const profileTextFields = {
     .max(SMART_CARD_TEXT_MEDIUM_MAX_LENGTH)
     .optional(),
   aboutText: z.string().trim().max(SMART_CARD_TEXT_LONG_MAX_LENGTH).optional(),
+  // Only surfaced in Template 3's admin form/render today; other templates
+  // leave this undefined and the column keeps its default.
+  logoShape: z.nativeEnum(SmartCardLogoShape).optional(),
 };
 
 export const createSmartCardProfileSchema = z

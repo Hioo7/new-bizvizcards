@@ -1,4 +1,7 @@
-import { SmartCardTemplateKey } from '../../generated/prisma/client';
+import {
+  SmartCardLogoShape,
+  SmartCardTemplateKey,
+} from '../../generated/prisma/client';
 
 // Legacy source table names — passed to LegacyIdMapperService as
 // `sourceTable`, matching the `@@map()` table name in
@@ -37,6 +40,15 @@ export const SMART_CARD_TEMPLATE_SLUG_MAP: Record<
   'interior.design.template': SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE,
   'interior.design.template2': SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE_2,
   'interior.design.template3': SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE_3,
+};
+
+// Legacy SmartCardProfile.logoShape (plain string) -> new SmartCardLogoShape
+// enum. Null or any unrecognized value falls back to CIRCLE, matching the
+// legacy app's own default (see smartCardAssembler.ts's `?? "circle"`).
+export const SMART_CARD_LOGO_SHAPE_MAP: Record<string, SmartCardLogoShape> = {
+  circle: SmartCardLogoShape.CIRCLE,
+  rectangle: SmartCardLogoShape.RECTANGLE,
+  free: SmartCardLogoShape.FREEFORM,
 };
 
 // India is the only dial code ever observed in the legacy ECard dataset —

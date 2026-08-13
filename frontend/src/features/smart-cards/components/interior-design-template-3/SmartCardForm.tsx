@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { IdCard } from "lucide-react";
 import FormStepShell from "@components/forms/FormStepShell";
 import CustomerStep from "@features/smart-cards/components/steps/CustomerStep";
-import ProfileStep from "@features/smart-cards/components/steps/ProfileStep";
+import ProfileStep from "./ProfileStep";
 import ContactStep from "@features/smart-cards/components/steps/ContactStep";
 import SocialStep from "@features/smart-cards/components/steps/SocialStep";
 import FounderStep from "@features/smart-cards/components/steps/FounderStep";

@@ -58,6 +58,7 @@ export function smartCardToFormValues(card: SmartCard): SmartCardFormValues {
       subTagline: card.profile?.subTagline ?? "",
       aboutText: card.profile?.aboutText ?? "",
       logo: toImageField(card.profile?.logoMediaId, card.profile?.logoUrl),
+      logoShape: card.profile?.logoShape ?? "CIRCLE",
     },
     contact: {
       contactNumber: card.contact?.contactNumber ?? "",
@@ -134,6 +135,7 @@ export function buildSmartCardSubmission(
         SMART_CARD_PROFILE_LOGO_FIELD,
         files,
       ),
+      logoShape: values.profile.logoShape,
     },
     contact: {
       contactNumber: optionalText(values.contact.contactNumber),

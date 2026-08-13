@@ -1,5 +1,5 @@
 // Read-only mirror of the legacy app's Postgres schema
-// (legacy-artifacts/cards-app/prisma/schema.prisma), limited to the models
+// (legacy-artifacts/Bizvizcards.com/cards-app/prisma/schema.prisma), limited to the models
 // in scope for the data migration pipeline (see the approved migration plan).
 // This schema is never touched by `prisma migrate` — the legacy database
 // already exists and isn't ours to alter. Models are prefixed `Legacy*` to
@@ -190,6 +190,7 @@ model LegacySmartCardProfile {
   tagline     String?
   subTagline  String?
   aboutText   String?
+  logoShape   String?
 
   smartCard LegacySmartCard @relation(fields: [smartCardId], references: [id])
 

@@ -1,5 +1,6 @@
 import { emptyImageField } from "@app-types/media.types";
 import type { ImageFieldValue } from "@app-types/media.types";
+import type { SmartCardLogoShape } from "@app-types/smartCard";
 
 export interface CustomerStepValues {
   customerId: string;
@@ -12,6 +13,8 @@ export interface ProfileStepValues {
   subTagline: string;
   aboutText: string;
   logo: ImageFieldValue;
+  /** Only set by Template 3's ProfileStep variant; other templates leave this undefined. */
+  logoShape?: SmartCardLogoShape;
 }
 
 export interface ContactStepValues {
@@ -94,6 +97,7 @@ export function emptySmartCardFormValues(): SmartCardFormValues {
       subTagline: "",
       aboutText: "",
       logo: emptyImageField(),
+      logoShape: "CIRCLE",
     },
     contact: { contactNumber: "", email: "", address: "" },
     social: {

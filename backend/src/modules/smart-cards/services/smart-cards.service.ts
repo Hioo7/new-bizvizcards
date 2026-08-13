@@ -188,6 +188,7 @@ export class SmartCardsService {
             subTagline: dto.profile.subTagline,
             aboutText: dto.profile.aboutText,
             logoMediaId,
+            logoShape: dto.profile.logoShape,
           },
         });
       }
@@ -351,6 +352,7 @@ export class SmartCardsService {
             subTagline: dto.profile.subTagline,
             aboutText: dto.profile.aboutText,
             logoMediaId,
+            logoShape: dto.profile.logoShape,
           },
           update: {
             companyName: dto.profile.companyName,
@@ -358,6 +360,7 @@ export class SmartCardsService {
             subTagline: dto.profile.subTagline,
             aboutText: dto.profile.aboutText,
             logoMediaId,
+            logoShape: dto.profile.logoShape,
           },
         });
       }
@@ -625,6 +628,7 @@ export class SmartCardsService {
             logoUrl: card.profile.logoMedia
               ? this.mediaService.getPublicUrl(card.profile.logoMedia)
               : null,
+            logoShape: card.profile.logoShape,
           }
         : null,
       contact: card.contact

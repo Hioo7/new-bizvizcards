@@ -6,6 +6,17 @@ enum SmartCardTemplateKey {
   @@map("SmartCardTemplateKey")
 }
 
+// Only consumed by Template 3's hero logo today (Template 1/2 leave this at
+// its default and never expose it) — shared on SmartCardProfile since all
+// templates back onto the same table already.
+enum SmartCardLogoShape {
+  CIRCLE
+  RECTANGLE
+  FREEFORM
+
+  @@map("SmartCardLogoShape")
+}
+
 model SmartCardTemplate {
   id             String               @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
   key            SmartCardTemplateKey @unique
@@ -58,6 +69,7 @@ model SmartCardProfile {
   aboutText   String?
   logoMediaId String?   @unique @db.Uuid
   logoMedia   Media?    @relation(fields: [logoMediaId], references: [id], onDelete: SetNull)
+  logoShape   SmartCardLogoShape @default(CIRCLE)
 
   @@map("SmartCardProfile")
 }

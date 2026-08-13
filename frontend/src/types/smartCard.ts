@@ -3,6 +3,9 @@ export type SmartCardTemplateKey =
   | "INTERIOR_DESIGN_TEMPLATE_2"
   | "INTERIOR_DESIGN_TEMPLATE_3";
 
+/** Only used by Template 3's hero logo today. */
+export type SmartCardLogoShape = "CIRCLE" | "RECTANGLE" | "FREEFORM";
+
 export type ImageSlot =
   | { action: "upload" }
   | { action: "keep"; mediaId: string };
@@ -40,6 +43,7 @@ export interface SmartCardProfile {
   aboutText: string | null;
   logoMediaId: string | null;
   logoUrl: string | null;
+  logoShape: SmartCardLogoShape;
 }
 
 export interface SmartCardFounder {
@@ -113,6 +117,7 @@ export interface SmartCardProfileInput {
   subTagline?: string;
   aboutText?: string;
   logo?: ImageSlot;
+  logoShape?: SmartCardLogoShape;
 }
 
 export interface SmartCardFounderInput {
