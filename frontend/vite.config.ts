@@ -69,6 +69,21 @@ export default defineConfig({
           },
         ],
       },
+      workbox: {
+        // Workbox's default generateSW behavior registers a NavigationRoute
+        // with no denylist, so the service worker answers EVERY navigation
+        // on the origin from the cached app shell — including paths that
+        // only exist to be resolved server-side by nginx's redirect check
+        // (backend/src/modules/redirects) before this SPA ever loads, e.g.
+        // /smartcard/:endpoint, /smartqr/:endpoint, /ecard/:endpoint,
+        // /minwebsite/:endpoint. Since admins can define a redirect source
+        // path under any prefix (no reserved-path enforcement exists on the
+        // backend), this denies the cached-shell fallback for everything
+        // except the actual authenticated app routes the PWA is for, so
+        // every other path always reaches the network and gets a chance to
+        // redirect.
+        navigateFallbackDenylist: [/^\/(?!user|admin|org)/],
+      },
     }),
   ],
   server: {
