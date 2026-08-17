@@ -92,4 +92,7 @@ export const ECARD_ENDPOINTS = {
   create: ECARDS_BASE_PATH,
   meById: (id: string) => `${ECARDS_BASE_PATH}/me/${id}`,
   googleWallet: (id: string) => `${ECARDS_BASE_PATH}/me/${id}/wallet/google`,
+  analytics: (id: string) => `${ECARDS_BASE_PATH}/me/${id}/analytics`,
+  analyticsTotalViews: (id: string) =>
+    `${ECARDS_BASE_PATH}/me/${id}/analytics/total-views`,
 };

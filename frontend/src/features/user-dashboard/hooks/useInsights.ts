@@ -5,6 +5,7 @@ import {
   INSIGHTS_DAYS_COUNT,
   RECENT_LEADS_MAX,
 } from "@features/user-dashboard/config";
+import { getInsightsDateBoundaries } from "@features/user-dashboard/utils/dateBoundaries";
 
 interface MonthlyBucket {
   label: string;
@@ -47,18 +48,8 @@ const SHORT_DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function useInsights(leads: Lead[]): InsightsResult {
   return useMemo(() => {
-    const now = new Date();
-    const todayStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
-    const weekStart = new Date(todayStart);
-    weekStart.setDate(todayStart.getDate() - todayStart.getDay());
-
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+    const { now, todayStart, weekStart, thisMonthStart, lastMonthStart, lastMonthEnd } =
+      getInsightsDateBoundaries();
 
     let todayLeads = 0;
     let thisWeekLeads = 0;

@@ -88,6 +88,12 @@ export class EcardAnalyticsService {
     }
   }
 
+  async getTotalViews(ecardId: string): Promise<number> {
+    return this.prisma.eCardEvent.count({
+      where: { ecardId, type: ECardEventType.VIEW },
+    });
+  }
+
   async getSummary(
     ecardId: string,
     query: EcardAnalyticsQueryDto,

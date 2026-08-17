@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Layers, UserRound } from "lucide-react";
+import { Info, Layers, UserRound } from "lucide-react";
 import type { Ecard } from "@app-types/ecard";
 import type { Lead } from "@features/user-dashboard/types";
 import { useInsights } from "@features/user-dashboard/hooks/useInsights";
+import { useEcardViews } from "@features/user-dashboard/hooks/useEcardViews";
 import EcardAnalyticsPickerSheet from "./EcardAnalyticsPickerSheet";
 
 interface InsightsSectionProps {
@@ -18,6 +19,7 @@ interface StatCardProps {
   value: number;
   icon: React.ReactNode;
   trend?: "up" | "down" | "neutral";
+  tooltip?: string;
 }
 
 function TodayIcon() {
@@ -52,7 +54,7 @@ function MonthIcon() {
   );
 }
 
-function StatCard({ label, value, icon, trend }: StatCardProps) {
+function StatCard({ label, value, icon, trend, tooltip }: StatCardProps) {
   return (
     <div className="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
@@ -70,7 +72,19 @@ function StatCard({ label, value, icon, trend }: StatCardProps) {
         )}
       </div>
       <p className="text-2xl font-bold text-base-content">{value}</p>
-      <p className="text-xs text-base-content/60">{label}</p>
+      <div className="flex items-center gap-1">
+        <p className="text-xs text-base-content/60">{label}</p>
+        {tooltip && (
+          <button
+            type="button"
+            className="tooltip tooltip-top -m-2 flex items-center justify-center rounded-full p-2 active:bg-base-200"
+            data-tip={tooltip}
+            aria-label={`About ${label}`}
+          >
+            <Info className="h-3.5 w-3.5 text-base-content/40" aria-hidden="true" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -151,6 +165,20 @@ export default function InsightsSection({
     weeklyBuckets,
     recentLeads,
   } = useInsights(filteredLeads);
+
+  const {
+    todayViews,
+    totalViews,
+    thisWeekViews,
+    thisMonthViews,
+    viewsTrend,
+    loading: viewsLoading,
+    error: viewsError,
+  } = useEcardViews(ecards, selectedEcardId);
+
+  const scopeLabel = selectedEcard
+    ? `for "${selectedEcard.hero.name}"`
+    : "across all your e-cards";
 
   if (!isAccessible) {
     return (
@@ -244,38 +272,96 @@ export default function InsightsSection({
         {!loading && !error && (
           <>
             {/* Stat cards 2×2 */}
+            <h2 className="mb-3 text-sm font-bold text-base-content">Leads</h2>
             <div className="mb-4 grid grid-cols-2 gap-3">
               <StatCard
                 label="Today"
                 value={todayLeads}
                 icon={<TodayIcon />}
+                tooltip={`Leads captured today, ${scopeLabel}.`}
               />
               <StatCard
                 label="Total"
                 value={totalLeads}
                 icon={<TotalIcon />}
+                tooltip={`All leads captured ${scopeLabel}, all time.`}
               />
               <StatCard
                 label="This Week"
                 value={thisWeekLeads}
                 icon={<WeekIcon />}
+                tooltip={`Leads captured since Sunday, ${scopeLabel}.`}
               />
               <StatCard
                 label="This Month"
                 value={thisMonthLeads}
                 icon={<MonthIcon />}
                 trend={monthTrend}
+                tooltip={`Leads captured so far this calendar month, ${scopeLabel}. The arrow compares this to all of last month.`}
               />
             </div>
+
+            {/* View stat cards 2×2 */}
+            <h2 className="mb-3 text-sm font-bold text-base-content">Views</h2>
+            {viewsError && (
+              <div className="alert alert-error mb-4">
+                <span>{viewsError}</span>
+              </div>
+            )}
+            {viewsLoading ? (
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="skeleton h-28 w-full rounded-2xl" />
+                ))}
+              </div>
+            ) : (
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <StatCard
+                  label="Today"
+                  value={todayViews}
+                  icon={<TodayIcon />}
+                  tooltip={`E-card views today, ${scopeLabel}.`}
+                />
+                <StatCard
+                  label="Total"
+                  value={totalViews}
+                  icon={<TotalIcon />}
+                  tooltip={`All e-card views ${scopeLabel}, all time.`}
+                />
+                <StatCard
+                  label="This Week"
+                  value={thisWeekViews}
+                  icon={<WeekIcon />}
+                  tooltip={`E-card views since Sunday, ${scopeLabel}.`}
+                />
+                <StatCard
+                  label="This Month"
+                  value={thisMonthViews}
+                  icon={<MonthIcon />}
+                  trend={viewsTrend}
+                  tooltip={`E-card views so far this calendar month, ${scopeLabel}. The arrow compares this to all of last month.`}
+                />
+              </div>
+            )}
 
             {/* Chart */}
             {filteredLeads.length > 0 ? (
               <div className="mb-4 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
                 {/* Toggle */}
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-base-content">
-                    Lead Activity
-                  </h2>
+                  <div className="flex items-center gap-1">
+                    <h2 className="text-sm font-semibold text-base-content">
+                      Lead Activity
+                    </h2>
+                    <button
+                      type="button"
+                      className="tooltip tooltip-top -m-2 flex items-center justify-center rounded-full p-2 active:bg-base-200"
+                      data-tip={`Number of leads captured per ${chartView === "monthly" ? "month" : "day"}, ${scopeLabel}. Use the toggle to switch between monthly and weekly (last 7 days) view.`}
+                      aria-label="About Lead Activity"
+                    >
+                      <Info className="h-3.5 w-3.5 text-base-content/40" aria-hidden="true" />
+                    </button>
+                  </div>
                   <div className="flex rounded-xl bg-base-200 p-1">
                     <button
                       type="button"

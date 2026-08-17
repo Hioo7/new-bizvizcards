@@ -79,6 +79,53 @@ describe('EcardsController', () => {
     });
   });
 
+  describe('getMineTotalViews', () => {
+    it("resolves the caller's own ecard and returns its all-time total views", async () => {
+      const getByAccountId = jest.fn().mockResolvedValue({ id: 'customer-1' });
+      const getById = jest
+        .fn()
+        .mockResolvedValue({ id: 'ecard-1', customerId: 'customer-1' });
+      const getTotalViews = jest.fn().mockResolvedValue(42);
+      const controller = new EcardsController(
+        { getById } as unknown as EcardsService,
+        { getByAccountId } as unknown as CustomersService,
+        { getTotalViews } as unknown as EcardAnalyticsService,
+        {} as unknown as EcardGoogleWalletService,
+        {} as unknown as EcardAppleWalletService,
+      );
+
+      const result = await controller.getMineTotalViews(
+        makeRequest(),
+        'ecard-1',
+      );
+
+      expect(getByAccountId).toHaveBeenCalledWith('account-1');
+      expect(getById).toHaveBeenCalledWith('ecard-1');
+      expect(getTotalViews).toHaveBeenCalledWith('ecard-1');
+      expect(result).toEqual({ totalViews: 42 });
+    });
+
+    it('throws NotFoundException when the ecard belongs to a different customer', async () => {
+      const getByAccountId = jest.fn().mockResolvedValue({ id: 'customer-1' });
+      const getById = jest
+        .fn()
+        .mockResolvedValue({ id: 'ecard-1', customerId: 'someone-else' });
+      const getTotalViews = jest.fn();
+      const controller = new EcardsController(
+        { getById } as unknown as EcardsService,
+        { getByAccountId } as unknown as CustomersService,
+        { getTotalViews } as unknown as EcardAnalyticsService,
+        {} as unknown as EcardGoogleWalletService,
+        {} as unknown as EcardAppleWalletService,
+      );
+
+      await expect(
+        controller.getMineTotalViews(makeRequest(), 'ecard-1'),
+      ).rejects.toThrow(NotFoundException);
+      expect(getTotalViews).not.toHaveBeenCalled();
+    });
+  });
+
   describe('googleWalletMine', () => {
     it("builds a save URL for the caller's own ecard and records a WALLET_SAVE event", async () => {
       const getByAccountId = jest.fn().mockResolvedValue({ id: 'customer-1' });

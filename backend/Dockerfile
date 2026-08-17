@@ -23,6 +23,16 @@ RUN npm run build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+# Alpine ships with no fonts and no fontconfig at all. sharp's SVG text
+# rendering (used by VirtualBackgroundComposerService to draw the caption
+# under the QR code) depends on fontconfig finding an installed font for the
+# "Arial, sans-serif" family — without this, fontconfig has no config file
+# and Pango silently renders every glyph as blank, which is invisible on a
+# dev machine's own OS fonts but reproduces every time in this container.
+# font-liberation provides Liberation Sans, a metric-compatible Arial
+# substitute, so it matches the family requested in
+# virtual-backgrounds.constants.ts.
+RUN apk add --no-cache fontconfig font-liberation && fc-cache -f
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/src ./src

@@ -74,6 +74,19 @@ export class EcardsController {
     return this.ecardAnalyticsService.getSummary(card.id, query);
   }
 
+  @Get('me/:ecardId/analytics/total-views')
+  async getMineTotalViews(
+    @Req() request: CustomerAuthenticatedRequest,
+    @Param('ecardId') ecardId: string,
+  ) {
+    const customer = await this.customersService.getByAccountId(
+      request.customerSession.user.id,
+    );
+    const card = await this.getOwnedCardOrThrow(ecardId, customer.id);
+    const totalViews = await this.ecardAnalyticsService.getTotalViews(card.id);
+    return { totalViews };
+  }
+
   @Get('me/:ecardId/wallet/google')
   async googleWalletMine(
     @Req() request: CustomerAuthenticatedRequest,

@@ -2,6 +2,7 @@ import { ECARD_MULTIPART_DATA_FIELD } from "@config/ecardFields";
 import { ECARD_ENDPOINTS } from "@config/api";
 import { apiRequest } from "@services/apiClient";
 import type { Ecard, EcardImageUpload, EcardPayload } from "@app-types/ecard";
+import type { EcardAnalyticsSummary } from "@app-types/ecardAnalytics";
 
 function buildFormData(
   payload: EcardPayload,
@@ -48,4 +49,22 @@ export function getCustomerEcardGoogleWalletUrl(
   id: string,
 ): Promise<{ url: string }> {
   return apiRequest<{ url: string }>(ECARD_ENDPOINTS.googleWallet(id));
+}
+
+export function getCustomerEcardAnalytics(
+  id: string,
+  range: { from: string; to: string },
+): Promise<EcardAnalyticsSummary> {
+  const params = new URLSearchParams(range);
+  return apiRequest<EcardAnalyticsSummary>(
+    `${ECARD_ENDPOINTS.analytics(id)}?${params}`,
+  );
+}
+
+export function getCustomerEcardTotalViews(
+  id: string,
+): Promise<{ totalViews: number }> {
+  return apiRequest<{ totalViews: number }>(
+    ECARD_ENDPOINTS.analyticsTotalViews(id),
+  );
 }

@@ -135,6 +135,39 @@ describe('EcardAnalyticsService (integration, TEST_DATABASE_URL only)', () => {
     });
   });
 
+  describe('getTotalViews', () => {
+    it('counts all VIEW events for the ecard regardless of date', async () => {
+      const ecardId = await seedEcard();
+      await seedEvent(ecardId, ECardEventType.VIEW, daysAgo(400));
+      await seedEvent(ecardId, ECardEventType.VIEW, daysAgo(10));
+      await seedEvent(ecardId, ECardEventType.VIEW, new Date());
+
+      const totalViews = await service.getTotalViews(ecardId);
+
+      expect(totalViews).toBe(3);
+    });
+
+    it('excludes non-VIEW events and events belonging to a different ecard', async () => {
+      const ecardId = await seedEcard();
+      const otherEcardId = await seedEcard();
+      await seedEvent(ecardId, ECardEventType.VIEW, new Date());
+      await seedEvent(ecardId, ECardEventType.WALLET_SAVE, new Date());
+      await seedEvent(otherEcardId, ECardEventType.VIEW, new Date());
+
+      const totalViews = await service.getTotalViews(ecardId);
+
+      expect(totalViews).toBe(1);
+    });
+
+    it('returns 0 for an ecard with no events', async () => {
+      const ecardId = await seedEcard();
+
+      const totalViews = await service.getTotalViews(ecardId);
+
+      expect(totalViews).toBe(0);
+    });
+  });
+
   describe('getSummary', () => {
     it('returns zero totals and an all-zero bucket series for an ecard with no events', async () => {
       const ecardId = await seedEcard();

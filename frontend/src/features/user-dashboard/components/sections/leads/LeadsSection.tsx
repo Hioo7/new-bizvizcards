@@ -5,10 +5,7 @@ import type {
   CreateLeadPayload,
   UpdateLeadPayload,
 } from "@features/user-dashboard/types";
-import {
-  RECENT_LEADS_MAX,
-  LEADS_FOLDERS_PREVIEW_MAX,
-} from "@features/user-dashboard/config";
+import { RECENT_LEADS_MAX } from "@features/user-dashboard/config";
 import LeadCard from "./LeadCard";
 import FolderCard from "./FolderCard";
 import CreateLeadModal from "./CreateLeadModal";
@@ -56,6 +53,7 @@ export default function LeadsSection({
   const [activeTab, setActiveTab] = useState<ActiveTab>("leads");
   const [searchQuery, setSearchQuery] = useState("");
   const [folderFilterId, setFolderFilterId] = useState<string | null>(null);
+  const [showAllLeads, setShowAllLeads] = useState(false);
   const [showFolderDropdown, setShowFolderDropdown] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
@@ -91,12 +89,14 @@ export default function LeadsSection({
 
   function handleFolderSelect(id: string) {
     setFolderFilterId(id);
+    setShowAllLeads(false);
     setShowFolderDropdown(false);
     setActiveTab("leads");
   }
 
   function handleClearFolderFilter() {
     setFolderFilterId(null);
+    setShowAllLeads(false);
     setShowFolderDropdown(false);
   }
 
@@ -353,7 +353,10 @@ export default function LeadsSection({
         <div className="mb-4 flex border-b border-base-300">
           <button
             type="button"
-            onClick={() => setActiveTab("folders")}
+            onClick={() => {
+              setActiveTab("folders");
+              setShowAllLeads(false);
+            }}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
               activeTab === "folders"
                 ? "border-primary text-primary"
@@ -486,58 +489,9 @@ export default function LeadsSection({
             )}
           </div>
         ) : /* ── Leads tab ───────────────────────────────────────────── */
-        folderFilterId === null ? (
-          /* Combined dashboard: folders snippet + recent leads */
+        folderFilterId === null && !showAllLeads ? (
+          /* Default Leads tab view: recent leads only (folders live on the Folders tab) */
           <div className="space-y-6">
-            {/* Folders snippet */}
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-base-content">Folders</h2>
-                {folders.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("folders")}
-                    className="text-xs font-medium text-primary"
-                  >
-                    View all
-                  </button>
-                )}
-              </div>
-              {folders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <p className="text-sm text-base-content/50">No folders yet</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateFolderModal(true)}
-                    className="mt-2 text-xs font-medium text-primary"
-                  >
-                    Create a folder
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {folders.slice(0, LEADS_FOLDERS_PREVIEW_MAX).map((folder) => (
-                    <FolderCard
-                      key={folder.id}
-                      folder={folder}
-                      leadCount={
-                        leads.filter((l) => l.folderId === folder.id).length
-                      }
-                      isDefault={defaultFolderId === folder.id}
-                      onClick={() => handleFolderSelect(folder.id)}
-                      onSetDefault={() =>
-                        onSetDefaultFolder(
-                          folder.id === defaultFolderId ? null : folder.id,
-                        )
-                      }
-                      onRename={() => setRenamingFolder(folder)}
-                      onDelete={() => setDeletingFolder(folder)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Recent leads snippet */}
             <div>
               <div className="mb-3 flex items-center justify-between">
@@ -548,6 +502,7 @@ export default function LeadsSection({
                   {leads.length > RECENT_LEADS_MAX && (
                     <button
                       type="button"
+                      onClick={() => setShowAllLeads(true)}
                       className="text-xs font-medium text-primary"
                     >
                       View all
@@ -614,11 +569,13 @@ export default function LeadsSection({
             </div>
           </div>
         ) : (
-          /* Filtered by folder */
+          /* Filtered by folder, or full "All Leads" list */
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-bold text-base-content">
-                Leads in &ldquo;{selectedFolder?.name}&rdquo;
+                {selectedFolder
+                  ? `Leads in “${selectedFolder.name}”`
+                  : "All Leads"}
               </h2>
               <div className="flex items-center gap-2">
                 {allFilteredLeads.length > 0 && (
@@ -659,7 +616,7 @@ export default function LeadsSection({
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-base-content/60">
-                  No leads in this folder
+                  {selectedFolder ? "No leads in this folder" : "No leads found"}
                 </p>
                 <p className="mt-1 text-xs text-base-content/40">
                   Tap &ldquo;Add Lead&rdquo; above to add one here
