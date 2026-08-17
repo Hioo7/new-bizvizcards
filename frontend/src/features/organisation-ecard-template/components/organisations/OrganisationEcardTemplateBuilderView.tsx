@@ -267,6 +267,9 @@ export default function OrganisationEcardTemplateBuilderView({
         editingComponent={editingComponent}
         organisationId={organisationId}
         teamScope={teamPickerScope}
+        // A template isn't owned by any specific customer, so there's no
+        // "self" to exclude from the team picker here.
+        currentCustomerId={null}
         heroPhone={builder.state.hero}
         videoSchema={organisationEcardTemplateVideoSheetSchema}
         whatsappSchema={organisationEcardTemplateWhatsappSheetSchema}

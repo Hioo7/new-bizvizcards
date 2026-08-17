@@ -31,6 +31,9 @@ interface ComponentEditSheetRouterProps {
   editingComponent: BuilderComponent | undefined;
   organisationId: string | null;
   teamScope: OrganisationMembersScope;
+  /** The customer who owns the card being edited — passed through to the
+   * Team component so they can't add themselves as their own teammate. */
+  currentCustomerId: string | null;
   heroPhone: Pick<EcardHeroDraft, "phoneCountryDialCode" | "phoneNumber">;
   onClose: () => void;
   onSave: (draft: ComponentDraft) => void;
@@ -47,6 +50,7 @@ export default function ComponentEditSheetRouter({
   editingComponent,
   organisationId,
   teamScope,
+  currentCustomerId,
   heroPhone,
   onClose,
   onSave,
@@ -121,6 +125,7 @@ export default function ComponentEditSheetRouter({
           open
           organisationId={organisationId}
           scope={teamScope}
+          currentCustomerId={currentCustomerId}
           draft={draft}
           isSubmitting={false}
           error={null}

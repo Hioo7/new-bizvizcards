@@ -340,6 +340,7 @@ export default function EcardBuilderView() {
         editingComponent={editingComponent}
         organisationId={builder.state.hero.organisationId}
         teamScope="employee"
+        currentCustomerId={customerId ?? null}
         heroPhone={builder.state.hero}
         onClose={() => setEditing(null)}
         onSave={(draft) => {

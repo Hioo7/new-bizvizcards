@@ -10,6 +10,10 @@ interface TeamMemberPickerModalProps {
   open: boolean;
   organisationId: string | null;
   scope: OrganisationMembersScope;
+  /** The customer building/owning this card — excluded from the pickable
+   * list, since adding yourself as your own teammate doesn't make sense
+   * outside of an organisation's own branding policy. */
+  currentCustomerId: string | null;
   selectedIds: string[];
   onClose: () => void;
   onConfirm: (memberIds: string[]) => void;
@@ -19,15 +23,17 @@ export default function TeamMemberPickerModal({
   open,
   organisationId,
   scope,
+  currentCustomerId,
   selectedIds,
   onClose,
   onConfirm,
 }: TeamMemberPickerModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const { members, isLoading, error } = useOrganisationMembers(
+  const { members: allMembers, isLoading, error } = useOrganisationMembers(
     organisationId,
     scope,
   );
+  const members = allMembers.filter((member) => member.customerId !== currentCustomerId);
   const [picked, setPicked] = useState<string[]>(selectedIds);
   const [prevOpen, setPrevOpen] = useState(open);
 
@@ -90,21 +96,33 @@ export default function TeamMemberPickerModal({
           )}
           {members.map((member) => {
             const isChecked = picked.includes(member.id);
+            const hasLinkedEcard = member.linkedEcard !== null;
             return (
               <button
                 key={member.id}
                 type="button"
-                onClick={() => toggle(member.id)}
-                className="flex w-full items-center gap-3 rounded-field px-3 py-2.5 text-left hover:bg-base-200"
+                disabled={!hasLinkedEcard}
+                onClick={() => hasLinkedEcard && toggle(member.id)}
+                className="flex w-full items-center gap-3 rounded-field px-3 py-2.5 text-left hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-base-100"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-base-300 text-base-content/60">
-                  <User className="h-4 w-4" />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-300 text-base-content/60">
+                  {member.linkedEcard?.photoUrl ? (
+                    <img
+                      src={member.linkedEcard.photoUrl}
+                      alt={member.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-base-content">
                     {member.name}
                   </p>
-                  <p className="truncate text-xs text-base-content/50">{member.email}</p>
+                  <p className="truncate text-xs text-base-content/50">
+                    {hasLinkedEcard ? member.email : "No e-card linked to this organisation"}
+                  </p>
                 </div>
                 <span
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${

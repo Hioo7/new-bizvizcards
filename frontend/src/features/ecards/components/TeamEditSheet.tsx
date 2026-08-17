@@ -13,6 +13,7 @@ interface TeamEditSheetProps {
   open: boolean;
   organisationId: string | null;
   scope: OrganisationMembersScope;
+  currentCustomerId: string | null;
   draft: TeamComponentDraft;
   isSubmitting: boolean;
   error: string | null;
@@ -24,6 +25,7 @@ export default function TeamEditSheet({
   open,
   organisationId,
   scope,
+  currentCustomerId,
   draft,
   isSubmitting,
   error,
@@ -86,8 +88,16 @@ export default function TeamEditSheet({
                 key={member.id}
                 className="flex items-center gap-3 rounded-field border border-base-300 bg-base-200 px-3 py-2"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-base-300 text-base-content/60">
-                  <User className="h-4 w-4" />
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-300 text-base-content/60">
+                  {member.linkedEcard?.photoUrl ? (
+                    <img
+                      src={member.linkedEcard.photoUrl}
+                      alt={member.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-base-content">
@@ -120,6 +130,7 @@ export default function TeamEditSheet({
         open={isPickerOpen}
         organisationId={organisationId}
         scope={scope}
+        currentCustomerId={currentCustomerId}
         selectedIds={memberIds}
         onClose={() => setIsPickerOpen(false)}
         onConfirm={(ids) => {

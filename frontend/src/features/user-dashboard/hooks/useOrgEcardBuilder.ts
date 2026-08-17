@@ -122,6 +122,9 @@ function draftToOrgComponent(
 export interface UseOrgEcardBuilderResult {
   state: EcardBuilderState;
   setState: (updater: (state: EcardBuilderState) => EcardBuilderState) => void;
+  /** The customer who owns this e-card (the org member being edited) — not
+   * the SPOC/admin driving this builder. */
+  customerId: string | null;
   loading: boolean;
   loadError: string | null;
   isSaving: boolean;
@@ -209,5 +212,14 @@ export function useOrgEcardBuilder(
     }
   }, [orgEcard, organisationId, ecardId, state]);
 
-  return { state, setState, loading, loadError, isSaving, saveError, save };
+  return {
+    state,
+    setState,
+    customerId: orgEcard?.customerId ?? null,
+    loading,
+    loadError,
+    isSaving,
+    saveError,
+    save,
+  };
 }

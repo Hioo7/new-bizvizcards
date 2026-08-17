@@ -1,55 +1,42 @@
-import { Download, Mail, Phone, UserRound } from "lucide-react";
-import { ecardVCardUrl } from "@services/publicEcardService";
+import { UserRound } from "lucide-react";
+import { ecardPublicPath } from "@config/routes";
 import type { EcardTeamComponent, EcardTeamMember } from "@app-types/ecard";
 
 interface TeamSectionProps {
   component: EcardTeamComponent;
 }
 
-function TeamMemberRow({ member }: { member: EcardTeamMember }) {
-  const hasPhone = member.phoneCountryDialCode && member.phoneNumber;
+function TeamMemberAvatar({ member }: { member: EcardTeamMember }) {
+  const { ecardEndpoint } = member;
+  const avatarInner = member.photoUrl ? (
+    <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
+  ) : (
+    <UserRound className="h-6 w-6" />
+  );
+
+  if (!ecardEndpoint) {
+    return (
+      <div
+        className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-200 text-base-content/50 opacity-50"
+        title={member.name}
+      >
+        {avatarInner}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-base-300/60 last:border-b-0">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-200 text-base-content/50">
-        {member.photoUrl ? (
-          <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
-        ) : (
-          <UserRound className="h-5 w-5" />
-        )}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{member.name}</p>
-        <p className="truncate text-xs text-base-content/60">{member.email}</p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        {hasPhone && (
-          <a
-            href={`tel:+${member.phoneCountryDialCode}${member.phoneNumber}`}
-            aria-label={`Call ${member.name}`}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/15 text-green-400 hover:bg-green-500/25"
-          >
-            <Phone className="h-4 w-4" />
-          </a>
-        )}
-        <a
-          href={`mailto:${member.email}`}
-          aria-label={`Email ${member.name}`}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/15 text-blue-400 hover:bg-blue-500/25"
-        >
-          <Mail className="h-4 w-4" />
-        </a>
-        {member.ecardEndpoint && (
-          <a
-            href={ecardVCardUrl(member.ecardEndpoint)}
-            aria-label={`Save ${member.name}'s contact`}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25"
-          >
-            <Download className="h-4 w-4" />
-          </a>
-        )}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={() =>
+        window.open(ecardPublicPath(ecardEndpoint), "_blank", "noopener,noreferrer")
+      }
+      title={member.name}
+      aria-label={`Open ${member.name}'s e-card`}
+      className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-200 text-base-content/50 transition hover:ring-2 hover:ring-primary/50 active:scale-95"
+    >
+      {avatarInner}
+    </button>
   );
 }
 
@@ -59,9 +46,9 @@ export function TeamSection({ component }: TeamSectionProps) {
   return (
     <div className="w-full rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
       <h3 className="mb-2 text-xl font-semibold break-words">{component.title || "Team"}</h3>
-      <div>
+      <div className="flex flex-nowrap justify-center-safe gap-4 overflow-x-auto pb-1">
         {component.members.map((member) => (
-          <TeamMemberRow key={member.organisationMemberId} member={member} />
+          <TeamMemberAvatar key={member.organisationMemberId} member={member} />
         ))}
       </div>
     </div>

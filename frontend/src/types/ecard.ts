@@ -210,6 +210,7 @@ export interface OrganisationMemberLinkedEcard {
   id: string;
   endpoint: string;
   heroName: string;
+  photoUrl: string | null;
 }
 
 export interface OrganisationMemberSummary {

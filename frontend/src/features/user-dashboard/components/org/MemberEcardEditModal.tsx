@@ -233,6 +233,7 @@ export default function MemberEcardEditModal({
         editingComponent={editingComponent}
         organisationId={builder.state.hero.organisationId}
         teamScope="customer"
+        currentCustomerId={builder.customerId}
         heroPhone={builder.state.hero}
         onClose={() => setEditing(null)}
         onSave={(draft) => {

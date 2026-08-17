@@ -35,6 +35,7 @@ type EditingTarget = { kind: "hero" } | { kind: "component"; key: string } | nul
 interface CustomerEcardBuilderSheetProps {
   open: boolean;
   existingEcard: Ecard | null;
+  currentCustomerId: string | null;
   prefillName: string;
   prefillEmail: string;
   onClose: () => void;
@@ -44,6 +45,7 @@ interface CustomerEcardBuilderSheetProps {
 export default function CustomerEcardBuilderSheet({
   open,
   existingEcard,
+  currentCustomerId,
   prefillName,
   prefillEmail,
   onClose,
@@ -301,6 +303,7 @@ export default function CustomerEcardBuilderSheet({
         editingComponent={editingComponent}
         organisationId={builder.state.hero.organisationId}
         teamScope="customer"
+        currentCustomerId={currentCustomerId}
         heroPhone={builder.state.hero}
         onClose={() => setEditing(null)}
         onSave={(draft) => {

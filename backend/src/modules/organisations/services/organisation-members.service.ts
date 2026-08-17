@@ -23,6 +23,7 @@ export interface OrganisationMemberLinkedEcard {
   endpoint: string;
   heroName: string;
   isExchangeContactEnabled: boolean;
+  photoUrl: string | null;
 }
 
 export interface OrganisationMemberListItem {
@@ -73,6 +74,7 @@ export class OrganisationMembersService {
                 endpoint: true,
                 heroName: true,
                 isExchangeContactEnabled: true,
+                heroProfilePhoto: true,
               },
             },
           },
@@ -81,19 +83,32 @@ export class OrganisationMembersService {
       orderBy: { joinedAt: 'asc' },
     });
 
-    return members.map((member) => ({
-      id: member.id,
-      customerId: member.customerId,
-      name: member.customer.account.name,
-      email: member.customer.account.email,
-      role: member.role,
-      status: member.status,
-      joinedAt: member.joinedAt,
-      profilePicture: member.customer.pfpMedia
-        ? this.mediaService.getPublicUrl(member.customer.pfpMedia)
-        : null,
-      linkedEcard: member.customer.ecards[0] ?? null,
-    }));
+    return members.map((member) => {
+      const orgCard = member.customer.ecards[0] ?? null;
+      return {
+        id: member.id,
+        customerId: member.customerId,
+        name: member.customer.account.name,
+        email: member.customer.account.email,
+        role: member.role,
+        status: member.status,
+        joinedAt: member.joinedAt,
+        profilePicture: member.customer.pfpMedia
+          ? this.mediaService.getPublicUrl(member.customer.pfpMedia)
+          : null,
+        linkedEcard: orgCard
+          ? {
+              id: orgCard.id,
+              endpoint: orgCard.endpoint,
+              heroName: orgCard.heroName,
+              isExchangeContactEnabled: orgCard.isExchangeContactEnabled,
+              photoUrl: orgCard.heroProfilePhoto
+                ? this.mediaService.getPublicUrl(orgCard.heroProfilePhoto)
+                : null,
+            }
+          : null,
+      };
+    });
   }
 
   async update(

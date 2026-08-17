@@ -185,6 +185,20 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const memberMembership = await prisma.organisationMember.create({
         data: { organisationId: organisation.id, customerId: member.id },
       });
+      // Team members must have an e-card linked to the shared organisation to
+      // be eligible for the TEAM component (assertTeamMembersEligible).
+      await service.createForCustomer(
+        member.id,
+        {
+          endpoint: `team-mate-${randomUUID()}`,
+          heroName: 'Team Mate',
+          heroEmail: 'team-mate@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [],
+        },
+        [],
+      );
 
       const created = await service.createForCustomer(
         customer.id,
@@ -498,6 +512,99 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       );
     });
 
+    it('rejects a TEAM member who belongs to the organisation but has no e-card linked to it', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const owner = await seedCustomer('Owner');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: owner.id },
+      });
+
+      const noCardMember = await seedCustomer('No Card Mate');
+      const noCardMembership = await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: noCardMember.id },
+      });
+
+      await expect(
+        service.createForCustomer(
+          owner.id,
+          {
+            endpoint: `no-ecard-${randomUUID()}`,
+            heroName: 'Owner',
+            heroEmail: 'owner@example.com',
+            isExchangeContactEnabled: true,
+            organisationId: organisation.id,
+            components: [
+              {
+                type: 'TEAM',
+                members: [{ organisationMemberId: noCardMembership.id }],
+              },
+            ],
+          },
+          [],
+        ),
+      ).rejects.toThrow(
+        'One or more team members do not have an e-card linked to this organisation',
+      );
+    });
+
+    it('accepts a TEAM member who has an e-card linked to the shared organisation', async () => {
+      const { organisation } = await seedOrgWithSpoc();
+      const owner = await seedCustomer('Owner');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: owner.id },
+      });
+
+      const eligibleMember = await seedCustomer('Eligible Mate');
+      const eligibleMembership = await prisma.organisationMember.create({
+        data: {
+          organisationId: organisation.id,
+          customerId: eligibleMember.id,
+        },
+      });
+      await service.createForCustomer(
+        eligibleMember.id,
+        {
+          endpoint: `eligible-${randomUUID()}`,
+          heroName: 'Eligible Mate',
+          heroEmail: 'eligible@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          heroProfilePhoto: { action: 'upload' },
+          components: [],
+        },
+        [makeFile('heroProfilePhoto')],
+      );
+
+      const created = await service.createForCustomer(
+        owner.id,
+        {
+          endpoint: `has-ecard-${randomUUID()}`,
+          heroName: 'Owner',
+          heroEmail: 'owner@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: organisation.id,
+          components: [
+            {
+              type: 'TEAM',
+              members: [{ organisationMemberId: eligibleMembership.id }],
+            },
+          ],
+        },
+        [],
+      );
+
+      const team = created.components.find((c) => c.type === 'TEAM');
+      expect(team?.members).toEqual([
+        expect.objectContaining({
+          organisationMemberId: eligibleMembership.id,
+        }),
+      ]);
+      // The avatar comes from the linked e-card's own hero photo, not any
+      // account-level profile picture.
+      expect(team?.members[0]?.photoUrl).toContain('/media/test-bucket/');
+      expect(team?.members[0]?.ecardEndpoint).toMatch(/^eligible-/);
+    });
+
     it('rejects tagging a card to an organisation the customer does not belong to', async () => {
       const { organisation } = await seedOrgWithSpoc();
       const outsider = await seedCustomer('Outsider');
@@ -533,10 +640,34 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const membershipA = await prisma.organisationMember.create({
         data: { organisationId: orgA.id, customerId: memberOfA.id },
       });
+      await service.createForCustomer(
+        memberOfA.id,
+        {
+          endpoint: `member-of-a-${randomUUID()}`,
+          heroName: 'Member of A',
+          heroEmail: 'member-of-a@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: orgA.id,
+          components: [],
+        },
+        [],
+      );
       const memberOfB = await seedCustomer('Member of B');
       const membershipB = await prisma.organisationMember.create({
         data: { organisationId: orgB.id, customerId: memberOfB.id },
       });
+      await service.createForCustomer(
+        memberOfB.id,
+        {
+          endpoint: `member-of-b-${randomUUID()}`,
+          heroName: 'Member of B',
+          heroEmail: 'member-of-b@example.com',
+          isExchangeContactEnabled: true,
+          organisationId: orgB.id,
+          components: [],
+        },
+        [],
+      );
 
       const cardForA = await service.createForCustomer(
         owner.id,
@@ -776,7 +907,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
   });
 
   describe('team member resolution via organisationId', () => {
-    it("resolves a colleague's org-tagged card for phone/endpoint, omitting them if untagged", async () => {
+    it("resolves a colleague's org-tagged card for phone/endpoint, and rejects a colleague whose card isn't tagged to the shared organisation", async () => {
       const { organisation } = await seedOrgWithSpoc();
       const owner = await seedCustomer('Owner');
       await prisma.organisationMember.create({
@@ -846,10 +977,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           components: [
             {
               type: 'TEAM',
-              members: [
-                { organisationMemberId: taggedMembership.id },
-                { organisationMemberId: untaggedMembership.id },
-              ],
+              members: [{ organisationMemberId: taggedMembership.id }],
             },
           ],
         },
@@ -860,19 +988,35 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       const taggedResult = team?.members.find(
         (m) => m.organisationMemberId === taggedMembership.id,
       );
-      const untaggedResult = team?.members.find(
-        (m) => m.organisationMemberId === untaggedMembership.id,
-      );
       expect(taggedResult).toMatchObject({
         phoneCountryDialCode: '91',
         phoneNumber: '9111111111',
       });
       expect(taggedResult?.ecardEndpoint).toMatch(/^tagged-/);
-      expect(untaggedResult).toMatchObject({
-        phoneCountryDialCode: null,
-        phoneNumber: null,
-        ecardEndpoint: null,
-      });
+
+      // Untagged Mate has an e-card, but it isn't linked to this
+      // organisation — assertTeamMembersEligible must reject them.
+      await expect(
+        service.updateById(
+          ownerCard.id,
+          {
+            endpoint: ownerCard.endpoint,
+            heroName: ownerCard.hero.name,
+            heroEmail: ownerCard.hero.email,
+            isExchangeContactEnabled: true,
+            organisationId: organisation.id,
+            components: [
+              {
+                type: 'TEAM',
+                members: [{ organisationMemberId: untaggedMembership.id }],
+              },
+            ],
+          },
+          [],
+        ),
+      ).rejects.toThrow(
+        'One or more team members do not have an e-card linked to this organisation',
+      );
     });
   });
 

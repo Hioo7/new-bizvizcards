@@ -60,6 +60,7 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
       prisma,
       organisationsService,
       planEnforcementService,
+      mediaService,
     );
   });
 
@@ -173,6 +174,39 @@ describe('OrganisationMembersService (integration, TEST_DATABASE_URL only)', () 
       expect(
         roster.find((m) => m.customerId === member.id)?.linkedEcard,
       ).toMatchObject({ id: ecard.id, endpoint: ecard.endpoint });
+    });
+
+    it("resolves linkedEcard.photoUrl from the member's org-linked e-card, not their account picture", async () => {
+      const { spoc, organisation } = await seedOrgWithSpoc();
+      const member = await seedCustomer('Member One');
+      await prisma.organisationMember.create({
+        data: { organisationId: organisation.id, customerId: member.id },
+      });
+      const media = await prisma.media.create({
+        data: {
+          id: randomUUID(),
+          source: MediaSource.MINIO,
+          storageKey: `team-picker-${randomUUID()}.png`,
+          originalName: 'photo.png',
+          extension: 'png',
+        },
+      });
+      await prisma.eCard.create({
+        data: {
+          customerId: member.id,
+          organisationId: organisation.id,
+          endpoint: `linked-photo-${randomUUID()}`,
+          heroName: 'Member One',
+          heroEmail: 'member-one-photo@example.com',
+          heroProfilePhotoMediaId: media.id,
+        },
+      });
+
+      const roster = await service.list(spoc.id, organisation.id);
+      const linked = roster.find(
+        (m) => m.customerId === member.id,
+      )?.linkedEcard;
+      expect(linked?.photoUrl).toBe(`/media/test-bucket/${media.storageKey}`);
     });
   });
 

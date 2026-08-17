@@ -35,6 +35,7 @@ export default function ProfileSection({
   } | null>(null);
   const [phone, setPhone] = useState<string | undefined>(undefined);
   const [dialCode, setDialCode] = useState<string | undefined>(undefined);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const org = useOrganisation();
   const customerEcards = useCustomerEcards();
   const { canInstall, triggerInstall } = usePWAInstall();
@@ -45,6 +46,7 @@ export default function ProfileSection({
       .then((p) => {
         setPhone(p.phoneNumber ?? undefined);
         setDialCode(p.phoneCountryDialCode ?? undefined);
+        setCustomerId(p.id);
       })
       .catch(() => { /* keep existing */ });
   }, []);
@@ -150,6 +152,7 @@ export default function ProfileSection({
         key={builderEcard?.id ?? "new"}
         open={builderOpen}
         existingEcard={builderEcard}
+        currentCustomerId={customerId}
         prefillName={user.name}
         prefillEmail={user.email}
         onClose={() => setBuilderOpen(false)}

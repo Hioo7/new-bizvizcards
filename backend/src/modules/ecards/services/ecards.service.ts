@@ -96,17 +96,20 @@ const FULL_INCLUDE = {
                   customer: {
                     include: {
                       account: { select: { name: true, email: true } },
-                      pfpMedia: true,
                       // Every card this teammate owns — the org-tagged one
                       // (if any) is picked out at read time in
                       // teamMemberToResponse, since a customer can now own
-                      // more than one.
+                      // more than one. The avatar shown for a teammate comes
+                      // from that org-tagged card's own hero photo, not the
+                      // customer's account-level profile picture, since the
+                      // team component links to a specific e-card.
                       ecards: {
                         select: {
                           endpoint: true,
                           phoneCountryDialCode: true,
                           phoneNumber: true,
                           organisationId: true,
+                          heroProfilePhoto: true,
                         },
                       },
                     },
@@ -521,7 +524,7 @@ export class EcardsService {
       (component) => component.type === 'TEAM',
     );
     if (teamComponent) {
-      await this.assertTeamMembersBelongToOwnerOrganisation(
+      await this.assertTeamMembersEligible(
         dto.organisationId ?? null,
         teamComponent.members.map((member) => member.organisationMemberId),
       );
@@ -693,7 +696,7 @@ export class EcardsService {
       (component) => component.type === 'TEAM',
     );
     if (teamComponent) {
-      await this.assertTeamMembersBelongToOwnerOrganisation(
+      await this.assertTeamMembersEligible(
         dto.organisationId ?? existing.organisationId,
         teamComponent.members.map((member) => member.organisationMemberId),
       );
@@ -1145,7 +1148,7 @@ export class EcardsService {
     }
   }
 
-  private async assertTeamMembersBelongToOwnerOrganisation(
+  private async assertTeamMembersEligible(
     organisationId: string | null,
     organisationMemberIds: string[],
   ): Promise<void> {
@@ -1158,15 +1161,32 @@ export class EcardsService {
       );
     }
     const uniqueIds = new Set(organisationMemberIds);
-    const validCount = await this.prisma.organisationMember.count({
-      where: {
-        id: { in: [...uniqueIds] },
-        organisationId,
+    const members = await this.prisma.organisationMember.findMany({
+      where: { id: { in: [...uniqueIds] }, organisationId },
+      select: {
+        id: true,
+        customer: {
+          select: {
+            ecards: {
+              where: { organisationId },
+              select: { id: true },
+              take: 1,
+            },
+          },
+        },
       },
     });
-    if (validCount !== uniqueIds.size) {
+    if (members.length !== uniqueIds.size) {
       throw new BadRequestException(
         "One or more team members do not belong to this card's organisation",
+      );
+    }
+    const hasIneligibleMember = members.some(
+      (member) => member.customer.ecards.length === 0,
+    );
+    if (hasIneligibleMember) {
+      throw new BadRequestException(
+        'One or more team members do not have an e-card linked to this organisation',
       );
     }
   }
@@ -1392,8 +1412,8 @@ export class EcardsService {
       organisationMemberId: member.organisationMemberId,
       name: customer.account.name,
       email: customer.account.email,
-      photoUrl: customer.pfpMedia
-        ? this.mediaService.getPublicUrl(customer.pfpMedia)
+      photoUrl: orgCard?.heroProfilePhoto
+        ? this.mediaService.getPublicUrl(orgCard.heroProfilePhoto)
         : null,
       phoneCountryDialCode: orgCard?.phoneCountryDialCode ?? null,
       phoneNumber: orgCard?.phoneNumber ?? null,
