@@ -24,17 +24,6 @@ import { ECARD_MAX_PER_CUSTOMER } from '../ecards.constants';
 import { EcardsService } from './ecards.service';
 
 const EMPTY_COMPONENTS: CreateEcardDto['components'] = [];
-const EMPTY_UPDATE_COMPONENTS: UpdateEcardDto['components'] = [];
-
-// Zod infers the OUTPUT type for CreateEcardDto/UpdateEcardDto (defaults filled
-// in). Tests pass raw partial objects, so we cast with this helper to avoid
-// having to repeat the Zod-default fields in every test fixture.
-function asCreateDto(dto: Record<string, unknown>): CreateEcardDto {
-  return dto as unknown as CreateEcardDto;
-}
-function asUpdateDto(dto: Record<string, unknown>): UpdateEcardDto {
-  return dto as unknown as UpdateEcardDto;
-}
 
 class FakeMediaStorageProvider implements MediaStorageProvider {
   deletedKeys: string[] = [];

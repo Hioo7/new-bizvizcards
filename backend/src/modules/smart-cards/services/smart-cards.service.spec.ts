@@ -312,7 +312,9 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
       const updated = await service.update(
         SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE,
         created.id,
-        { profile: { companyName: 'Acme', logoShape: 'RECTANGLE' } } as unknown as UpdateSmartCardDto,
+        {
+          profile: { companyName: 'Acme', logoShape: 'RECTANGLE' },
+        } as unknown as UpdateSmartCardDto,
         [],
       );
 
