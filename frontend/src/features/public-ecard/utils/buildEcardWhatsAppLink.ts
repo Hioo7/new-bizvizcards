@@ -7,6 +7,6 @@ export function buildEcardWhatsAppLink(
   heroName: string,
 ): string {
   const digits = `${dialCode}${phoneNumber}`.replace(/\D/g, "");
-  const message = `Hello ${heroName}, got your contact from bizvizCards.com`;
+  const message = `Hi ${heroName}, I'm interested in getting a BizVizCards NFC card. Can you help me with the purchase?`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
