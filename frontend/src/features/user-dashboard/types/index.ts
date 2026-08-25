@@ -357,6 +357,25 @@ export interface UpdateLeadReminderPayload {
   status?: ReminderStatus;
 }
 
+// ── Ecard Analytics ───────────────────────────────────────────────────────────
+
+export interface EcardDailyBucket {
+  date: string;
+  views: number;
+  walletSaves: number;
+  contactSaves: number;
+  exchangeContacts: number;
+}
+
+export interface AggregatedEcardAnalytics {
+  totalViews: number;
+  totalWalletSaves: number;
+  totalContactSaves: number;
+  totalExchangeContacts: number;
+  averageViewDurationMs: number | null;
+  dailyCounts: EcardDailyBucket[];
+}
+
 // ── Shop / Products ─────────────────────────────────────────────────────────
 
 export type ShopProductType = "STANDALONE" | "VARIANT_BASED";
