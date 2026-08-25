@@ -226,7 +226,7 @@
 }
 
 .animate-ticker {
-  animation: ticker 60s linear infinite;
+  animation: ticker 22s linear infinite;
   will-change: transform;
   backface-visibility: hidden;
 }
