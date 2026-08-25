@@ -4,9 +4,9 @@ import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { LeadExportService } from './lead-export.service';
 
-async function readRows(buffer: Buffer): Promise<Record<string, unknown>[]> {
+async function readRows(buffer: Buffer<ArrayBufferLike>): Promise<Record<string, unknown>[]> {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  await workbook.xlsx.load(buffer as unknown as Parameters<typeof workbook.xlsx.load>[0]);
   const worksheet = workbook.getWorksheet('Leads')!;
   const headerRow = worksheet.getRow(1).values as unknown[];
   const rows: Record<string, unknown>[] = [];

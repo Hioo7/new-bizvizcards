@@ -51,3 +51,5 @@ export const CART_ITEM_MAX_QUANTITY = 99;
 export const ADDRESSES_MAX = 5;
 
 export const LEADS_EXPORT_UNCATEGORISED_LABEL = "Uncategorised";
+
+export const ECARD_ANALYTICS_DAYS = 30;

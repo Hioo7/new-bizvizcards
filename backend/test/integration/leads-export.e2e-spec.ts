@@ -134,7 +134,7 @@ describe('POST /api/leads/export (e2e, TEST_DATABASE_URL only)', () => {
     );
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(response.body as Buffer);
+    await workbook.xlsx.load(response.body as unknown as Parameters<typeof workbook.xlsx.load>[0]);
     const worksheet = workbook.getWorksheet('Leads')!;
     expect(worksheet.getRow(2).getCell('A').value).toBe('Alice');
   });
@@ -154,7 +154,7 @@ describe('POST /api/leads/export (e2e, TEST_DATABASE_URL only)', () => {
       .expect(200);
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(response.body as Buffer);
+    await workbook.xlsx.load(response.body as unknown as Parameters<typeof workbook.xlsx.load>[0]);
     const worksheet = workbook.getWorksheet('Leads')!;
     expect(worksheet.rowCount).toBe(2); // header + 1 owned lead
     expect(worksheet.getRow(2).getCell('A').value).toBe('Own Lead');

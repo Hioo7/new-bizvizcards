@@ -102,7 +102,7 @@ function EcardFooter({ whatsappHref }: EcardFooterProps) {
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             bizvizcards
           </a>
@@ -116,7 +116,7 @@ function EcardFooter({ whatsappHref }: EcardFooterProps) {
           href="https://blueticksinnovations.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary hover:underline"
+          className="text-primary underline"
         >
           blueticksinnovations.com
         </a>

@@ -14,5 +14,6 @@ const prisma = new PrismaClient({
 export const auth = createCustomerAuth({
   secret: process.env.BETTER_AUTH_CUSTOMER_SECRET!,
   baseUrl: process.env.BETTER_AUTH_URL!,
+  trustedFrontendOrigins: [],
   prisma,
 });

@@ -218,15 +218,17 @@
 /* Legacy eCard "Intro Scroller" marquee (see cardone.template/template.tsx). */
 @keyframes ticker {
   0% {
-    transform: translateX(100%);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
 .animate-ticker {
-  animation: ticker 25s linear infinite;
+  animation: ticker 60s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 body {

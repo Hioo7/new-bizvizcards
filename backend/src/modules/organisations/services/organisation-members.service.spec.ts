@@ -24,6 +24,11 @@ class FakeMediaStorageProvider implements MediaStorageProvider {
     return Promise.resolve();
   }
 
+  download(key: string): Promise<Buffer> {
+    void key;
+    return Promise.resolve(Buffer.alloc(0));
+  }
+
   getPublicUrl(key: string): string {
     return `/media/test-bucket/${key}`;
   }

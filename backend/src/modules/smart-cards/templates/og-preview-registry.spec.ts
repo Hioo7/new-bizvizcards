@@ -1,4 +1,7 @@
-import { SmartCardTemplateKey } from '../../../generated/prisma/client';
+import {
+  SmartCardLogoShape,
+  SmartCardTemplateKey,
+} from '../../../generated/prisma/client';
 import type { PublicSmartCard } from '../services/smart-cards.service';
 import {
   OG_PREVIEW_FALLBACK_TITLE,
@@ -40,6 +43,7 @@ describe('ogPreviewFieldsRegistry', () => {
         aboutText: null,
         logoMediaId: 'media-id',
         logoUrl: '/media/bucket/logo.png',
+        logoShape: SmartCardLogoShape.CIRCLE,
       });
 
       const fields = ogPreviewFieldsRegistry[card.templateKey](card);
@@ -59,6 +63,7 @@ describe('ogPreviewFieldsRegistry', () => {
         aboutText: null,
         logoMediaId: null,
         logoUrl: null,
+        logoShape: SmartCardLogoShape.CIRCLE,
       });
 
       const fields = ogPreviewFieldsRegistry[card.templateKey](card);
@@ -74,6 +79,7 @@ describe('ogPreviewFieldsRegistry', () => {
         aboutText: null,
         logoMediaId: null,
         logoUrl: null,
+        logoShape: SmartCardLogoShape.CIRCLE,
       });
 
       const fields = ogPreviewFieldsRegistry[card.templateKey](card);
@@ -92,6 +98,7 @@ describe('ogPreviewFieldsRegistry', () => {
         aboutText: null,
         logoMediaId: null,
         logoUrl: null,
+        logoShape: SmartCardLogoShape.CIRCLE,
       });
 
       const fields = ogPreviewFieldsRegistry[card.templateKey](card);

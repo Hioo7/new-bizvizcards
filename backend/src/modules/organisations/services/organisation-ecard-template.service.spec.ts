@@ -27,6 +27,11 @@ class FakeMediaStorageProvider implements MediaStorageProvider {
     return Promise.resolve();
   }
 
+  download(key: string): Promise<Buffer> {
+    void key;
+    return Promise.resolve(Buffer.alloc(0));
+  }
+
   getPublicUrl(key: string): string {
     return `/media/test-bucket/${key}`;
   }
@@ -92,6 +97,7 @@ describe('OrganisationEcardTemplateService (integration, TEST_DATABASE_URL only)
       mediaService,
       new MediaSlotResolverService(mediaService),
       organisationsService,
+      planEnforcementService,
     );
   });
 

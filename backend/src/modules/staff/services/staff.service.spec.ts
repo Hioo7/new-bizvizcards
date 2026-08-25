@@ -62,6 +62,7 @@ describe('StaffService (integration, TEST_DATABASE_URL only)', () => {
     auth = createEmployeeAuth({
       secret: 'a'.repeat(32),
       baseUrl: 'http://localhost:3000',
+      trustedFrontendOrigins: [],
       prisma,
       otpSender,
     });

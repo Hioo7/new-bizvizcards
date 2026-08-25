@@ -57,10 +57,17 @@ export function AboutSection({ component }: AboutSectionProps) {
 
       {tickerText && (
         <div className="mt-2 w-full overflow-hidden rounded-2xl border border-base-300 bg-secondary p-2 shadow-xl">
-          <div className="flex animate-ticker whitespace-nowrap">
-            {Array.from({ length: TICKER_REPEAT_COUNT }).map((_, idx) => (
-              <span key={idx} className="px-1 text-sm opacity-70">
-                {tickerText}
+          <div className="flex w-max animate-ticker">
+            {[0, 1].map((groupIdx) => (
+              <span
+                key={groupIdx}
+                aria-hidden={groupIdx === 1}
+                className="whitespace-nowrap pr-12 text-sm opacity-70"
+              >
+                {Array.from({ length: TICKER_REPEAT_COUNT })
+                  .map(() => tickerText)
+                  .join(" \u2022 ")}
+                {" \u2022"}
               </span>
             ))}
           </div>
