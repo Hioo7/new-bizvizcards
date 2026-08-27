@@ -222,12 +222,48 @@ async function backfillLocationReviewTestimonialsAvailability(): Promise<void> {
   );
 }
 
+// Backfills an ABOUT_US EcardComponentAvailability row onto every existing
+// EcardPolicy missing one — same retrofit reasoning as the functions above.
+// Seeded as available — ABOUT_US is a basic feature available to all plans.
+async function backfillAboutUsAvailability(): Promise<void> {
+  const ecardPolicies = await prisma.ecardPolicy.findMany({
+    where: {
+      componentAvailabilities: {
+        none: { type: ECardComponentType.ABOUT_US },
+      },
+    },
+    select: { id: true },
+  });
+
+  if (ecardPolicies.length === 0) {
+    console.log(
+      'No EcardPolicy rows are missing an ABOUT_US availability row; skipping.',
+    );
+    return;
+  }
+
+  for (const ecardPolicy of ecardPolicies) {
+    await prisma.ecardComponentAvailability.create({
+      data: {
+        ecardPolicyId: ecardPolicy.id,
+        type: ECardComponentType.ABOUT_US,
+        isAvailable: true,
+      },
+    });
+  }
+
+  console.log(
+    `Backfilled ABOUT_US availability for ${ecardPolicies.length} EcardPolicy row(s).`,
+  );
+}
+
 async function main() {
   await backfillEventPolicy();
   await backfillEmailSignaturePolicy();
   await backfillAccentColorPresets();
   await backfillVideoGalleryAvailability();
   await backfillLocationReviewTestimonialsAvailability();
+  await backfillAboutUsAvailability();
 }
 
 main()

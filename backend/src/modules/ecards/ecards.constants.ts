@@ -14,10 +14,10 @@ export const ECARD_PHONE_NUMBER_MIN_DIGITS = 7;
 export const ECARD_PHONE_NUMBER_MAX_DIGITS = 15;
 export const ECARD_PHONE_NUMBER_DIGITS_REGEX = /^\d+$/;
 
-// One instance of each ECardComponentType per card (ABOUT, SOCIAL_LINKS,
-// GALLERY, VIDEO, VIDEO_GALLERY, TEAM, WHATSAPP, BROCHURE, LOCATION_TILE,
-// REVIEW_LINK, TESTIMONIALS) — see ECardComponent.@@unique([ecardId, type]).
-export const ECARD_MAX_COMPONENTS = 11;
+// One instance of each ECardComponentType per card (ABOUT, ABOUT_US,
+// SOCIAL_LINKS, GALLERY, VIDEO, VIDEO_GALLERY, TEAM, WHATSAPP, BROCHURE,
+// LOCATION_TILE, REVIEW_LINK, TESTIMONIALS) — see ECardComponent.@@unique([ecardId, type]).
+export const ECARD_MAX_COMPONENTS = 12;
 export const ECARD_MAX_SUB_GALLERIES = 10;
 export const ECARD_MAX_GALLERY_IMAGES = 30;
 export const ECARD_MAX_VIDEO_SUB_GALLERIES = 10;

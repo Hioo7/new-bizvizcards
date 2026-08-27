@@ -94,6 +94,7 @@ export interface Lead {
   stage?: OpportunityStage | null;
   folderId?: string | null;
   ecardId: string | null;
+  seenAt: string | null;
   createdAt: string;
   updatedAt: string;
   formAnswers?: LeadFormAnswer[];

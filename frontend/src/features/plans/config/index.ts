@@ -10,6 +10,7 @@ export const PLAN_SUBSCRIPTION_DURATION_MAX_MONTHS = 60;
 
 export const ECARD_COMPONENT_TYPES = [
   "ABOUT",
+  "ABOUT_US",
   "SOCIAL_LINKS",
   "GALLERY",
   "VIDEO",
@@ -27,6 +28,7 @@ export const ECARD_COMPONENT_LABELS: Record<
   string
 > = {
   ABOUT: "About",
+  ABOUT_US: "About Us",
   SOCIAL_LINKS: "Social links",
   GALLERY: "Gallery",
   VIDEO: "Video",

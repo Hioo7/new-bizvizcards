@@ -29,6 +29,7 @@ const FULL_INCLUDE = {
     orderBy: { order: 'asc' as const },
     include: {
       about: true,
+      aboutUs: true,
       socialLinks: true,
       video: true,
       whatsapp: true,
@@ -111,6 +112,12 @@ export interface OrganisationEcardTemplateAboutComponentResponse extends Organis
   shortNote: string | null;
   description: string | null;
   aboutMe: string | null;
+}
+
+export interface OrganisationEcardTemplateAboutUsComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
+  type: typeof ECardComponentType.ABOUT_US;
+  tagline: string | null;
+  content: string | null;
 }
 
 export interface OrganisationEcardTemplateSocialLinksComponentResponse extends OrganisationEcardTemplateComponentResponseBase {
@@ -217,6 +224,7 @@ export interface OrganisationEcardTemplateTestimonialsComponentResponse extends 
 
 export type OrganisationEcardTemplateComponentResponse =
   | OrganisationEcardTemplateAboutComponentResponse
+  | OrganisationEcardTemplateAboutUsComponentResponse
   | OrganisationEcardTemplateSocialLinksComponentResponse
   | OrganisationEcardTemplateVideoComponentResponse
   | OrganisationEcardTemplateGalleryComponentResponse
@@ -549,6 +557,15 @@ export class OrganisationEcardTemplateService {
           },
         });
         return;
+      case 'ABOUT_US':
+        await tx.organisationEcardTemplateAboutUsComponent.create({
+          data: {
+            templateComponentId,
+            tagline: component.tagline,
+            content: component.content,
+          },
+        });
+        return;
       case 'SOCIAL_LINKS':
         await tx.organisationEcardTemplateSocialLinksComponent.create({
           data: {
@@ -833,6 +850,13 @@ export class OrganisationEcardTemplateService {
           shortNote: component.about?.shortNote ?? null,
           description: component.about?.description ?? null,
           aboutMe: component.about?.aboutMe ?? null,
+        };
+      case ECardComponentType.ABOUT_US:
+        return {
+          ...base,
+          type: ECardComponentType.ABOUT_US,
+          tagline: component.aboutUs?.tagline ?? null,
+          content: component.aboutUs?.content ?? null,
         };
       case ECardComponentType.SOCIAL_LINKS:
         return {

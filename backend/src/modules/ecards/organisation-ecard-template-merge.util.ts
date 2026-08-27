@@ -228,6 +228,13 @@ function templateComponentToCardComponent(
         description: templateComponent.description,
         aboutMe: templateComponent.aboutMe,
       };
+    case ECardComponentType.ABOUT_US:
+      return {
+        ...base,
+        type: ECardComponentType.ABOUT_US,
+        tagline: templateComponent.tagline,
+        content: templateComponent.content,
+      };
     case ECardComponentType.SOCIAL_LINKS:
       return {
         ...base,

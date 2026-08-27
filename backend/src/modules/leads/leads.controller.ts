@@ -54,6 +54,25 @@ export class LeadsController {
     return this.leadsService.list(customer.id, query);
   }
 
+  @Get('unseen-count')
+  async getUnseenCount(@Req() request: CustomerAuthenticatedRequest) {
+    const customer = await this.customersService.getByAccountId(
+      request.customerSession.user.id,
+    );
+    return this.leadsService.getUnseenCount(customer.id);
+  }
+
+  @Post('mark-seen')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async markAllSeen(
+    @Req() request: CustomerAuthenticatedRequest,
+  ): Promise<void> {
+    const customer = await this.customersService.getByAccountId(
+      request.customerSession.user.id,
+    );
+    await this.leadsService.markAllSeen(customer.id);
+  }
+
   @Get(':id')
   async getById(
     @Req() request: CustomerAuthenticatedRequest,

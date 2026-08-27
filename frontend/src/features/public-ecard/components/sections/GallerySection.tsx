@@ -56,10 +56,10 @@ function SubGalleryItem({ subGallery }: { subGallery: EcardSubGallery }) {
 
 export function GallerySection({ component }: GallerySectionProps) {
   return (
-    <>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
       {component.subGalleries.map((subGallery) => (
         <SubGalleryItem key={subGallery.id} subGallery={subGallery} />
       ))}
-    </>
+    </div>
   );
 }

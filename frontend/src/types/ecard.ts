@@ -50,6 +50,12 @@ export interface EcardAboutComponent extends EcardComponentBase {
   aboutMe: string | null;
 }
 
+export interface EcardAboutUsComponent extends EcardComponentBase {
+  type: "ABOUT_US";
+  tagline: string | null;
+  content: string | null;
+}
+
 export interface EcardSocialLinksComponent extends EcardComponentBase {
   type: "SOCIAL_LINKS";
   website: string | null;
@@ -154,6 +160,7 @@ export interface EcardTestimonialsComponent extends EcardComponentBase {
 
 export type EcardComponent =
   | EcardAboutComponent
+  | EcardAboutUsComponent
   | EcardSocialLinksComponent
   | EcardVideoComponent
   | EcardGalleryComponent
@@ -237,6 +244,12 @@ export interface EcardAboutComponentPayload {
   shortNote?: string;
   description?: string;
   aboutMe?: string;
+}
+
+export interface EcardAboutUsComponentPayload {
+  type: "ABOUT_US";
+  tagline?: string;
+  content?: string;
 }
 
 export interface EcardSocialLinksComponentPayload {
@@ -327,6 +340,7 @@ export interface EcardTestimonialsComponentPayload {
 
 export type EcardComponentPayload =
   | EcardAboutComponentPayload
+  | EcardAboutUsComponentPayload
   | EcardSocialLinksComponentPayload
   | EcardVideoComponentPayload
   | EcardGalleryComponentPayload

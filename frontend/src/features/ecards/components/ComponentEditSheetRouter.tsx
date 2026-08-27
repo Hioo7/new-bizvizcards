@@ -1,5 +1,6 @@
 import type { ZodType } from "zod";
 import AboutEditSheet from "@features/ecards/components/AboutEditSheet";
+import AboutUsEditSheet from "@features/ecards/components/AboutUsEditSheet";
 import SocialLinksEditSheet from "@features/ecards/components/SocialLinksEditSheet";
 import VideoEditSheet from "@features/ecards/components/VideoEditSheet";
 import GalleryEditSheet from "@features/ecards/components/GalleryEditSheet";
@@ -66,6 +67,17 @@ export default function ComponentEditSheetRouter({
     case "ABOUT":
       return (
         <AboutEditSheet
+          open
+          draft={draft}
+          isSubmitting={false}
+          error={null}
+          onClose={onClose}
+          onSave={onSave}
+        />
+      );
+    case "ABOUT_US":
+      return (
+        <AboutUsEditSheet
           open
           draft={draft}
           isSubmitting={false}

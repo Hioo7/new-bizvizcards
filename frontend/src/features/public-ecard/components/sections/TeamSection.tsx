@@ -9,7 +9,7 @@ interface TeamSectionProps {
 function TeamMemberAvatar({ member }: { member: EcardTeamMember }) {
   const { ecardEndpoint } = member;
   const avatarInner = member.photoUrl ? (
-    <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
+    <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover object-top" />
   ) : (
     <UserRound className="h-8 w-8" />
   );
@@ -17,7 +17,7 @@ function TeamMemberAvatar({ member }: { member: EcardTeamMember }) {
   if (!ecardEndpoint) {
     return (
       <div
-        className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-200 text-base-content/50 opacity-50"
+        className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-base-300 bg-base-200 text-base-content/50 opacity-50"
         title={member.name}
       >
         {avatarInner}
@@ -33,7 +33,7 @@ function TeamMemberAvatar({ member }: { member: EcardTeamMember }) {
       }
       title={member.name}
       aria-label={`Open ${member.name}'s e-card`}
-      className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-base-200 text-base-content/50 transition hover:ring-2 hover:ring-primary/50 active:scale-95"
+      className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-base-300 bg-base-200 text-base-content/50 transition hover:border-primary/50 active:scale-95"
     >
       {avatarInner}
     </button>

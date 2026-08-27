@@ -1,5 +1,6 @@
 enum ECardComponentType {
   ABOUT
+  ABOUT_US
   SOCIAL_LINKS
   GALLERY
   VIDEO
@@ -144,6 +145,7 @@ model ECardComponent {
   updatedAt DateTime           @updatedAt
 
   about        ECardAboutComponent?
+  aboutUs      ECardAboutUsComponent?
   socialLinks  ECardSocialLinksComponent?
   gallery      ECardGalleryComponent?
   video        ECardVideoComponent?
@@ -170,6 +172,16 @@ model ECardAboutComponent {
   aboutMe     String?
 
   @@map("ECardAboutComponent")
+}
+
+model ECardAboutUsComponent {
+  ecardComponentId String         @id @db.Uuid
+  ecardComponent   ECardComponent @relation(fields: [ecardComponentId], references: [id], onDelete: Cascade)
+
+  tagline String?
+  content String?
+
+  @@map("ECardAboutUsComponent")
 }
 
 model ECardSocialLinksComponent {

@@ -83,6 +83,14 @@ export class UserDashboardService {
     });
   }
 
+  async getUnseenLeadsCount(): Promise<{ count: number }> {
+    return apiRequest<{ count: number }>(DASHBOARD_API.leadsUnseenCount);
+  }
+
+  async markLeadsSeen(): Promise<void> {
+    await apiRequest<void>(DASHBOARD_API.leadsMarkSeen, { method: "POST" });
+  }
+
   async exportLeads(leadIds: string[]): Promise<Blob> {
     return apiRequestBlob(DASHBOARD_API.leadsExport, {
       method: "POST",

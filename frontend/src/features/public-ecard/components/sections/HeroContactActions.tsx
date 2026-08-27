@@ -1,10 +1,14 @@
 import { Download, UserRoundPlus } from "lucide-react";
 import { ecardVCardUrl } from "@services/publicEcardService";
+import { SocialLinksSection } from "@features/public-ecard/components/sections/SocialLinksSection";
+import type { ECardIconShape, EcardSocialLinksComponent } from "@app-types/ecard";
 
 interface HeroContactActionsProps {
   endpoint: string;
   canExchangeContact: boolean;
   onExchangeContact: () => void;
+  socialLinksComponent?: EcardSocialLinksComponent;
+  iconShape?: ECardIconShape;
 }
 
 // Extracted from the Default Hero layout — the "Exchange contact" /
@@ -13,6 +17,8 @@ export function HeroContactActions({
   endpoint,
   canExchangeContact,
   onExchangeContact,
+  socialLinksComponent,
+  iconShape,
 }: HeroContactActionsProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -37,6 +43,11 @@ export function HeroContactActions({
           Save <span className="text-primary">contact</span>
         </h2>
       </a>
+      {socialLinksComponent && iconShape && (
+        <div className="hidden md:block">
+          <SocialLinksSection component={socialLinksComponent} iconShape={iconShape} />
+        </div>
+      )}
     </div>
   );
 }

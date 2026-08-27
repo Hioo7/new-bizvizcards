@@ -1,5 +1,5 @@
 import { UserRound } from "lucide-react";
-import type { EcardHero } from "@app-types/ecard";
+import type { ECardIconShape, EcardHero, EcardSocialLinksComponent } from "@app-types/ecard";
 import { HeroShareButton } from "@features/public-ecard/components/sections/HeroShareButton";
 import { HeroContactActions } from "@features/public-ecard/components/sections/HeroContactActions";
 
@@ -8,6 +8,8 @@ interface HeroSectionProps {
   endpoint: string;
   canExchangeContact: boolean;
   onExchangeContact: () => void;
+  socialLinksComponent?: EcardSocialLinksComponent;
+  iconShape?: ECardIconShape;
 }
 
 export function HeroSection({
@@ -15,6 +17,8 @@ export function HeroSection({
   endpoint,
   canExchangeContact,
   onExchangeContact,
+  socialLinksComponent,
+  iconShape,
 }: HeroSectionProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -49,6 +53,8 @@ export function HeroSection({
         endpoint={endpoint}
         canExchangeContact={canExchangeContact}
         onExchangeContact={onExchangeContact}
+        socialLinksComponent={socialLinksComponent}
+        iconShape={iconShape}
       />
     </div>
   );

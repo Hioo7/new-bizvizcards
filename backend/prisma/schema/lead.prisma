@@ -72,6 +72,10 @@ model Lead {
   locationLatitude  Float?
   locationLongitude Float?
 
+  // Null means the customer has never opened/acknowledged this lead —
+  // used to power the notifications badge and unseen-leads list.
+  seenAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

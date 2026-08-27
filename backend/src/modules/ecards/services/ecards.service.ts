@@ -54,6 +54,7 @@ const FULL_INCLUDE = {
     orderBy: { order: 'asc' as const },
     include: {
       about: true,
+      aboutUs: true,
       socialLinks: true,
       video: true,
       whatsapp: true,
@@ -143,6 +144,12 @@ export interface EcardAboutComponentResponse extends EcardComponentResponseBase 
   shortNote: string | null;
   description: string | null;
   aboutMe: string | null;
+}
+
+export interface EcardAboutUsComponentResponse extends EcardComponentResponseBase {
+  type: typeof ECardComponentType.ABOUT_US;
+  tagline: string | null;
+  content: string | null;
 }
 
 export interface EcardSocialLinksComponentResponse extends EcardComponentResponseBase {
@@ -249,6 +256,7 @@ export interface EcardTestimonialsComponentResponse extends EcardComponentRespon
 
 export type EcardComponentResponse =
   | EcardAboutComponentResponse
+  | EcardAboutUsComponentResponse
   | EcardSocialLinksComponentResponse
   | EcardVideoComponentResponse
   | EcardGalleryComponentResponse
@@ -875,6 +883,15 @@ export class EcardsService {
           },
         });
         return;
+      case 'ABOUT_US':
+        await tx.eCardAboutUsComponent.create({
+          data: {
+            ecardComponentId,
+            tagline: component.tagline,
+            content: component.content,
+          },
+        });
+        return;
       case 'SOCIAL_LINKS':
         await tx.eCardSocialLinksComponent.create({
           data: {
@@ -1295,6 +1312,13 @@ export class EcardsService {
           shortNote: component.about?.shortNote ?? null,
           description: component.about?.description ?? null,
           aboutMe: component.about?.aboutMe ?? null,
+        };
+      case ECardComponentType.ABOUT_US:
+        return {
+          ...base,
+          type: ECardComponentType.ABOUT_US,
+          tagline: component.aboutUs?.tagline ?? null,
+          content: component.aboutUs?.content ?? null,
         };
       case ECardComponentType.SOCIAL_LINKS:
         return {

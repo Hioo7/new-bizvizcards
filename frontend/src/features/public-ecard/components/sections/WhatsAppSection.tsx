@@ -25,12 +25,12 @@ export function WhatsAppSection({ component, heroName }: WhatsAppSectionProps) {
       className="block w-full rounded-2xl border border-base-300 bg-base-100 px-6 pb-6 shadow-xl"
     >
       <img src={whatsAppDecorativeIcon} alt="" className="block h-10 w-auto" />
-      <p className="mt-2 text-3xl font-normal leading-tight md:text-5xl">
+      <p className="mt-2 flex flex-wrap items-center gap-3 text-3xl font-normal leading-tight md:text-5xl">
         Connect with me on
-      </p>
-      <p className="mt-1 flex items-center gap-3 text-3xl font-normal leading-tight text-primary md:text-5xl">
-        WhatsApp
-        <img src={whatsAppLogo} alt="WhatsApp" className="h-10 w-10" />
+        <span className="flex items-center gap-3 text-primary">
+          WhatsApp
+          <img src={whatsAppLogo} alt="WhatsApp" className="h-10 w-10" />
+        </span>
       </p>
     </a>
   );

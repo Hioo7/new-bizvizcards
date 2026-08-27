@@ -3,6 +3,7 @@ import { updateImageSlotSchema } from '../../../common/validators/image-slot.dto
 import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
 import { ECARD_MAX_COMPONENTS } from '../ecards.constants';
 import { ecardAboutComponentSchema } from './components/about.dto';
+import { ecardAboutUsComponentSchema } from './components/about-us.dto';
 import { updateEcardBrochureComponentSchema } from './components/brochure.dto';
 import { updateEcardGalleryComponentSchema } from './components/gallery.dto';
 import { ecardLocationTileComponentSchema } from './components/location-tile.dto';
@@ -22,6 +23,7 @@ import {
 
 const updateEcardComponentSchema = z.discriminatedUnion('type', [
   ecardAboutComponentSchema,
+  ecardAboutUsComponentSchema,
   ecardSocialLinksComponentSchema,
   updateEcardGalleryComponentSchema,
   ecardVideoComponentSchema,

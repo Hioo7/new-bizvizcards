@@ -2,6 +2,8 @@ export const DASHBOARD_API = {
   leads: "/api/leads",
   lead: (id: string) => `/api/leads/${id}`,
   leadsExport: "/api/leads/export",
+  leadsUnseenCount: "/api/leads/unseen-count",
+  leadsMarkSeen: "/api/leads/mark-seen",
   leadFolders: "/api/lead-folders",
   leadFolder: (id: string) => `/api/lead-folders/${id}`,
   leadFolderDefault: "/api/lead-folders/default",

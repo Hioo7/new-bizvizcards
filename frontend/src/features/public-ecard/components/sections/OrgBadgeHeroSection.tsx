@@ -1,5 +1,5 @@
 import { UserRound } from "lucide-react";
-import type { EcardHero } from "@app-types/ecard";
+import type { ECardIconShape, EcardHero, EcardSocialLinksComponent } from "@app-types/ecard";
 import { HeroShareButton } from "@features/public-ecard/components/sections/HeroShareButton";
 import { HeroContactActions } from "@features/public-ecard/components/sections/HeroContactActions";
 
@@ -8,6 +8,8 @@ interface OrgBadgeHeroSectionProps {
   endpoint: string;
   canExchangeContact: boolean;
   onExchangeContact: () => void;
+  socialLinksComponent?: EcardSocialLinksComponent;
+  iconShape?: ECardIconShape;
 }
 
 // Default layout plus a small circular badge overlapping the profile photo,
@@ -17,6 +19,8 @@ export function OrgBadgeHeroSection({
   endpoint,
   canExchangeContact,
   onExchangeContact,
+  socialLinksComponent,
+  iconShape,
 }: OrgBadgeHeroSectionProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -65,6 +69,8 @@ export function OrgBadgeHeroSection({
         endpoint={endpoint}
         canExchangeContact={canExchangeContact}
         onExchangeContact={onExchangeContact}
+        socialLinksComponent={socialLinksComponent}
+        iconShape={iconShape}
       />
     </div>
   );

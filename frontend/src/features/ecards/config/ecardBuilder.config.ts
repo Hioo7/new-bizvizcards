@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Building2,
   Clapperboard,
   FileText,
   Images,
@@ -21,6 +22,7 @@ import type {
 
 export const ECARD_COMPONENT_TYPES: EcardComponentType[] = [
   "ABOUT",
+  "ABOUT_US",
   "SOCIAL_LINKS",
   "GALLERY",
   "VIDEO",
@@ -46,6 +48,11 @@ export const ECARD_COMPONENT_META: Record<EcardComponentType, EcardComponentMeta
     label: "About / Bio",
     icon: FileText,
     description: "A short bio and about-me text.",
+  },
+  ABOUT_US: {
+    label: "About Us",
+    icon: Building2,
+    description: "A short description about your company or organisation.",
   },
   SOCIAL_LINKS: {
     label: "Social Links",

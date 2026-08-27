@@ -18,7 +18,7 @@ export function deriveOrganisationEcardTemplatePolicySelection(
   const orgEcardPolicy = policy.organisation.orgEcardPolicy;
   return {
     planUnavailableTypes: ECARD_COMPONENT_TYPES.filter(
-      (type) => !orgEcardPolicy.components[type],
+      (type) => orgEcardPolicy.components[type] === false,
     ),
     availableHeroLayouts: orgEcardPolicy.heroLayouts,
     availableThemes: orgEcardPolicy.themes,
