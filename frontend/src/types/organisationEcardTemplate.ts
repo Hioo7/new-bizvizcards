@@ -3,6 +3,7 @@ import type {
   ECardIconShape,
   ECardTheme,
   EcardAboutComponentPayload,
+  EcardAboutUsComponentPayload,
   EcardComponent,
   EcardGalleryComponentPayload,
   EcardImageUpload,
@@ -78,6 +79,7 @@ export interface OrganisationEcardTemplateReviewLinkComponentPayload {
 
 export type OrganisationEcardTemplateComponentPayload =
   | EcardAboutComponentPayload
+  | EcardAboutUsComponentPayload
   | EcardSocialLinksComponentPayload
   | EcardGalleryComponentPayload
   | EcardVideoGalleryComponentPayload

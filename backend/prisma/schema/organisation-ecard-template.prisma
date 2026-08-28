@@ -51,6 +51,7 @@ model OrganisationEcardTemplateComponent {
   updatedAt  DateTime                  @updatedAt
 
   about        OrganisationEcardTemplateAboutComponent?
+  aboutUs      OrganisationEcardTemplateAboutUsComponent?
   socialLinks  OrganisationEcardTemplateSocialLinksComponent?
   gallery      OrganisationEcardTemplateGalleryComponent?
   video        OrganisationEcardTemplateVideoComponent?
@@ -77,6 +78,16 @@ model OrganisationEcardTemplateAboutComponent {
   aboutMe     String?
 
   @@map("OrganisationEcardTemplateAboutComponent")
+}
+
+model OrganisationEcardTemplateAboutUsComponent {
+  templateComponentId String                             @id @db.Uuid
+  templateComponent   OrganisationEcardTemplateComponent @relation(fields: [templateComponentId], references: [id], onDelete: Cascade)
+
+  tagline String?
+  content String?
+
+  @@map("OrganisationEcardTemplateAboutUsComponent")
 }
 
 model OrganisationEcardTemplateSocialLinksComponent {

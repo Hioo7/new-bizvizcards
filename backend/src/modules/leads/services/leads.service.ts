@@ -269,6 +269,20 @@ export class LeadsService {
     });
   }
 
+  async getUnseenCount(customerId: string): Promise<{ count: number }> {
+    const count = await this.prisma.lead.count({
+      where: { customerId, seenAt: null },
+    });
+    return { count };
+  }
+
+  async markAllSeen(customerId: string): Promise<void> {
+    await this.prisma.lead.updateMany({
+      where: { customerId, seenAt: null },
+      data: { seenAt: new Date() },
+    });
+  }
+
   async getById(customerId: string, id: string): Promise<LeadDetailResponse> {
     const lead = await this.findWithFormSubmission(customerId, id);
     return this.toDetailResponse(lead);

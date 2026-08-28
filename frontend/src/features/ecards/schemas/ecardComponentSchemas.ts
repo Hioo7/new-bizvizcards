@@ -56,6 +56,11 @@ export const aboutSheetSchema = z.object({
   aboutMe: z.string().trim().max(ECARD_TEXT_LONG_MAX_LENGTH),
 });
 
+export const aboutUsSheetSchema = z.object({
+  tagline: z.string().trim().max(ECARD_TEXT_SHORT_MAX_LENGTH),
+  content: z.string().trim().max(ECARD_TEXT_LONG_MAX_LENGTH),
+});
+
 const urlOrEmpty = z
   .string()
   .trim()
@@ -138,6 +143,7 @@ export const testimonialsSheetSchema = z.object({
 
 export type HeroSheetValues = z.infer<typeof heroSheetSchema>;
 export type AboutSheetValues = z.infer<typeof aboutSheetSchema>;
+export type AboutUsSheetValues = z.infer<typeof aboutUsSheetSchema>;
 export type SocialLinksSheetValues = z.infer<typeof socialLinksSheetSchema>;
 export type VideoSheetValues = z.infer<typeof videoSheetSchema>;
 export type WhatsAppSheetValues = z.infer<typeof whatsappSheetSchema>;

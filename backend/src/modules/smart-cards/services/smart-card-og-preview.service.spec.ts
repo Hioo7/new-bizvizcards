@@ -1,6 +1,9 @@
 import { AppConfigService } from '../../../common/config/app-config.service';
 import type { MediaService } from '../../../common/media/media.service';
-import { SmartCardTemplateKey } from '../../../generated/prisma/client';
+import {
+  SmartCardLogoShape,
+  SmartCardTemplateKey,
+} from '../../../generated/prisma/client';
 import type { PublicSmartCard } from './smart-cards.service';
 import { SmartCardOgPreviewService } from './smart-card-og-preview.service';
 
@@ -47,6 +50,7 @@ describe('SmartCardOgPreviewService', () => {
         aboutText: null,
         logoMediaId: 'id',
         logoUrl: '/media/bucket/logo.png',
+        logoShape: SmartCardLogoShape.CIRCLE,
       });
 
       const fields = service.buildFields(card);
@@ -62,6 +66,7 @@ describe('SmartCardOgPreviewService', () => {
         aboutText: null,
         logoMediaId: null,
         logoUrl: null,
+        logoShape: SmartCardLogoShape.CIRCLE,
       });
 
       const fields = service.buildFields(card);

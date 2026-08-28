@@ -8,6 +8,7 @@ import {
   ECardTheme,
 } from '../../../generated/prisma/client';
 import { ecardAboutComponentSchema } from '../../ecards/dto/components/about.dto';
+import { ecardAboutUsComponentSchema } from '../../ecards/dto/components/about-us.dto';
 import { updateEcardGalleryComponentSchema } from '../../ecards/dto/components/gallery.dto';
 import { ecardSocialLinksComponentSchema } from '../../ecards/dto/components/social-links.dto';
 import { ecardTeamComponentSchema } from '../../ecards/dto/components/team-member-pick.dto';
@@ -125,6 +126,7 @@ const organisationEcardTemplateReviewLinkComponentSchema = z
 
 const organisationEcardTemplateComponentSchema = z.discriminatedUnion('type', [
   ecardAboutComponentSchema,
+  ecardAboutUsComponentSchema,
   ecardSocialLinksComponentSchema,
   updateEcardGalleryComponentSchema,
   organisationEcardTemplateVideoComponentSchema,

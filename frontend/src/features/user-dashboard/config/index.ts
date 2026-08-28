@@ -2,6 +2,8 @@ export const DASHBOARD_API = {
   leads: "/api/leads",
   lead: (id: string) => `/api/leads/${id}`,
   leadsExport: "/api/leads/export",
+  leadsUnseenCount: "/api/leads/unseen-count",
+  leadsMarkSeen: "/api/leads/mark-seen",
   leadFolders: "/api/lead-folders",
   leadFolder: (id: string) => `/api/lead-folders/${id}`,
   leadFolderDefault: "/api/lead-folders/default",
@@ -51,3 +53,5 @@ export const CART_ITEM_MAX_QUANTITY = 99;
 export const ADDRESSES_MAX = 5;
 
 export const LEADS_EXPORT_UNCATEGORISED_LABEL = "Uncategorised";
+
+export const ECARD_ANALYTICS_DAYS = 30;

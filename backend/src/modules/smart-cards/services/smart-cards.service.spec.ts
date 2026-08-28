@@ -15,6 +15,7 @@ import { PlanEnforcementService } from '../../plans/services/plan-enforcement.se
 import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { SmartCardsService } from './smart-cards.service';
 import type { CreateSmartCardDto } from '../dto/create-smart-card.dto';
+import type { UpdateSmartCardDto } from '../dto/update-smart-card.dto';
 
 class FakeMediaStorageProvider implements MediaStorageProvider {
   uploadedKeys: string[] = [];
@@ -28,6 +29,11 @@ class FakeMediaStorageProvider implements MediaStorageProvider {
   delete(key: string): Promise<void> {
     this.deletedKeys.push(key);
     return Promise.resolve();
+  }
+
+  download(key: string): Promise<Buffer> {
+    void key;
+    return Promise.resolve(Buffer.alloc(0));
   }
 
   getPublicUrl(key: string): string {
@@ -275,7 +281,7 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
         created.id,
         {
           profile: { companyName: 'Acme', logo: { action: 'upload' } },
-        },
+        } as unknown as UpdateSmartCardDto,
         [makeFile('profileLogo')],
       );
 
@@ -306,7 +312,9 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
       const updated = await service.update(
         SmartCardTemplateKey.INTERIOR_DESIGN_TEMPLATE,
         created.id,
-        { profile: { companyName: 'Acme', logoShape: 'RECTANGLE' } },
+        {
+          profile: { companyName: 'Acme', logoShape: 'RECTANGLE' },
+        } as unknown as UpdateSmartCardDto,
         [],
       );
 
@@ -375,7 +383,7 @@ describe('SmartCardsService (integration, TEST_DATABASE_URL only)', () => {
             profile: {
               logo: { action: 'keep', mediaId: randomUUID() },
             },
-          },
+          } as unknown as UpdateSmartCardDto,
           [],
         ),
       ).rejects.toThrow();

@@ -58,6 +58,12 @@ function draftToOrgComponent(
         ...(draft.description.trim() && { description: draft.description.trim() }),
         ...(draft.aboutMe.trim() && { aboutMe: draft.aboutMe.trim() }),
       };
+    case "ABOUT_US":
+      return {
+        type: "ABOUT_US",
+        ...(draft.tagline.trim() && { tagline: draft.tagline.trim() }),
+        ...(draft.content.trim() && { content: draft.content.trim() }),
+      };
     case "WHATSAPP":
       return {
         type: "WHATSAPP",

@@ -273,57 +273,43 @@ describe('SmartCardMigrator', () => {
     expect(recordSuccess).toHaveBeenCalled(); // card itself still succeeds
   });
 
-  const logoShapeCases: [string | null, string][] = [
-    ['circle', 'CIRCLE'],
-    ['rectangle', 'RECTANGLE'],
-    ['free', 'FREEFORM'],
-    [null, 'CIRCLE'],
-    ['some-unrecognized-value', 'CIRCLE'],
-  ];
-
-  it.each(logoShapeCases)(
-    'maps legacy profile.logoShape %s to %s on the created SmartCardProfile',
-    async (legacyLogoShape: string | null, expectedLogoShape: string) => {
-      const profileCreate = jest
-        .fn<Promise<object>, [{ data: { logoShape: string } }]>()
-        .mockResolvedValue({});
-      const transaction = jest
-        .fn()
-        .mockImplementation((fn: (tx: unknown) => Promise<unknown>) => {
-          const tx = {
-            smartCard: {
-              create: jest.fn().mockResolvedValue({ id: 'smart-card-1' }),
-            },
-            smartCardProfile: { create: profileCreate },
-          };
-          return fn(tx);
-        });
-      const { migrator } = createMigrator({
-        findMany: () =>
-          Promise.resolve([
-            legacySmartCard({
-              profile: {
-                smartCardId: 'legacy-smart-card-1',
-                companyName: 'Acme',
-                logoUrl: null,
-                mediaId: null,
-                tagline: null,
-                subTagline: null,
-                aboutText: null,
-                logoShape: legacyLogoShape,
-              },
-            }),
-          ]),
-        transaction,
+  it('always sets logoShape to CIRCLE on the created SmartCardProfile', async () => {
+    const profileCreate = jest
+      .fn<Promise<object>, [{ data: { logoShape: string } }]>()
+      .mockResolvedValue({});
+    const transaction = jest
+      .fn()
+      .mockImplementation((fn: (tx: unknown) => Promise<unknown>) => {
+        const tx = {
+          smartCard: {
+            create: jest.fn().mockResolvedValue({ id: 'smart-card-1' }),
+          },
+          smartCardProfile: { create: profileCreate },
+        };
+        return fn(tx);
       });
+    const { migrator } = createMigrator({
+      findMany: () =>
+        Promise.resolve([
+          legacySmartCard({
+            profile: {
+              smartCardId: 'legacy-smart-card-1',
+              companyName: 'Acme',
+              logoUrl: null,
+              mediaId: null,
+              tagline: null,
+              subTagline: null,
+              aboutText: null,
+            },
+          }),
+        ]),
+      transaction,
+    });
 
-      await migrator.migrate('job-1');
+    await migrator.migrate('job-1');
 
-      expect(profileCreate.mock.calls[0][0].data.logoShape).toBe(
-        expectedLogoShape,
-      );
-    },
-  );
+    expect(profileCreate.mock.calls[0][0].data.logoShape).toBe('CIRCLE');
+  });
 
   it('skips reprocessing and just touches the record when a prior SUCCESS exists', async () => {
     const { migrator, recordSuccess, touchExistingSuccess } = createMigrator({

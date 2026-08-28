@@ -8,12 +8,12 @@ import {
   submitEcardExchangeContact,
 } from "@services/publicEcardService";
 import { useAutoDownloadContact } from "@features/public-ecard/hooks/useAutoDownloadContact";
-import { buildEcardWhatsAppLink } from "@features/public-ecard/utils/buildEcardWhatsAppLink";
 import { HeroSection } from "@features/public-ecard/components/sections/HeroSection";
 import { BannerHeroSection } from "@features/public-ecard/components/sections/BannerHeroSection";
 import { BannerProfileHeroSection } from "@features/public-ecard/components/sections/BannerProfileHeroSection";
 import { OrgBadgeHeroSection } from "@features/public-ecard/components/sections/OrgBadgeHeroSection";
 import { AboutSection } from "@features/public-ecard/components/sections/AboutSection";
+import { AboutUsSection } from "@features/public-ecard/components/sections/AboutUsSection";
 import { SocialLinksSection } from "@features/public-ecard/components/sections/SocialLinksSection";
 import { GallerySection } from "@features/public-ecard/components/sections/GallerySection";
 import { VideoSection } from "@features/public-ecard/components/sections/VideoSection";
@@ -34,18 +34,23 @@ interface HeroProps {
   endpoint: string;
   canExchangeContact: boolean;
   onExchangeContact: () => void;
+  socialLinksComponent?: Extract<EcardComponent, { type: "SOCIAL_LINKS" }>;
 }
 
 function renderHero(props: HeroProps) {
+  const socialLinksProps = {
+    socialLinksComponent: props.socialLinksComponent,
+    iconShape: props.hero.iconShape,
+  };
   switch (props.hero.layout) {
     case "BANNER":
-      return <BannerHeroSection {...props} />;
+      return <BannerHeroSection {...props} {...socialLinksProps} />;
     case "BANNER_PROFILE":
-      return <BannerProfileHeroSection {...props} />;
+      return <BannerProfileHeroSection {...props} {...socialLinksProps} />;
     case "ORG_BADGE":
-      return <OrgBadgeHeroSection {...props} />;
+      return <OrgBadgeHeroSection {...props} {...socialLinksProps} />;
     case "DEFAULT":
-      return <HeroSection {...props} />;
+      return <HeroSection {...props} {...socialLinksProps} />;
   }
 }
 
@@ -57,13 +62,16 @@ function renderComponent(
   switch (component.type) {
     case "ABOUT":
       return <AboutSection key={component.id} component={component} />;
+    case "ABOUT_US":
+      return <AboutUsSection key={component.id} component={component} />;
     case "SOCIAL_LINKS":
       return (
-        <SocialLinksSection
-          key={component.id}
-          component={component}
-          iconShape={iconShape}
-        />
+        <div key={component.id} className="md:hidden">
+          <SocialLinksSection
+            component={component}
+            iconShape={iconShape}
+          />
+        </div>
       );
     case "GALLERY":
       return <GallerySection key={component.id} component={component} />;
@@ -86,29 +94,22 @@ function renderComponent(
   }
 }
 
-interface EcardFooterProps {
-  /** Legacy's "bizvizcards" link reused the eCard's own WhatsApp CTA link —
-   * only available when a WHATSAPP component is configured on this card. */
-  whatsappHref: string | null;
-}
 
-function EcardFooter({ whatsappHref }: EcardFooterProps) {
+const COMPANY_WHATSAPP_HREF = `https://wa.me/916363797685?text=${encodeURIComponent("Hi, interested in your products and services ?")}`;
+
+function EcardFooter() {
   return (
     <footer className="mt-10 text-sm text-base-content/60 text-center px-4 pb-6">
       <p>
         Click here to get yours today{" "}
-        {whatsappHref ? (
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            bizvizcards
-          </a>
-        ) : (
-          <span>bizvizcards</span>
-        )}
+        <a
+          href={COMPANY_WHATSAPP_HREF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline"
+        >
+          bizvizcards
+        </a>
       </p>
       <p>
         Powered by{" "}
@@ -116,7 +117,7 @@ function EcardFooter({ whatsappHref }: EcardFooterProps) {
           href="https://blueticksinnovations.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary hover:underline"
+          className="text-primary underline"
         >
           blueticksinnovations.com
         </a>
@@ -146,17 +147,7 @@ export function EcardRenderer({
 
   useAutoDownloadContact(card);
 
-  const whatsappComponent = card.components.find((c) => c.type === "WHATSAPP");
-  const whatsappHref =
-    whatsappComponent?.type === "WHATSAPP" &&
-    whatsappComponent.phoneCountryDialCode &&
-    whatsappComponent.phoneNumber
-      ? buildEcardWhatsAppLink(
-          whatsappComponent.phoneCountryDialCode,
-          whatsappComponent.phoneNumber,
-          card.hero.name,
-        )
-      : null;
+  const socialLinksComponent = card.components.find((c) => c.type === "SOCIAL_LINKS");
 
   // Card-wide custom hex overrides, applied as CSS custom properties on the
   // root element so every existing `text-base-content`/`text-primary` class
@@ -188,13 +179,14 @@ export function EcardRenderer({
           endpoint: card.endpoint,
           canExchangeContact,
           onExchangeContact: () => setIsExchangeOpen(true),
+          socialLinksComponent: socialLinksComponent?.type === "SOCIAL_LINKS" ? socialLinksComponent : undefined,
         })}
         <div className="mt-6 space-y-2">
           {card.components.map((component) =>
             renderComponent(component, card.hero.name, card.hero.iconShape),
           )}
         </div>
-        <EcardFooter whatsappHref={whatsappHref} />
+        <EcardFooter />
       </div>
 
       {exchangeContactForm ? (

@@ -58,6 +58,12 @@ export interface AboutComponentDraft {
   aboutMe: string;
 }
 
+export interface AboutUsComponentDraft {
+  type: "ABOUT_US";
+  tagline: string;
+  content: string;
+}
+
 export interface SocialLinksComponentDraft {
   type: "SOCIAL_LINKS";
   website: string;
@@ -146,6 +152,7 @@ export interface TestimonialsComponentDraft {
 
 export type ComponentDraft =
   | AboutComponentDraft
+  | AboutUsComponentDraft
   | SocialLinksComponentDraft
   | VideoComponentDraft
   | GalleryComponentDraft
@@ -161,6 +168,8 @@ export function emptyDraftForType(type: ComponentDraft["type"]): ComponentDraft 
   switch (type) {
     case "ABOUT":
       return { type: "ABOUT", profession: "", shortNote: "", description: "", aboutMe: "" };
+    case "ABOUT_US":
+      return { type: "ABOUT_US", tagline: "", content: "" };
     case "SOCIAL_LINKS":
       return {
         type: "SOCIAL_LINKS",

@@ -195,6 +195,12 @@ export function componentToDraft(component: EcardComponent): ComponentDraft {
         description: component.description ?? "",
         aboutMe: component.aboutMe ?? "",
       };
+    case "ABOUT_US":
+      return {
+        type: "ABOUT_US",
+        tagline: component.tagline ?? "",
+        content: component.content ?? "",
+      };
     case "SOCIAL_LINKS":
       return {
         type: "SOCIAL_LINKS",
@@ -314,6 +320,12 @@ function componentDraftToPayload(
         shortNote: draft.shortNote.trim() || undefined,
         description: draft.description.trim() || undefined,
         aboutMe: draft.aboutMe.trim() || undefined,
+      };
+    case "ABOUT_US":
+      return {
+        type: "ABOUT_US",
+        tagline: draft.tagline.trim() || undefined,
+        content: draft.content.trim() || undefined,
       };
     case "SOCIAL_LINKS":
       return {

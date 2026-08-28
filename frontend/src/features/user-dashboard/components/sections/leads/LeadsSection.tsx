@@ -14,6 +14,7 @@ import RenameFolderModal from "./RenameFolderModal";
 import DeleteFolderModal from "./DeleteFolderModal";
 import LeadDetailModal from "./LeadDetailModal";
 import ExportLeadsModal from "./ExportLeadsModal";
+import NotificationsSheet from "./NotificationsSheet";
 
 interface LeadsSectionProps {
   leads: Lead[];
@@ -58,6 +59,12 @@ export default function LeadsSection({
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [seenLeadIds, setSeenLeadIds] = useState<Set<string>>(new Set());
+
+  const unseenCount = leads.filter(
+    (l) => l.seenAt === null && !seenLeadIds.has(l.id),
+  ).length;
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   // Derive from the leads prop so the detail view always reflects the latest state
   // after any update (e.g. stage change) without needing a separate sync.
@@ -142,8 +149,9 @@ export default function LeadsSection({
           <div className="mt-1 flex gap-2">
             <button
               type="button"
-              className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/30 text-white"
-              aria-label="Notifications"
+              onClick={() => setShowNotifications(true)}
+              className="relative flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/30 text-white"
+              aria-label={`Notifications${unseenCount > 0 ? ` (${unseenCount} new)` : ""}`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -159,6 +167,11 @@ export default function LeadsSection({
                 <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 01-3.46 0" />
               </svg>
+              {unseenCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-[10px] font-bold text-white">
+                  {unseenCount > 9 ? "9+" : unseenCount}
+                </span>
+              )}
             </button>
             <button
               type="button"
@@ -679,6 +692,16 @@ export default function LeadsSection({
         folders={folders}
         onClose={() => setShowExportModal(false)}
         onExport={onExportLeads}
+      />
+
+      <NotificationsSheet
+        isOpen={showNotifications}
+        leads={leads}
+        onClose={() => setShowNotifications(false)}
+        onLeadClick={(lead) => setSelectedLeadId(lead.id)}
+        onMarkSeen={() =>
+          setSeenLeadIds(new Set(leads.filter((l) => l.seenAt === null).map((l) => l.id)))
+        }
       />
     </div>
   );

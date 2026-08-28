@@ -19,6 +19,7 @@ const noopOtpSender: OtpSender = {
 export const auth = createEmployeeAuth({
   secret: process.env.BETTER_AUTH_STAFF_SECRET!,
   baseUrl: process.env.BETTER_AUTH_URL!,
+  trustedFrontendOrigins: [],
   prisma,
   otpSender: noopOtpSender,
 });

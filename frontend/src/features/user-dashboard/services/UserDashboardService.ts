@@ -1,5 +1,7 @@
 import { apiRequest, apiRequestBlob } from "@services/apiClient";
 import { DASHBOARD_API } from "@features/user-dashboard/config";
+import { ECARD_ENDPOINTS } from "@config/api";
+import type { Ecard } from "@app-types/ecard";
 import type {
   Lead,
   LeadFolder,
@@ -24,6 +26,8 @@ import type {
   OrgEcard,
   OrgEcardListResponse,
   UpdateOrgEcardPayload,
+  AggregatedEcardAnalytics,
+  EcardDailyBucket,
 } from "@features/user-dashboard/types";
 import {
   CUSTOMER_PRODUCTS_BASE_PATH,
@@ -77,6 +81,14 @@ export class UserDashboardService {
     await apiRequest<void>(DASHBOARD_API.lead(id), {
       method: "DELETE",
     });
+  }
+
+  async getUnseenLeadsCount(): Promise<{ count: number }> {
+    return apiRequest<{ count: number }>(DASHBOARD_API.leadsUnseenCount);
+  }
+
+  async markLeadsSeen(): Promise<void> {
+    await apiRequest<void>(DASHBOARD_API.leadsMarkSeen, { method: "POST" });
   }
 
   async exportLeads(leadIds: string[]): Promise<Blob> {
@@ -293,6 +305,82 @@ export class UserDashboardService {
       method: "PATCH",
       body: formData,
     });
+  }
+
+  // ── Ecard Analytics ────────────────────────────────────────────────────────
+
+  async getMyEcardsAnalytics(): Promise<AggregatedEcardAnalytics> {
+    const ecards = await apiRequest<Ecard[]>(ECARD_ENDPOINTS.me);
+
+    if (ecards.length === 0) {
+      return {
+        totalViews: 0,
+        totalWalletSaves: 0,
+        totalContactSaves: 0,
+        totalExchangeContacts: 0,
+        averageViewDurationMs: null,
+        dailyCounts: [],
+      };
+    }
+
+    const results = await Promise.all(
+      ecards.map((ecard) =>
+        apiRequest<AggregatedEcardAnalytics>(ECARD_ENDPOINTS.analytics(ecard.id))
+      )
+    );
+
+    let totalViews = 0;
+    let totalWalletSaves = 0;
+    let totalContactSaves = 0;
+    let totalExchangeContacts = 0;
+    let durationWeightedSum = 0;
+    let durationTotalViews = 0;
+    const bucketMap = new Map<string, EcardDailyBucket>();
+
+    for (const result of results) {
+      totalViews += result.totalViews;
+      totalWalletSaves += result.totalWalletSaves;
+      totalContactSaves += result.totalContactSaves;
+      totalExchangeContacts += result.totalExchangeContacts;
+
+      if (result.averageViewDurationMs !== null && result.totalViews > 0) {
+        durationWeightedSum += result.averageViewDurationMs * result.totalViews;
+        durationTotalViews += result.totalViews;
+      }
+
+      for (const bucket of result.dailyCounts) {
+        const existing = bucketMap.get(bucket.date) ?? {
+          date: bucket.date,
+          views: 0,
+          walletSaves: 0,
+          contactSaves: 0,
+          exchangeContacts: 0,
+        };
+        bucketMap.set(bucket.date, {
+          date: bucket.date,
+          views: existing.views + bucket.views,
+          walletSaves: existing.walletSaves + bucket.walletSaves,
+          contactSaves: existing.contactSaves + bucket.contactSaves,
+          exchangeContacts: existing.exchangeContacts + bucket.exchangeContacts,
+        });
+      }
+    }
+
+    const dailyCounts = [...bucketMap.values()].sort((a, b) =>
+      a.date.localeCompare(b.date)
+    );
+
+    return {
+      totalViews,
+      totalWalletSaves,
+      totalContactSaves,
+      totalExchangeContacts,
+      averageViewDurationMs:
+        durationTotalViews === 0
+          ? null
+          : Math.round(durationWeightedSum / durationTotalViews),
+      dailyCounts,
+    };
   }
 
   // ── Shop / Products ────────────────────────────────────────────────────────

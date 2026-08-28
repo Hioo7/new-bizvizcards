@@ -3,8 +3,8 @@ import {
   MigrationDomain,
   MigrationRecordStatus,
   Prisma,
-  SmartCardLogoShape,
 } from '../../../../generated/prisma/client';
+import { SmartCardLogoShape } from '../../../../generated/prisma/enums';
 import { Prisma as LegacyPrisma } from '../../../../generated/legacy-prisma/client';
 import { PRISMA_ERROR_CODES } from '../../../../common/constants/prisma-error-codes.constants';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
@@ -17,7 +17,6 @@ import {
   MIGRATION_REJECTION_REASON,
   MIGRATION_SOURCE_TABLE,
   MigrationRejectionReason,
-  SMART_CARD_LOGO_SHAPE_MAP,
   SMART_CARD_TEMPLATE_SLUG_MAP,
 } from '../../migration.constants';
 import type { DomainMigrator } from './domain-migrator.interface';
@@ -218,11 +217,7 @@ export class SmartCardMigrator implements DomainMigrator {
               subTagline: legacySmartCard.profile.subTagline,
               aboutText: legacySmartCard.profile.aboutText,
               logoMediaId: profileLogo?.id ?? null,
-              logoShape: legacySmartCard.profile.logoShape
-                ? (SMART_CARD_LOGO_SHAPE_MAP[
-                    legacySmartCard.profile.logoShape
-                  ] ?? SmartCardLogoShape.CIRCLE)
-                : SmartCardLogoShape.CIRCLE,
+              logoShape: SmartCardLogoShape.CIRCLE,
             },
           });
         }

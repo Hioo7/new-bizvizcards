@@ -94,6 +94,7 @@ export interface Lead {
   stage?: OpportunityStage | null;
   folderId?: string | null;
   ecardId: string | null;
+  seenAt: string | null;
   createdAt: string;
   updatedAt: string;
   formAnswers?: LeadFormAnswer[];
@@ -355,6 +356,25 @@ export interface UpdateLeadReminderPayload {
   text?: string | null;
   triggerAt?: string;
   status?: ReminderStatus;
+}
+
+// ── Ecard Analytics ───────────────────────────────────────────────────────────
+
+export interface EcardDailyBucket {
+  date: string;
+  views: number;
+  walletSaves: number;
+  contactSaves: number;
+  exchangeContacts: number;
+}
+
+export interface AggregatedEcardAnalytics {
+  totalViews: number;
+  totalWalletSaves: number;
+  totalContactSaves: number;
+  totalExchangeContacts: number;
+  averageViewDurationMs: number | null;
+  dailyCounts: EcardDailyBucket[];
 }
 
 // ── Shop / Products ─────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { UserRound } from "lucide-react";
-import type { EcardHero } from "@app-types/ecard";
+import type { ECardIconShape, EcardHero, EcardSocialLinksComponent } from "@app-types/ecard";
 import { HeroShareButton } from "@features/public-ecard/components/sections/HeroShareButton";
 import { HeroContactActions } from "@features/public-ecard/components/sections/HeroContactActions";
 
@@ -8,6 +8,8 @@ interface BannerHeroSectionProps {
   endpoint: string;
   canExchangeContact: boolean;
   onExchangeContact: () => void;
+  socialLinksComponent?: EcardSocialLinksComponent;
+  iconShape?: ECardIconShape;
 }
 
 // Wide banner image up top, hero details below — no profile photo overlap.
@@ -16,6 +18,8 @@ export function BannerHeroSection({
   endpoint,
   canExchangeContact,
   onExchangeContact,
+  socialLinksComponent,
+  iconShape,
 }: BannerHeroSectionProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -52,6 +56,8 @@ export function BannerHeroSection({
         endpoint={endpoint}
         canExchangeContact={canExchangeContact}
         onExchangeContact={onExchangeContact}
+        socialLinksComponent={socialLinksComponent}
+        iconShape={iconShape}
       />
     </div>
   );

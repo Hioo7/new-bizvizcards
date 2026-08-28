@@ -72,7 +72,7 @@ export default function EcardBuilderView() {
   );
   const { policy } = useCustomerEffectivePolicy(customerId ?? null);
   const planUnavailableTypes = policy
-    ? ECARD_COMPONENT_TYPES.filter((type) => !policy.ecard.components[type])
+    ? ECARD_COMPONENT_TYPES.filter((type) => policy.ecard.components[type] === false)
     : [];
   const availableHeroLayouts = policy?.ecard.heroLayouts ?? null;
   const availableThemes = policy?.ecard.themes ?? null;

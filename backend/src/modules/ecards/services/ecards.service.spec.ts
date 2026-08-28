@@ -14,8 +14,16 @@ import { OrganisationsService } from '../../organisations/services/organisations
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
 import { ecardSocialLinksComponentSchema } from '../dto/components/social-links.dto';
+import type {
+  CreateEcardAsEmployeeDto,
+  CreateEcardDto,
+} from '../dto/create-ecard.dto';
+import type { CreateEcardAsSpocDto } from '../dto/create-ecard-as-spoc.dto';
+import type { UpdateEcardDto } from '../dto/update-ecard.dto';
 import { ECARD_MAX_PER_CUSTOMER } from '../ecards.constants';
 import { EcardsService } from './ecards.service';
+
+const EMPTY_COMPONENTS: CreateEcardDto['components'] = [];
 
 class FakeMediaStorageProvider implements MediaStorageProvider {
   deletedKeys: string[] = [];
@@ -28,6 +36,11 @@ class FakeMediaStorageProvider implements MediaStorageProvider {
   delete(key: string): Promise<void> {
     this.deletedKeys.push(key);
     return Promise.resolve();
+  }
+
+  download(key: string): Promise<Buffer> {
+    void key;
+    return Promise.resolve(Buffer.alloc(0));
   }
 
   getPublicUrl(key: string): string {
@@ -96,6 +109,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
       prisma,
       organisationsService,
       planEnforcementService,
+      new MediaService(prisma, bootstrapRegistry),
     );
   });
 
@@ -195,8 +209,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'team-mate@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -246,7 +260,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               pdf: { action: 'upload' },
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [
           makeFile('heroProfilePhoto'),
           makeFile('galleryImage_0_0'),
@@ -325,7 +339,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -361,8 +375,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Jane Doe',
           heroEmail: 'jane@personal.example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
       const branded = await service.createForCustomer(
@@ -373,8 +387,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'jane@acme.example.com',
           isExchangeContactEnabled: true,
           heroCompanyName: 'Acme Inc',
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -398,8 +412,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Test Customer',
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         );
       }
@@ -412,8 +426,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Test Customer',
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         ),
       ).rejects.toThrow(
@@ -432,8 +446,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Test Customer',
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -445,8 +459,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Test Customer',
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         ),
       ).rejects.toThrow('Endpoint already in use');
@@ -468,7 +482,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
                 members: [{ organisationMemberId: randomUUID() }],
               },
             ],
-          },
+          } as unknown as CreateEcardDto,
           [],
         ),
       ).rejects.toThrow(
@@ -504,7 +518,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
                 members: [{ organisationMemberId: outsiderMembership.id }],
               },
             ],
-          },
+          } as unknown as CreateEcardDto,
           [],
         ),
       ).rejects.toThrow(
@@ -539,7 +553,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
                 members: [{ organisationMemberId: noCardMembership.id }],
               },
             ],
-          },
+          } as unknown as CreateEcardDto,
           [],
         ),
       ).rejects.toThrow(
@@ -570,8 +584,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
           heroProfilePhoto: { action: 'upload' },
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [makeFile('heroProfilePhoto')],
       );
 
@@ -589,7 +603,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               members: [{ organisationMemberId: eligibleMembership.id }],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -618,8 +632,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroEmail: 'outsider@example.com',
             isExchangeContactEnabled: true,
             organisationId: organisation.id,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         ),
       ).rejects.toThrow('Customer does not belong to this organisation');
@@ -648,8 +662,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-of-a@example.com',
           isExchangeContactEnabled: true,
           organisationId: orgA.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
       const memberOfB = await seedCustomer('Member of B');
@@ -664,8 +678,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-of-b@example.com',
           isExchangeContactEnabled: true,
           organisationId: orgB.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -683,7 +697,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               members: [{ organisationMemberId: membershipA.id }],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
       const team = cardForA.components.find((c) => c.type === 'TEAM');
@@ -705,7 +719,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               members: [{ organisationMemberId: membershipB.id }],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
       const teamB = cardForB.components.find((c) => c.type === 'TEAM');
@@ -730,7 +744,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
                 members: [{ organisationMemberId: membershipA.id }],
               },
             ],
-          },
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow(
@@ -754,8 +768,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroEmail: 'jane@acme.example.com',
             isExchangeContactEnabled: true,
             organisationId: organisation.id,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         );
 
@@ -776,8 +790,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroEmail: 'jane@acme.example.com',
             isExchangeContactEnabled: true,
             organisationId: organisation.id,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         );
 
@@ -790,8 +804,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               heroEmail: 'jane@acme.example.com',
               isExchangeContactEnabled: true,
               organisationId: organisation.id,
-              components: [],
-            },
+              components: EMPTY_COMPONENTS,
+            } as unknown as CreateEcardDto,
             [],
           ),
         ).rejects.toThrow(
@@ -811,8 +825,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               heroEmail: 'test@example.com',
               isExchangeContactEnabled: true,
               organisationId: randomUUID(),
-              components: [],
-            },
+              components: EMPTY_COMPONENTS,
+            } as unknown as CreateEcardDto,
             [],
           ),
         ).rejects.toThrow(
@@ -832,8 +846,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
             autoDownloadContact: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         );
 
@@ -849,8 +863,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Test Customer',
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardDto,
           [],
         );
 
@@ -872,8 +886,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Test Customer',
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardAsEmployeeDto,
         [],
       );
 
@@ -891,8 +905,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Test Customer',
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardAsEmployeeDto,
           [],
         ),
       ).rejects.toThrow('customerId does not reference an existing customer');
@@ -921,8 +935,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'owner@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -940,8 +954,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           organisationId: organisation.id,
           phoneCountryDialCode: '91',
           phoneNumber: '9111111111',
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -961,8 +975,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           isExchangeContactEnabled: true,
           phoneCountryDialCode: '91',
           phoneNumber: '9222222222',
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -980,7 +994,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               members: [{ organisationMemberId: taggedMembership.id }],
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1011,7 +1025,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
                 members: [{ organisationMemberId: untaggedMembership.id }],
               },
             ],
-          },
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow(
@@ -1037,7 +1051,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               subGalleries: [{ images: [{ image: { action: 'upload' } }] }],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [makeFile('heroProfilePhoto'), makeFile('galleryImage_0_0')],
       );
       const originalHeroMediaId = created.hero.profilePhotoMediaId as string;
@@ -1069,7 +1083,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [makeFile('heroProfilePhoto')],
       );
 
@@ -1121,7 +1135,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [makeFile('galleryImage_0_0'), makeFile('galleryImage_0_1')],
       );
 
@@ -1161,7 +1175,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1193,7 +1207,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1225,7 +1239,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1252,7 +1266,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1279,7 +1293,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
           components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
-        },
+        } as unknown as CreateEcardDto,
         [makePdfFile('brochurePdf')],
       );
       const brochureMediaId = created.components.find(
@@ -1299,7 +1313,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               pdf: { action: 'keep', mediaId: brochureMediaId },
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1320,7 +1334,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
           components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
-        },
+        } as unknown as CreateEcardDto,
         [makePdfFile('brochurePdf')],
       );
       const originalMediaId = created.components.find(
@@ -1335,7 +1349,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
           components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
-        },
+        } as unknown as UpdateEcardDto,
         [makePdfFile('brochurePdf')],
       );
 
@@ -1357,8 +1371,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Test Customer',
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1371,7 +1385,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
             components: [{ type: 'BROCHURE', pdf: { action: 'upload' } }],
-          },
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow('Missing uploaded file for field "brochurePdf"');
@@ -1386,8 +1400,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Test Customer',
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1411,7 +1425,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
                 ],
               },
             ],
-          },
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow('mediaId does not belong to this resource');
@@ -1426,8 +1440,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Test Customer',
             heroEmail: 'test@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow('E-card not found');
@@ -1443,8 +1457,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
           autoDownloadContact: false,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
       expect(created.hero.autoDownloadContact).toBe(false);
@@ -1457,8 +1471,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: created.hero.email,
           isExchangeContactEnabled: true,
           autoDownloadContact: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as UpdateEcardDto,
         [],
       );
       expect(enabled.hero.autoDownloadContact).toBe(true);
@@ -1471,8 +1485,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: created.hero.email,
           isExchangeContactEnabled: true,
           autoDownloadContact: false,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as UpdateEcardDto,
         [],
       );
       expect(disabled.hero.autoDownloadContact).toBe(false);
@@ -1505,7 +1519,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1564,7 +1578,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1585,7 +1599,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               ],
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1616,7 +1630,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             },
             { type: 'REVIEW_LINK', url: 'https://example.com/review' },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
       expect(created.components).toHaveLength(2);
@@ -1628,8 +1642,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: created.hero.name,
           heroEmail: created.hero.email,
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1665,7 +1679,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               youtube: 'https://www.youtube.com/@example',
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1694,7 +1708,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               youtube: 'https://www.youtube.com/@original',
             },
           ],
-        },
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1711,7 +1725,7 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
               youtube: 'https://www.youtube.com/@updated',
             },
           ],
-        },
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -1746,8 +1760,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
           heroProfilePhoto: { action: 'upload' },
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [makeFile('heroProfilePhoto')],
       );
       const mediaId = created.hero.profilePhotoMediaId as string;
@@ -1782,8 +1796,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Test Customer',
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1806,8 +1820,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'test@example.com',
           isExchangeContactEnabled: true,
           autoDownloadContact: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1836,8 +1850,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardAsSpocDto,
         [],
       );
 
@@ -1867,8 +1881,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Target',
             heroEmail: 'target@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardAsSpocDto,
           [],
         ),
       ).rejects.toThrow('Only the organisation SPOC can perform this action');
@@ -1892,8 +1906,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Target',
             heroEmail: 'target@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardAsSpocDto,
           [],
         ),
       ).rejects.toThrow('Only the organisation SPOC can perform this action');
@@ -1917,8 +1931,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Outsider',
             heroEmail: 'outsider@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardAsSpocDto,
           [],
         ),
       ).rejects.toThrow('Organisation member not found');
@@ -1939,8 +1953,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardAsSpocDto,
         [],
       );
 
@@ -1954,8 +1968,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Member One',
             heroEmail: 'member-one@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as CreateEcardAsSpocDto,
           [],
         ),
       ).rejects.toThrow(
@@ -1979,8 +1993,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -1993,8 +2007,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Updated By SPOC',
           heroEmail: 'updated@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -2017,8 +2031,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardAsSpocDto,
         [],
       );
 
@@ -2031,8 +2045,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Updated Again',
           heroEmail: 'updated-again@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -2053,8 +2067,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2068,8 +2082,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Should Not Update',
             heroEmail: 'member-one@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow('Only the organisation SPOC can perform this action');
@@ -2090,8 +2104,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: otherOrg.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2105,8 +2119,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Should Not Update',
             heroEmail: 'member-one@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow('E-card not found');
@@ -2122,8 +2136,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2137,8 +2151,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
             heroName: 'Should Not Update',
             heroEmail: 'member-one@example.com',
             isExchangeContactEnabled: true,
-            components: [],
-          },
+            components: EMPTY_COMPONENTS,
+          } as unknown as UpdateEcardDto,
           [],
         ),
       ).rejects.toThrow('E-card not found');
@@ -2159,8 +2173,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2174,8 +2188,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: otherOrg.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as UpdateEcardDto,
         [],
       );
 
@@ -2198,8 +2212,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2225,8 +2239,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2250,8 +2264,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: otherOrg.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2276,8 +2290,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
       await service.createForCustomer(
@@ -2287,8 +2301,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2331,8 +2345,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2359,8 +2373,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
       const newCard = await service.createForCustomer(
@@ -2370,8 +2384,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2401,8 +2415,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
           organisationId: organisation.id,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2425,8 +2439,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Someone Else',
           heroEmail: 'someone-else@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 
@@ -2449,8 +2463,8 @@ describe('EcardsService (integration, TEST_DATABASE_URL only)', () => {
           heroName: 'Member One',
           heroEmail: 'member-one@example.com',
           isExchangeContactEnabled: true,
-          components: [],
-        },
+          components: EMPTY_COMPONENTS,
+        } as unknown as CreateEcardDto,
         [],
       );
 

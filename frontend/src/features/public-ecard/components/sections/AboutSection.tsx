@@ -1,5 +1,8 @@
-import { useState } from "react";
-import { ECARD_ABOUT_TRUNCATE_WORD_COUNT } from "@features/public-ecard/config/ecardPreview.config";
+import { useState, useRef, useEffect } from "react";
+import {
+  ECARD_ABOUT_TRUNCATE_WORD_COUNT,
+  ECARD_TICKER_PX_PER_SECOND,
+} from "@features/public-ecard/config/ecardPreview.config";
 import type { EcardAboutComponent } from "@app-types/ecard";
 
 interface AboutSectionProps {
@@ -10,6 +13,16 @@ const TICKER_REPEAT_COUNT = 6;
 
 export function AboutSection({ component }: AboutSectionProps) {
   const [expanded, setExpanded] = useState(false);
+  const groupRef = useRef<HTMLSpanElement>(null);
+  const [tickerDuration, setTickerDuration] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!groupRef.current) return;
+    const groupWidth = groupRef.current.getBoundingClientRect().width;
+    if (groupWidth > 0) {
+      setTickerDuration(groupWidth / ECARD_TICKER_PX_PER_SECOND);
+    }
+  }, [component.description, component.shortNote]);
 
   const bodyText = component.aboutMe || component.description || "";
   const words = bodyText.trim().split(/\s+/).filter(Boolean);
@@ -57,10 +70,21 @@ export function AboutSection({ component }: AboutSectionProps) {
 
       {tickerText && (
         <div className="mt-2 w-full overflow-hidden rounded-2xl border border-base-300 bg-secondary p-2 shadow-xl">
-          <div className="flex animate-ticker whitespace-nowrap">
-            {Array.from({ length: TICKER_REPEAT_COUNT }).map((_, idx) => (
-              <span key={idx} className="px-1 text-sm opacity-70">
-                {tickerText}
+          <div
+            className="flex w-max animate-ticker"
+            style={tickerDuration !== null ? { animationDuration: `${tickerDuration}s` } : undefined}
+          >
+            {[0, 1].map((groupIdx) => (
+              <span
+                key={groupIdx}
+                ref={groupIdx === 0 ? groupRef : undefined}
+                aria-hidden={groupIdx === 1}
+                className="whitespace-nowrap pr-12 text-sm opacity-70"
+              >
+                {Array.from({ length: TICKER_REPEAT_COUNT })
+                  .map(() => tickerText)
+                  .join(" \u2022 ")}
+                {" \u2022"}
               </span>
             ))}
           </div>

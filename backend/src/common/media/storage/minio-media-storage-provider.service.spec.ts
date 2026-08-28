@@ -132,7 +132,7 @@ describe('MinioMediaStorageProvider', () => {
     it('creates the bucket first when it does not exist yet, then applies the policy', async () => {
       const sendSpy = jest
         .spyOn(S3Client.prototype, 'send')
-        .mockRejectedValueOnce(new Error('NotFound'))
+        .mockRejectedValueOnce(new Error('NotFound') as never)
         .mockResolvedValue({} as never);
       const provider = new MinioMediaStorageProvider(createAppConfig());
 
