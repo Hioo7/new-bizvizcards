@@ -5,7 +5,7 @@ import { useStaffAuth } from "@hooks/useStaffAuth";
 import { ROUTES } from "@config/routes";
 import { ADMIN_APP_TILES } from "@features/admin/config/appsConfig";
 import AppTile from "@features/admin/components/AppTile";
-import LogoutConfirmModal from "@features/admin/components/LogoutConfirmModal";
+import LogoutConfirmModal from "@components/LogoutConfirmModal";
 
 const GRID_CONTAINER_VARIANTS = {
   hidden: {},

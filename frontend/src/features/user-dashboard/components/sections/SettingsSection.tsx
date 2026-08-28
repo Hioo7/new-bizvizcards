@@ -1,4 +1,5 @@
 import { useState } from "react";
+import LogoutConfirmModal from "@components/LogoutConfirmModal";
 import { DASHBOARD_APP_VERSION } from "@features/user-dashboard/config";
 import {
   PWAInstallModal,
@@ -112,6 +113,17 @@ function Divider() {
 export default function SettingsSection({ onSignOut, onBack }: SettingsSectionProps) {
   const { canInstall, isInstalled, triggerInstall } = usePWAInstall();
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  async function handleConfirmSignOut() {
+    setIsSigningOut(true);
+    try {
+      await onSignOut();
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
 
   const installRowDescription = isInstalled
     ? PWA_INSTALL_ROW_DESCRIPTION_INSTALLED
@@ -333,7 +345,7 @@ export default function SettingsSection({ onSignOut, onBack }: SettingsSectionPr
             labelClassName="text-error font-semibold"
             description="Sign out of your account"
             showChevron={false}
-            onClick={() => void onSignOut()}
+            onClick={() => setIsSignOutConfirmOpen(true)}
           />
         </SettingsGroup>
       </div>
@@ -345,6 +357,13 @@ export default function SettingsSection({ onSignOut, onBack }: SettingsSectionPr
           await triggerInstall();
           setIsInstallModalOpen(false);
         }}
+      />
+
+      <LogoutConfirmModal
+        open={isSignOutConfirmOpen}
+        isLoggingOut={isSigningOut}
+        onCancel={() => setIsSignOutConfirmOpen(false)}
+        onConfirm={() => void handleConfirmSignOut()}
       />
     </div>
   );
