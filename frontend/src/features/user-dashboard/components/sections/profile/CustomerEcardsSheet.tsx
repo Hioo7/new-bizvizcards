@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 import type { Ecard } from "@app-types/ecard";
 import { ecardPublicPath } from "@config/routes";
+import ConfirmActionModal from "@components/ConfirmActionModal";
 import EcardListItem from "./EcardListItem";
 import EcardShareContent from "./EcardShareContent";
 import EcardShareSheet from "./EcardShareSheet";
@@ -27,6 +29,9 @@ export default function CustomerEcardsSheet({
   onDelete,
 }: CustomerEcardsSheetProps) {
   const [shareEcard, setShareEcard] = useState<Ecard | null>(null);
+  const [deletingEcard, setDeletingEcard] = useState<Ecard | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches,
   );
@@ -37,6 +42,20 @@ export default function CustomerEcardsSheet({
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
+
+  async function handleConfirmDelete() {
+    if (!deletingEcard) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete(deletingEcard.id);
+      setDeletingEcard(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete e-card");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (!open) return null;
 
@@ -133,7 +152,7 @@ export default function CustomerEcardsSheet({
                   key={ecard.id}
                   ecard={ecard}
                   onEdit={() => onEdit(ecard)}
-                  onDelete={() => void onDelete(ecard.id)}
+                  onDelete={() => setDeletingEcard(ecard)}
                   onShare={() => setShareEcard(ecard)}
                 />
               ))}
@@ -199,6 +218,19 @@ export default function CustomerEcardsSheet({
           onClose={() => setShareEcard(null)}
         />
       )}
+
+      <ConfirmActionModal
+        open={deletingEcard !== null}
+        icon={Trash2}
+        title={`Delete ${deletingEcard?.hero.name ?? "this e-card"}?`}
+        description="This permanently removes the e-card and its media. This can't be undone."
+        confirmLabel="Delete"
+        isDestructive
+        isSubmitting={deleting}
+        error={deleteError}
+        onCancel={() => { setDeletingEcard(null); setDeleteError(null); }}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </>
   );
 }

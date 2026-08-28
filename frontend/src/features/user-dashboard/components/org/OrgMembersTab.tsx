@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import ConfirmActionModal from "@components/ConfirmActionModal";
 import type { OrgMemberListItem, UpdateMemberPayload } from "@features/user-dashboard/types";
 
 interface OrgMembersTabProps {
@@ -16,14 +18,14 @@ function MemberCard({
   isSpoc,
   isSelf,
   onUpdate,
-  onRemove,
+  onRequestRemove,
   onShowEcards,
 }: {
   member: OrgMemberListItem;
   isSpoc: boolean;
   isSelf: boolean;
   onUpdate: (id: string, payload: UpdateMemberPayload) => Promise<void>;
-  onRemove: (id: string) => Promise<void>;
+  onRequestRemove: (member: OrgMemberListItem) => void;
   onShowEcards: (member: OrgMemberListItem) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -39,15 +41,6 @@ function MemberCard({
 
   const hasEcard = member.linkedEcard !== null;
   const exchangeEnabled = member.linkedEcard?.isExchangeContactEnabled ?? false;
-
-  async function handleRemove() {
-    setBusy(true);
-    try {
-      await onRemove(member.id);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <div className="rounded-2xl bg-base-100 border border-base-200 shadow-sm overflow-hidden">
@@ -249,21 +242,17 @@ function MemberCard({
             </button>
             <button
               type="button"
-              onClick={() => void handleRemove()}
+              onClick={() => onRequestRemove(member)}
               disabled={busy}
               aria-label="Remove member"
               className="flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/40 hover:text-error hover:border-error transition-colors"
             >
-              {busy ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </>
         )}
@@ -301,36 +290,67 @@ export default function OrgMembersTab({
       m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
   );
 
-  if (filtered.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-base-content/30" aria-hidden="true">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-          </svg>
-        </div>
-        <p className="text-sm font-medium text-base-content/60">
-          {search ? "No members match your search" : "No members yet"}
-        </p>
-      </div>
-    );
+  const [deletingMember, setDeletingMember] = useState<OrgMemberListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleConfirmRemove() {
+    if (!deletingMember) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onRemove(deletingMember.id);
+      setDeletingMember(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to remove member");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {filtered.map((m) => (
-        <MemberCard
-          key={m.id}
-          member={m}
-          isSpoc={isSpoc}
-          isSelf={m.customerId === currentCustomerId}
-          onUpdate={onUpdate}
-          onRemove={onRemove}
-          onShowEcards={onShowEcards}
-        />
-      ))}
-    </div>
+    <>
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-base-200">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-base-content/30" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-base-content/60">
+            {search ? "No members match your search" : "No members yet"}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filtered.map((m) => (
+            <MemberCard
+              key={m.id}
+              member={m}
+              isSpoc={isSpoc}
+              isSelf={m.customerId === currentCustomerId}
+              onUpdate={onUpdate}
+              onRequestRemove={setDeletingMember}
+              onShowEcards={onShowEcards}
+            />
+          ))}
+        </div>
+      )}
+
+      <ConfirmActionModal
+        open={deletingMember !== null}
+        icon={Trash2}
+        title={`Remove ${deletingMember?.name ?? "this member"}?`}
+        description="They lose access to this organisation immediately. This can't be undone."
+        confirmLabel="Remove"
+        isDestructive
+        isSubmitting={deleting}
+        error={deleteError}
+        onCancel={() => { setDeletingMember(null); setDeleteError(null); }}
+        onConfirm={() => void handleConfirmRemove()}
+      />
+    </>
   );
 }

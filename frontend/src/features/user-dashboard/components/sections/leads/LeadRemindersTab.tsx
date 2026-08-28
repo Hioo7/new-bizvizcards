@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import ConfirmActionModal from "@components/ConfirmActionModal";
 import type {
   LeadReminder,
   CreateLeadReminderPayload,
@@ -30,14 +32,13 @@ function formatDateTime(dateStr: string): string {
 function ReminderItem({
   reminder,
   onUpdate,
-  onDelete,
+  onRequestDelete,
 }: {
   reminder: LeadReminder;
   onUpdate: (id: string, payload: UpdateLeadReminderPayload) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onRequestDelete: (reminder: LeadReminder) => void;
 }) {
   const [toggling, setToggling] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(reminder.title);
   const [editText, setEditText] = useState(reminder.text ?? "");
@@ -76,15 +77,6 @@ function ReminderItem({
       await onUpdate(reminder.id, { status: isDone ? "PENDING" : "DISMISSED" });
     } finally {
       setToggling(false);
-    }
-  }
-
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      await onDelete(reminder.id);
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -137,21 +129,16 @@ function ReminderItem({
             </button>
             <button
               type="button"
-              onClick={() => void handleDelete()}
-              disabled={deleting}
+              onClick={() => onRequestDelete(reminder)}
               aria-label="Delete reminder"
               className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-error/10 text-base-content/40 hover:text-error transition-colors"
             >
-              {deleting ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                  <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
         )}
@@ -277,6 +264,23 @@ export default function LeadRemindersTab({
   const [triggerAt, setTriggerAt] = useState("");
   const [adding, setAdding] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [deletingReminder, setDeletingReminder] = useState<LeadReminder | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleConfirmDelete() {
+    if (!deletingReminder) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete(deletingReminder.id);
+      setDeletingReminder(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete reminder");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function handleAdd() {
     if (!title.trim() || !triggerAt) return;
@@ -330,7 +334,7 @@ export default function LeadRemindersTab({
       {reminders.length > 0 && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {reminders.map((r) => (
-            <ReminderItem key={r.id} reminder={r} onUpdate={onUpdate} onDelete={onDelete} />
+            <ReminderItem key={r.id} reminder={r} onUpdate={onUpdate} onRequestDelete={setDeletingReminder} />
           ))}
         </div>
       )}
@@ -414,6 +418,19 @@ export default function LeadRemindersTab({
           Add Reminder
         </button>
       )}
+
+      <ConfirmActionModal
+        open={deletingReminder !== null}
+        icon={Trash2}
+        title="Delete this reminder?"
+        description="This permanently removes the reminder. This can't be undone."
+        confirmLabel="Delete"
+        isDestructive
+        isSubmitting={deleting}
+        error={deleteError}
+        onCancel={() => { setDeletingReminder(null); setDeleteError(null); }}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </div>
   );
 }

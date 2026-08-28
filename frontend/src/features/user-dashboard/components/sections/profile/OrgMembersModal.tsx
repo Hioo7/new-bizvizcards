@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import ConfirmActionModal from "@components/ConfirmActionModal";
 import type {
   OrgMemberListItem,
   OrgInvite,
@@ -26,13 +28,13 @@ function MemberCard({
   isSpoc,
   isSelf,
   onUpdate,
-  onRemove,
+  onRequestRemove,
 }: {
   member: OrgMemberListItem;
   isSpoc: boolean;
   isSelf: boolean;
   onUpdate: (id: string, payload: UpdateMemberPayload) => Promise<void>;
-  onRemove: (id: string) => Promise<void>;
+  onRequestRemove: (member: OrgMemberListItem) => void;
 }) {
   const [busy, setBusy] = useState(false);
 
@@ -51,15 +53,6 @@ function MemberCard({
       await onUpdate(member.id, {
         status: isSuspended ? "ACTIVE" : "SUSPENDED",
       });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleRemove() {
-    setBusy(true);
-    try {
-      await onRemove(member.id);
     } finally {
       setBusy(false);
     }
@@ -136,21 +129,17 @@ function MemberCard({
             </button>
             <button
               type="button"
-              onClick={() => void handleRemove()}
+              onClick={() => onRequestRemove(member)}
               disabled={busy}
               aria-label="Remove member"
               className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-error/10 text-base-content/30 hover:text-error transition-colors"
             >
-              {busy ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
         )}
@@ -229,12 +218,29 @@ export default function OrgMembersModal({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [deletingMember, setDeletingMember] = useState<OrgMemberListItem | null>(null);
+  const [deletingMemberBusy, setDeletingMemberBusy] = useState(false);
+  const [deleteMemberError, setDeleteMemberError] = useState<string | null>(null);
 
   const q = search.toLowerCase();
   const filteredMembers = members.filter(
     (m) =>
       m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
   );
+
+  async function handleConfirmRemoveMember() {
+    if (!deletingMember) return;
+    setDeletingMemberBusy(true);
+    setDeleteMemberError(null);
+    try {
+      await onRemoveMember(deletingMember.id);
+      setDeletingMember(null);
+    } catch (err) {
+      setDeleteMemberError(err instanceof Error ? err.message : "Failed to remove member");
+    } finally {
+      setDeletingMemberBusy(false);
+    }
+  }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -337,7 +343,7 @@ export default function OrgMembersModal({
                     isSpoc={isSpoc}
                     isSelf={m.customerId === currentCustomerId}
                     onUpdate={onUpdateMember}
-                    onRemove={onRemoveMember}
+                    onRequestRemove={setDeletingMember}
                   />
                 ))
               )}
@@ -396,6 +402,19 @@ export default function OrgMembersModal({
         )}
       </div>
       <div className="modal-backdrop" onClick={onClose} />
+
+      <ConfirmActionModal
+        open={deletingMember !== null}
+        icon={Trash2}
+        title={`Remove ${deletingMember?.name ?? "this member"}?`}
+        description="They lose access to this organisation immediately. This can't be undone."
+        confirmLabel="Remove"
+        isDestructive
+        isSubmitting={deletingMemberBusy}
+        error={deleteMemberError}
+        onCancel={() => { setDeletingMember(null); setDeleteMemberError(null); }}
+        onConfirm={() => void handleConfirmRemoveMember()}
+      />
     </dialog>
   );
 }

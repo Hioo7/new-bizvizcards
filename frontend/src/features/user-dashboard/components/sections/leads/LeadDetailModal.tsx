@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
+import ConfirmActionModal from "@components/ConfirmActionModal";
 import { LocationMapEmbed } from "@components/LocationMapEmbed";
 import type {
   Lead,
@@ -66,6 +68,8 @@ export default function LeadDetailModal({
   onUpdate,
 }: LeadDetailModalProps) {
   const [deleting, setDeleting] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [updatingStage, setUpdatingStage] = useState(false);
   const [stageDropdownOpen, setStageDropdownOpen] = useState(false);
   // Both activeTab and isEditing are derived from lead-scoped state so they
@@ -159,9 +163,12 @@ export default function LeadDetailModal({
   async function handleDelete() {
     if (!lead) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await onDelete(lead.id);
       onClose();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete lead");
     } finally {
       setDeleting(false);
     }
@@ -578,7 +585,7 @@ export default function LeadDetailModal({
               {/* Delete lead */}
               <button
                 type="button"
-                onClick={() => void handleDelete()}
+                onClick={() => setIsConfirmingDelete(true)}
                 disabled={deleting}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-error py-3.5 text-sm font-bold text-error-content transition-opacity hover:opacity-90 disabled:opacity-60"
               >
@@ -624,6 +631,19 @@ export default function LeadDetailModal({
           )}
         </div>
       </div>
+
+      <ConfirmActionModal
+        open={isConfirmingDelete}
+        icon={Trash2}
+        title={`Delete ${lead.name}?`}
+        description="This permanently removes the lead and all its notes and reminders. This can't be undone."
+        confirmLabel="Delete"
+        isDestructive
+        isSubmitting={deleting}
+        error={deleteError}
+        onCancel={() => setIsConfirmingDelete(false)}
+        onConfirm={() => void handleDelete()}
+      />
     </div>
   );
 }

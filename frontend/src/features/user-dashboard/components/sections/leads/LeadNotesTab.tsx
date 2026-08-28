@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import ConfirmActionModal from "@components/ConfirmActionModal";
 import type {
   LeadReferenceNote,
   CreateLeadReferenceNotePayload,
@@ -28,16 +30,15 @@ function formatDate(dateStr: string): string {
 function NoteItem({
   note,
   onUpdate,
-  onDelete,
+  onRequestDelete,
 }: {
   note: LeadReferenceNote;
   onUpdate: (noteId: string, payload: UpdateLeadReferenceNotePayload) => Promise<void>;
-  onDelete: (noteId: string) => Promise<void>;
+  onRequestDelete: (note: LeadReferenceNote) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   async function handleSave() {
     if (!editContent.trim()) return;
@@ -47,15 +48,6 @@ function NoteItem({
       setEditing(false);
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      await onDelete(note.id);
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -87,21 +79,16 @@ function NoteItem({
             </button>
             <button
               type="button"
-              onClick={() => void handleDelete()}
-              disabled={deleting}
+              onClick={() => onRequestDelete(note)}
               aria-label="Delete note"
               className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-error/10 text-base-content/40 hover:text-error transition-colors"
             >
-              {deleting ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                  <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M9 6V4h6v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
         )}
@@ -158,6 +145,9 @@ export default function LeadNotesTab({
   const [newContent, setNewContent] = useState("");
   const [adding, setAdding] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [deletingNote, setDeletingNote] = useState<LeadReferenceNote | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function handleAdd() {
     if (!newContent.trim()) return;
@@ -168,6 +158,20 @@ export default function LeadNotesTab({
       setShowForm(false);
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!deletingNote) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete(deletingNote.id);
+      setDeletingNote(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete note");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -202,7 +206,7 @@ export default function LeadNotesTab({
       {notes.length > 0 && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {notes.map((note) => (
-            <NoteItem key={note.id} note={note} onUpdate={onUpdate} onDelete={onDelete} />
+            <NoteItem key={note.id} note={note} onUpdate={onUpdate} onRequestDelete={setDeletingNote} />
           ))}
         </div>
       )}
@@ -261,6 +265,19 @@ export default function LeadNotesTab({
           Add Note
         </button>
       )}
+
+      <ConfirmActionModal
+        open={deletingNote !== null}
+        icon={Trash2}
+        title="Delete this note?"
+        description="This permanently removes the note. This can't be undone."
+        confirmLabel="Delete"
+        isDestructive
+        isSubmitting={deleting}
+        error={deleteError}
+        onCancel={() => { setDeletingNote(null); setDeleteError(null); }}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </div>
   );
 }
