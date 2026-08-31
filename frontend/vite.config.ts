@@ -112,6 +112,15 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/media/, ""),
       },
+      // Business-card OCR service (card-reader). Run it locally with
+      // `uv run uvicorn card_reader.main:app --reload --port 8000` in
+      // ../card-reader. Strip the "/scanner" prefix — the service serves its
+      // routes at the root (mirrors nginx's `location /scanner/` in prod).
+      "/scanner": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/scanner/, ""),
+      },
     },
   },
   resolve: {

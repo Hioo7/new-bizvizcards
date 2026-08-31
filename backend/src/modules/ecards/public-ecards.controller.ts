@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
@@ -13,6 +14,9 @@ import { ECardEventType } from '../../generated/prisma/client';
 import { EcardAnalyticsService } from '../ecard-analytics/services/ecard-analytics.service';
 import { recordViewDurationSchema } from '../ecard-analytics/dto/record-view-duration.dto';
 import type { RecordViewDurationDto } from '../ecard-analytics/dto/record-view-duration.dto';
+import { resolveEcardTrafficSource } from '../ecard-analytics/utils/resolve-ecard-traffic-source.util';
+import { publicEcardViewQuerySchema } from './dto/public-ecard-view-query.dto';
+import type { PublicEcardViewQueryDto } from './dto/public-ecard-view-query.dto';
 import { submitCustomFormExchangeContactSchema } from '../exchange-contact-forms/dto/submit-custom-form-exchange-contact.dto';
 import type { SubmitCustomFormExchangeContactDto } from '../exchange-contact-forms/dto/submit-custom-form-exchange-contact.dto';
 import { ExchangeContactFormResolutionService } from '../exchange-contact-forms/services/exchange-contact-form-resolution.service';
@@ -45,7 +49,11 @@ export class PublicEcardsController {
   ) {}
 
   @Get(':endpoint')
-  async get(@Param('endpoint') endpoint: string) {
+  async get(
+    @Param('endpoint') endpoint: string,
+    @Query(new ZodValidationPipe(publicEcardViewQuerySchema))
+    query?: PublicEcardViewQueryDto,
+  ) {
     const card = await this.ecardsService.getByEndpoint(endpoint);
     const policy =
       await this.planPolicyResolverService.getEffectiveEcardPolicyForCard({
@@ -79,6 +87,7 @@ export class PublicEcardsController {
     const event = await this.ecardAnalyticsService.recordEvent(
       card.id,
       ECardEventType.VIEW,
+      resolveEcardTrafficSource(query?.src, query?.sref),
     );
     const exchangeContactForm =
       await this.exchangeContactFormResolutionService.resolveForCard(card);
@@ -119,6 +128,7 @@ export class PublicEcardsController {
     await this.ecardAnalyticsService.recordEvent(
       card.id,
       ECardEventType.EXCHANGE_CONTACT,
+      resolveEcardTrafficSource(dto.trafficSource, dto.trafficSourceRefId),
     );
     return lead;
   }
@@ -142,6 +152,7 @@ export class PublicEcardsController {
     await this.ecardAnalyticsService.recordEvent(
       card.id,
       ECardEventType.EXCHANGE_CONTACT,
+      resolveEcardTrafficSource(dto.trafficSource, dto.trafficSourceRefId),
     );
     return lead;
   }

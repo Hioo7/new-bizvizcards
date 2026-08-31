@@ -2,7 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { ECardEventType } from '../../../generated/prisma/client';
 import type { EcardAnalyticsQueryDto } from '../dto/ecard-analytics-query.dto';
-import { ECARD_ANALYTICS_DEFAULT_RANGE_DAYS } from '../ecard-analytics.constants';
+import {
+  DEFAULT_ECARD_EVENT_ATTRIBUTION,
+  type EcardEventAttribution,
+} from '../ecard-analytics.constants';
+import {
+  eachUtcDayKey,
+  resolveAnalyticsDateRange,
+  utcDayKey,
+} from '../utils/analytics-date-range.util';
 
 type EventCounts = Record<
   'views' | 'walletSaves' | 'contactSaves' | 'exchangeContacts',
@@ -36,30 +44,6 @@ export interface EcardAnalyticsSummary {
   dailyCounts: EcardAnalyticsDailyCount[];
 }
 
-function dateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function startOfUtcDay(date: Date): Date {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
-}
-
-function endOfUtcDay(date: Date): Date {
-  return new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-      23,
-      59,
-      59,
-      999,
-    ),
-  );
-}
-
 @Injectable()
 export class EcardAnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -67,9 +51,15 @@ export class EcardAnalyticsService {
   async recordEvent(
     ecardId: string,
     type: ECardEventType,
+    attribution: EcardEventAttribution = DEFAULT_ECARD_EVENT_ATTRIBUTION,
   ): Promise<{ id: string }> {
     return this.prisma.eCardEvent.create({
-      data: { ecardId, type },
+      data: {
+        ecardId,
+        type,
+        source: attribution.source,
+        sourceRefId: attribution.sourceRefId,
+      },
       select: { id: true },
     });
   }
@@ -98,17 +88,7 @@ export class EcardAnalyticsService {
     ecardId: string,
     query: EcardAnalyticsQueryDto,
   ): Promise<EcardAnalyticsSummary> {
-    const to = query.to
-      ? endOfUtcDay(new Date(query.to))
-      : endOfUtcDay(new Date());
-    const from = query.from
-      ? startOfUtcDay(new Date(query.from))
-      : startOfUtcDay(
-          new Date(
-            to.getTime() -
-              (ECARD_ANALYTICS_DEFAULT_RANGE_DAYS - 1) * 86_400_000,
-          ),
-        );
+    const { from, to } = resolveAnalyticsDateRange(query);
 
     const events = await this.prisma.eCardEvent.findMany({
       where: { ecardId, createdAt: { gte: from, lte: to } },
@@ -118,12 +98,8 @@ export class EcardAnalyticsService {
 
     const totals = emptyCounts();
     const buckets = new Map<string, EventCounts>();
-    for (
-      let cursor = new Date(from);
-      cursor <= to;
-      cursor = new Date(cursor.getTime() + 86_400_000)
-    ) {
-      buckets.set(dateKey(cursor), emptyCounts());
+    for (const key of eachUtcDayKey(from, to)) {
+      buckets.set(key, emptyCounts());
     }
 
     let viewDurationSum = 0;
@@ -131,7 +107,7 @@ export class EcardAnalyticsService {
     for (const event of events) {
       const key = EVENT_TYPE_TO_COUNT_KEY[event.type];
       totals[key] += 1;
-      const bucket = buckets.get(dateKey(event.createdAt));
+      const bucket = buckets.get(utcDayKey(event.createdAt));
       if (bucket) bucket[key] += 1;
 
       if (event.type === ECardEventType.VIEW && event.durationMs !== null) {

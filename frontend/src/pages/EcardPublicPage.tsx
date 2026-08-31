@@ -13,6 +13,7 @@ export default function EcardPublicPage() {
     viewEventId,
     exchangeContactAllowed,
     exchangeContactForm,
+    trafficAttribution,
     isLoading,
     error,
   } = usePublicEcard(endpoint);
@@ -40,6 +41,7 @@ export default function EcardPublicPage() {
       card={card}
       exchangeContactAllowed={exchangeContactAllowed}
       exchangeContactForm={exchangeContactForm}
+      trafficAttribution={trafficAttribution}
     />
   );
 }

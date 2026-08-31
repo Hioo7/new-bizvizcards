@@ -169,4 +169,7 @@ export type ExchangeContactFormAnswerPayload =
 export interface SubmitCustomFormExchangeContactPayload {
   formVersionId: string;
   answers: ExchangeContactFormAnswerPayload[];
+  // Attribution carried over from the landing URL's `?src=&sref=` params.
+  trafficSource?: string;
+  trafficSourceRefId?: string;
 }

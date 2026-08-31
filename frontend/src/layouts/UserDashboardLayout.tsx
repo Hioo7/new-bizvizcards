@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { useCallback, useState, useEffect } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@hooks/useAuth";
 import { useMyEffectivePolicy } from "@hooks/useMyEffectivePolicy";
 import { ROUTES } from "@config/routes";
@@ -21,11 +21,21 @@ export default function UserDashboardLayout() {
   const { user, isLoading: authLoading, signOut } = useAuth();
   const { policy, isLoading: policyLoading } = useMyEffectivePolicy();
   const location = useLocation();
-  const initialSection =
-    (location.state as UserDashboardLocationState | null)?.section ??
-    "profile";
+  const navigate = useNavigate();
+  const locationState = location.state as UserDashboardLocationState | null;
+  const initialSection = locationState?.section ?? "profile";
   const [activeSection, setActiveSection] =
     useState<DashboardSection>(initialSection);
+  const scanPrefill = locationState?.scanPrefill;
+
+  // Clear the one-shot scan prefill from history so a refresh / back-nav
+  // doesn't re-open the New Lead modal.
+  const consumeScanPrefill = useCallback(() => {
+    navigate(location.pathname, {
+      replace: true,
+      state: { section: "leads" } satisfies UserDashboardLocationState,
+    });
+  }, [navigate, location.pathname]);
 
   const {
     leads,
@@ -51,6 +61,8 @@ export default function UserDashboardLayout() {
   const ecardAvailable = !policyLoading && (policy?.ecard.isAvailable ?? false);
   const orgAvailable =
     !policyLoading && (policy?.organisation.isAvailable ?? false);
+  const virtualBackgroundAvailable =
+    !policyLoading && (policy?.virtualBackground.isAvailable ?? false);
 
   // Only load leads data when the plan allows it
   useEffect(() => {
@@ -101,6 +113,8 @@ export default function UserDashboardLayout() {
             loading={leadsLoading}
             error={leadsError}
             isAccessible={leadsAccessible}
+            scanPrefill={scanPrefill}
+            onScanPrefillConsumed={consumeScanPrefill}
             onCreateLead={createLead}
             onUpdateLead={updateLead}
             onDeleteLead={deleteLead}
@@ -118,6 +132,7 @@ export default function UserDashboardLayout() {
             loading={leadsLoading}
             error={leadsError}
             isAccessible={leadsAccessible}
+            virtualBackgroundAccessible={virtualBackgroundAvailable}
             ecards={ecardAvailable ? customerEcards.ecards : []}
           />
         );

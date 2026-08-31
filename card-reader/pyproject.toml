@@ -1,0 +1,80 @@
+[project]
+name = "card-reader"
+version = "0.1.0"
+description = "Business-card OCR microservice — extracts structured contact details from a card photo"
+readme = "README.md"
+authors = [
+    { name = "Pranav-trackway", email = "pranav@ohmgpt.com" }
+]
+requires-python = "==3.12.*"
+dependencies = [
+    "en-core-web-sm",
+    "fastapi>=0.141.1",
+    "gunicorn>=26.2.0",
+    "phonenumbers>=9.0.38",
+    "pillow>=12.3.0",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pytesseract>=0.3.13",
+    "python-multipart>=0.0.32",
+    "spacy>=3.8.16",
+    "structlog>=26.1.0",
+    "uvicorn[standard]>=0.52.4",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.5",
+    "types-requests>=2.33.0.20260712",
+]
+
+# ── Tooling config (hand-authored — not dependency management) ────────────────
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# `from __future__ import annotations` is on everywhere, so type-only imports
+# cost nothing at runtime — the flake8-type-checking (TC) rules are omitted as
+# pure churn.
+select = ["E", "F", "I", "N", "UP", "B", "ASYNC", "S", "C4", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S311"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra -q --strict-markers"
+markers = [
+    "requires_tesseract: needs the tesseract binary on PATH",
+]
+filterwarnings = [
+    # Third-party deprecations we don't control.
+    "ignore::DeprecationWarning:starlette.*",
+    "ignore:Using `httpx`:DeprecationWarning",
+]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["card_reader"]
+strict = true
+plugins = ["pydantic.mypy"]
+
+# Third-party packages without type stubs / py.typed.
+[[tool.mypy.overrides]]
+module = ["pytesseract.*"]
+ignore_missing_imports = true

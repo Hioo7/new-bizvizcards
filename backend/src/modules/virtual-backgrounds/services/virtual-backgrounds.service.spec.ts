@@ -5,6 +5,8 @@ import { AppConfigService } from '../../../common/config/app-config.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MediaService } from '../../../common/media/media.service';
 import {
+  ECardEventType,
+  ECardTrafficSource,
   MediaSource,
   PlanBusinessModelType,
   VirtualBackgroundQrCorner,
@@ -79,6 +81,7 @@ describe('VirtualBackgroundsService (integration, TEST_DATABASE_URL only)', () =
   let prisma: PrismaService;
   let mediaService: MediaService;
   let templatesService: VirtualBackgroundTemplatesService;
+  let composerService: VirtualBackgroundComposerService;
   let service: VirtualBackgroundsService;
   let originalDatabaseUrl: string | undefined;
   const seededAccountIds: string[] = [];
@@ -102,13 +105,14 @@ describe('VirtualBackgroundsService (integration, TEST_DATABASE_URL only)', () =
       prisma,
       mediaService,
     );
+    composerService = new VirtualBackgroundComposerService();
     service = new VirtualBackgroundsService(
       prisma,
       mediaService,
       appConfig,
       planEnforcement,
       policyResolver,
-      new VirtualBackgroundComposerService(),
+      composerService,
       templatesService,
     );
   });
@@ -119,6 +123,7 @@ describe('VirtualBackgroundsService (integration, TEST_DATABASE_URL only)', () =
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     if (seededMediaIds.length > 0) {
       await prisma.media.deleteMany({ where: { id: { in: seededMediaIds } } });
       seededMediaIds.length = 0;
@@ -471,5 +476,187 @@ describe('VirtualBackgroundsService (integration, TEST_DATABASE_URL only)', () =
       where: { id: created.id },
     });
     expect(found).toBeNull();
+  });
+
+  function daysAgo(days: number): Date {
+    return new Date(Date.now() - days * 86_400_000);
+  }
+
+  // Full setup for a single tracked virtual background: whitelisted template,
+  // customer on a plan that allows it, an e-card, and the composed row.
+  async function createTrackedVb() {
+    const template = await createTemplate(`Tracked ${randomUUID()}`);
+    const customer = await seedCustomer();
+    const plan = await seedPlan({ whitelistedTemplateIds: [template.id] });
+    await assignPlan(customer.id, plan.id);
+    const ecard = await seedEcard(customer.id);
+    const vb = await service.createForCustomer(
+      customer.id,
+      {
+        source: 'TEMPLATE',
+        templateId: template.id,
+        ecardId: ecard.id,
+        qrCorner: VirtualBackgroundQrCorner.BOTTOM_RIGHT,
+      },
+      undefined,
+    );
+    seededMediaIds.push(
+      (
+        await prisma.virtualBackground.findUniqueOrThrow({
+          where: { id: vb.id },
+        })
+      ).composedMediaId,
+    );
+    return { customer, ecard, vb };
+  }
+
+  async function seedEcardEvent(
+    ecardId: string,
+    type: ECardEventType,
+    options: {
+      source?: ECardTrafficSource;
+      sourceRefId?: string | null;
+      createdAt?: Date;
+    } = {},
+  ) {
+    await prisma.eCardEvent.create({
+      data: {
+        ecardId,
+        type,
+        source: options.source ?? ECardTrafficSource.VIRTUAL_BACKGROUND,
+        sourceRefId:
+          options.sourceRefId === undefined ? null : options.sourceRefId,
+        createdAt: options.createdAt ?? new Date(),
+      },
+    });
+  }
+
+  describe('createForCustomer QR attribution', () => {
+    it('bakes ?src=virtual-background&sref=<new row id> into the QR URL', async () => {
+      const template = await createTemplate('QR params');
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ whitelistedTemplateIds: [template.id] });
+      await assignPlan(customer.id, plan.id);
+      const ecard = await seedEcard(customer.id);
+      const composeSpy = jest.spyOn(composerService, 'compose');
+
+      const vb = await service.createForCustomer(
+        customer.id,
+        {
+          source: 'TEMPLATE',
+          templateId: template.id,
+          ecardId: ecard.id,
+          qrCorner: VirtualBackgroundQrCorner.BOTTOM_RIGHT,
+        },
+        undefined,
+      );
+      seededMediaIds.push(
+        (
+          await prisma.virtualBackground.findUniqueOrThrow({
+            where: { id: vb.id },
+          })
+        ).composedMediaId,
+      );
+
+      const composedUrl = new URL(composeSpy.mock.calls[0][0].ecardUrl);
+      expect(composedUrl.pathname.endsWith(`/ecard/${ecard.endpoint}`)).toBe(
+        true,
+      );
+      expect(composedUrl.searchParams.get('src')).toBe('virtual-background');
+      expect(composedUrl.searchParams.get('sref')).toBe(vb.id);
+    });
+  });
+
+  describe('getAnalyticsForCustomer', () => {
+    it('returns zeroed totals and an empty list when the customer has no virtual backgrounds', async () => {
+      const customer = await seedCustomer();
+
+      const result = await service.getAnalyticsForCustomer(customer.id, {});
+
+      expect(result.totals).toEqual({ views: 0, exchangeContacts: 0 });
+      expect(result.perBackground).toEqual([]);
+      expect(result.dailyCounts.length).toBeGreaterThan(0);
+      expect(
+        result.dailyCounts.every(
+          (day) => day.views === 0 && day.exchangeContacts === 0,
+        ),
+      ).toBe(true);
+    });
+
+    it('counts VIEW and EXCHANGE_CONTACT events attributed to the virtual background', async () => {
+      const { customer, ecard, vb } = await createTrackedVb();
+      await seedEcardEvent(ecard.id, ECardEventType.VIEW, {
+        sourceRefId: vb.id,
+      });
+      await seedEcardEvent(ecard.id, ECardEventType.VIEW, {
+        sourceRefId: vb.id,
+      });
+      await seedEcardEvent(ecard.id, ECardEventType.EXCHANGE_CONTACT, {
+        sourceRefId: vb.id,
+      });
+
+      const result = await service.getAnalyticsForCustomer(customer.id, {});
+
+      expect(result.totals).toEqual({ views: 2, exchangeContacts: 1 });
+      expect(
+        result.perBackground.find((r) => r.virtualBackgroundId === vb.id),
+      ).toMatchObject({ views: 2, exchangeContacts: 1, ecardId: ecard.id });
+    });
+
+    it("ignores DIRECT events, bogus sourceRefIds, and another customer's data — the background still lists with zeros", async () => {
+      const { customer, ecard, vb } = await createTrackedVb();
+      const other = await createTrackedVb();
+      await seedEcardEvent(ecard.id, ECardEventType.VIEW, {
+        source: ECardTrafficSource.DIRECT,
+        sourceRefId: vb.id,
+      });
+      await seedEcardEvent(ecard.id, ECardEventType.VIEW, {
+        sourceRefId: randomUUID(),
+      });
+      await seedEcardEvent(other.ecard.id, ECardEventType.VIEW, {
+        sourceRefId: other.vb.id,
+      });
+
+      const result = await service.getAnalyticsForCustomer(customer.id, {});
+
+      expect(result.totals).toEqual({ views: 0, exchangeContacts: 0 });
+      expect(
+        result.perBackground.find((r) => r.virtualBackgroundId === vb.id),
+      ).toMatchObject({ views: 0, exchangeContacts: 0 });
+    });
+
+    it('excludes events outside the requested window', async () => {
+      const { customer, ecard, vb } = await createTrackedVb();
+      await seedEcardEvent(ecard.id, ECardEventType.VIEW, {
+        sourceRefId: vb.id,
+        createdAt: daysAgo(40),
+      });
+
+      const result = await service.getAnalyticsForCustomer(customer.id, {});
+
+      expect(result.totals.views).toBe(0);
+    });
+  });
+
+  describe('recomposeComposedImage', () => {
+    it('re-renders the composed image, repoints the row, and drops the previous media', async () => {
+      const { vb } = await createTrackedVb();
+      const before = await prisma.virtualBackground.findUniqueOrThrow({
+        where: { id: vb.id },
+      });
+
+      await service.recomposeComposedImage(vb.id);
+
+      const after = await prisma.virtualBackground.findUniqueOrThrow({
+        where: { id: vb.id },
+      });
+      seededMediaIds.push(after.composedMediaId);
+      expect(after.composedMediaId).not.toBe(before.composedMediaId);
+      expect(
+        await prisma.media.findUnique({
+          where: { id: before.composedMediaId },
+        }),
+      ).toBeNull();
+    });
   });
 });

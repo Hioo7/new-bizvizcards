@@ -191,3 +191,37 @@ jobs:
 
       - name: Run tests
         run: npm test -- --forceExit
+
+  # ── Card Reader (Python OCR service) ─────────────────────────────────────────
+  card-reader-check:
+    name: Card Reader — Lint, Types, Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: card-reader
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tesseract
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run mypy src
+
+      - name: Test
+        run: uv run pytest

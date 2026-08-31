@@ -5,21 +5,16 @@ import type { Lead } from "@features/user-dashboard/types";
 import { useInsights } from "@features/user-dashboard/hooks/useInsights";
 import { useEcardViews } from "@features/user-dashboard/hooks/useEcardViews";
 import EcardAnalyticsPickerSheet from "./EcardAnalyticsPickerSheet";
+import StatCard from "./StatCard";
+import VirtualBackgroundInsights from "./VirtualBackgroundInsights";
 
 interface InsightsSectionProps {
   leads: Lead[];
   loading: boolean;
   error: string | null;
   isAccessible: boolean;
+  virtualBackgroundAccessible: boolean;
   ecards: Ecard[];
-}
-
-interface StatCardProps {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  trend?: "up" | "down" | "neutral";
-  tooltip?: string;
 }
 
 function TodayIcon() {
@@ -51,41 +46,6 @@ function MonthIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-primary" aria-hidden="true">
       <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
     </svg>
-  );
-}
-
-function StatCard({ label, value, icon, trend, tooltip }: StatCardProps) {
-  return (
-    <div className="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-          {icon}
-        </div>
-        {trend && trend !== "neutral" && (
-          <span
-            className={`badge badge-sm ${
-              trend === "up" ? "badge-success" : "badge-error"
-            }`}
-          >
-            {trend === "up" ? "↑" : "↓"}
-          </span>
-        )}
-      </div>
-      <p className="text-2xl font-bold text-base-content">{value}</p>
-      <div className="flex items-center gap-1">
-        <p className="text-xs text-base-content/60">{label}</p>
-        {tooltip && (
-          <button
-            type="button"
-            className="tooltip tooltip-top -m-2 flex items-center justify-center rounded-full p-2 active:bg-base-200"
-            data-tip={tooltip}
-            aria-label={`About ${label}`}
-          >
-            <Info className="h-3.5 w-3.5 text-base-content/40" aria-hidden="true" />
-          </button>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -141,6 +101,7 @@ export default function InsightsSection({
   loading,
   error,
   isAccessible,
+  virtualBackgroundAccessible,
   ecards,
 }: InsightsSectionProps) {
   const [chartView, setChartView] = useState<"monthly" | "weekly">("monthly");
@@ -343,6 +304,12 @@ export default function InsightsSection({
                 />
               </div>
             )}
+
+            {/* Virtual backgrounds */}
+            <VirtualBackgroundInsights
+              accessible={virtualBackgroundAccessible}
+              selectedEcardId={selectedEcardId}
+            />
 
             {/* Chart */}
             {filteredLeads.length > 0 ? (

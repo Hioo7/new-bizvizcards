@@ -349,6 +349,17 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
       expect(lead.stage).toBeNull();
     });
 
+    it('persists sourcedBy CARD_SCANNER when the payload sets it', async () => {
+      const customer = await seedCustomer();
+
+      const lead = await service.create(customer.id, {
+        name: 'Scanned Lead',
+        sourcedBy: LeadSourceType.CARD_SCANNER,
+      });
+
+      expect(lead.sourcedBy).toBe(LeadSourceType.CARD_SCANNER);
+    });
+
     it('throws NotFoundException when folderId belongs to another customer', async () => {
       const customerA = await seedCustomer();
       const customerB = await seedCustomer();

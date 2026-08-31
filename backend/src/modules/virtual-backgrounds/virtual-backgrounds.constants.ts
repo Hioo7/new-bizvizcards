@@ -1,3 +1,5 @@
+import { ECardEventType } from '../../generated/prisma/client';
+
 // The only size a virtual background is ever produced at — Google
 // Meet/Zoom/Teams all expect a 16:9 1920x1080 image for a custom virtual
 // background.
@@ -65,6 +67,16 @@ export const VIRTUAL_BACKGROUND_TEMPLATE_NOT_FOUND_MESSAGE =
 export const VIRTUAL_BACKGROUND_TEMPLATE_LIMIT_REACHED_MESSAGE = `The virtual background template library has reached its limit of ${VIRTUAL_BACKGROUND_MAX_TEMPLATES}`;
 export const VIRTUAL_BACKGROUND_NOT_FOUND_MESSAGE =
   'Virtual background not found';
+
+// GET /api/customer/virtual-backgrounds/analytics
+export const VIRTUAL_BACKGROUND_ANALYTICS_PATH_SEGMENT = 'analytics';
+
+// The e-card events a virtual background's QR scan can produce: a view, and a
+// contact exchange from the page it landed on.
+export const VIRTUAL_BACKGROUND_TRACKED_EVENT_TYPES = [
+  ECardEventType.VIEW,
+  ECardEventType.EXCHANGE_CONTACT,
+] as const;
 export const VIRTUAL_BACKGROUND_MISSING_BASE_IMAGE_MESSAGE =
   'Either a templateId or a custom base image must be provided';
 export const VIRTUAL_BACKGROUND_AMBIGUOUS_BASE_IMAGE_MESSAGE =

@@ -1,13 +1,25 @@
 import type { ExchangeContactFieldType } from "@app-types/exchangeContactForm";
+import type { LeadFormPrefill } from "@app-types/lead";
 
 // Dashboard section types
 export type DashboardSection = "profile" | "leads" | "analytics" | "cart" | "apps" | "settings";
+
+/** Payload the card scanner hands back to the Leads section: the extracted
+ * field values to prefill the New Lead form, the raw OCR lines to show as a
+ * read-only hint, and a `key` (Date.now) that forces a fresh modal mount per
+ * scan. */
+export interface ScanPrefill {
+  key: number;
+  initialValues: LeadFormPrefill;
+  rawText: string[];
+}
 
 /** react-router `navigate(ROUTES.userDashboard, { state })` shape — lets a
  * page reached from a dashboard tab (e.g. a mini-app) send the user back to
  * that same tab instead of always landing on Home. */
 export interface UserDashboardLocationState {
   section?: DashboardSection;
+  scanPrefill?: ScanPrefill;
 }
 
 // ── Leads ────────────────────────────────────────────────────────────────────
@@ -124,6 +136,9 @@ export interface CreateLeadPayload {
   location?: string;
   stage?: OpportunityStage;
   folderId?: string;
+  /** The only source a client may assert — set when the lead came from the
+   *  card scanner. The backend rejects any other value. */
+  sourcedBy?: Extract<LeadSourceType, "CARD_SCANNER">;
 }
 
 export interface UpdateLeadPayload {

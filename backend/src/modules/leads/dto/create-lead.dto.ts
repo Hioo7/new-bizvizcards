@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LeadSourceType } from '../../../generated/prisma/client';
 import { isPairedOrBothAbsent } from '../../../common/validators/paired-fields.validator';
 import {
   LEAD_COMPANY_MAX_LENGTH,
@@ -55,6 +56,10 @@ export const createLeadSchema = z
       .max(LEAD_LOCATION_LONGITUDE_MAX)
       .optional(),
     folderId: z.string().uuid().optional(),
+    // The only source a client may assert. Everything else is server-decided
+    // (SMART_CARD / E_CARD from the exchange endpoints) or defaulted to
+    // MANUAL_ENTRY — a z.literal, so no other value can be sent.
+    sourcedBy: z.literal(LeadSourceType.CARD_SCANNER).optional(),
   })
   .strict()
   .refine(

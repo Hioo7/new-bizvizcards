@@ -1,4 +1,7 @@
-import { VIRTUAL_BACKGROUNDS_BASE_PATH } from "@config/api";
+import {
+  VIRTUAL_BACKGROUNDS_ANALYTICS_PATH,
+  VIRTUAL_BACKGROUNDS_BASE_PATH,
+} from "@config/api";
 import {
   VIRTUAL_BACKGROUND_CUSTOM_IMAGE_FIELD,
   VIRTUAL_BACKGROUND_MULTIPART_DATA_FIELD,
@@ -6,6 +9,7 @@ import {
 import { apiRequest } from "@services/apiClient";
 import type {
   CreateVirtualBackgroundPayload,
+  VirtualBackgroundAnalytics,
   VirtualBackgroundSummary,
   VirtualBackgroundTemplateSummary,
 } from "@app-types/virtualBackground";
@@ -45,4 +49,20 @@ export function deleteVirtualBackground(id: string): Promise<void> {
   return apiRequest<void>(`${VIRTUAL_BACKGROUNDS_BASE_PATH}/${id}`, {
     method: "DELETE",
   });
+}
+
+export function getVirtualBackgroundAnalytics(range?: {
+  from?: string;
+  to?: string;
+}): Promise<VirtualBackgroundAnalytics> {
+  const params = new URLSearchParams();
+  if (range?.from) params.set("from", range.from);
+  if (range?.to) params.set("to", range.to);
+  const query = params.toString();
+  return apiRequest<VirtualBackgroundAnalytics>(
+    query
+      ? `${VIRTUAL_BACKGROUNDS_ANALYTICS_PATH}?${query}`
+      : VIRTUAL_BACKGROUNDS_ANALYTICS_PATH,
+    { method: "GET" },
+  );
 }

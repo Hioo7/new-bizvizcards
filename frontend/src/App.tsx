@@ -34,6 +34,7 @@ import UserExchangeContactFormsPage from "@pages/UserExchangeContactFormsPage";
 import UserExchangeContactFormBuilderPage from "@pages/UserExchangeContactFormBuilderPage";
 import UserEmailSignaturesPage from "@pages/UserEmailSignaturesPage";
 import UserVirtualBackgroundsPage from "@pages/UserVirtualBackgroundsPage";
+import UserScanCardPage from "@pages/UserScanCardPage";
 import OrgDashboardPage from "@pages/OrgDashboardPage";
 import DataMigrationPage from "@pages/DataMigrationPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
@@ -71,6 +72,7 @@ function App() {
           path={ROUTES.userVirtualBackgrounds}
           element={<UserVirtualBackgroundsPage />}
         />
+        <Route path={ROUTES.userScanCard} element={<UserScanCardPage />} />
         <Route path={ROUTES.orgDashboard} element={<OrgDashboardPage />} />
       </Route>
 

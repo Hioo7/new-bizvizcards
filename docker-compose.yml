@@ -109,6 +109,33 @@ services:
     networks:
       - app-network
 
+  # Python OCR service. nginx proxies /scanner/* here (see nginx/default.conf).
+  # Config is entirely CARD_READER_* env vars (no secrets) — see
+  # card-reader/.env.template. The image ships production-safe defaults, so
+  # card-reader/.env is OPTIONAL: create it on the VPS only to override
+  # something (e.g. CARD_READER_WORKERS on a bigger host). The `required: false`
+  # below needs Docker Compose >= v2.24 (Jan 2024); on an older Compose either
+  # `touch card-reader/.env` once or drop the long form for `- ./card-reader/.env`.
+  # This file is separate from the `--env-file backend/.env` compose reads for
+  # ${DOCKERHUB_USERNAME}/${IMAGE_TAG} interpolation.
+  card-reader:
+    image: ${DOCKERHUB_USERNAME}/bizvizcards-card-reader:${IMAGE_TAG:-latest}
+    container_name: cards-app-card-reader
+    restart: unless-stopped
+    env_file:
+      - path: ./card-reader/.env
+        required: false
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    mem_limit: 1500m
+    cpus: 2.0
+    networks:
+      - app-network
+
   nginx:
     image: nginx:1.27-alpine
     container_name: cards-app-nginx
@@ -118,9 +145,14 @@ services:
     ports:
       - "8091:80"
     depends_on:
-      - backend
-      - frontend
-      - event-app
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
+      event-app:
+        condition: service_started
+      card-reader:
+        condition: service_healthy
     networks:
       - app-network
 

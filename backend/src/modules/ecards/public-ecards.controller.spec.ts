@@ -3,7 +3,11 @@ import { PublicEcardsController } from './public-ecards.controller';
 import type { EcardsService } from './services/ecards.service';
 import type { EcardVCardService } from './services/ecard-vcard.service';
 import type { EcardOgPreviewService } from './services/ecard-og-preview.service';
-import { ECardEventType } from '../../generated/prisma/client';
+import {
+  ECardEventType,
+  ECardTrafficSource,
+} from '../../generated/prisma/client';
+import { DEFAULT_ECARD_EVENT_ATTRIBUTION } from '../ecard-analytics/ecard-analytics.constants';
 import type { EcardAnalyticsService } from '../ecard-analytics/services/ecard-analytics.service';
 import type { ExchangeContactFormResolutionService } from '../exchange-contact-forms/services/exchange-contact-form-resolution.service';
 import type { LeadsService } from '../leads/services/leads.service';
@@ -91,12 +95,52 @@ describe('PublicEcardsController', () => {
     const result = await controller.get('my-card');
 
     expect(getByEndpoint).toHaveBeenCalledWith('my-card');
-    expect(recordEvent).toHaveBeenCalledWith('card-1', ECardEventType.VIEW);
+    expect(recordEvent).toHaveBeenCalledWith(
+      'card-1',
+      ECardEventType.VIEW,
+      DEFAULT_ECARD_EVENT_ATTRIBUTION,
+    );
     expect(result).toEqual({
       card,
       viewEventId: 'event-1',
       exchangeContactAllowed: true,
       exchangeContactForm: null,
+    });
+  });
+
+  it('get attributes the VIEW to a virtual background when src + sref query params are present', async () => {
+    const card = {
+      id: 'card-1',
+      customerId: 'customer-1',
+      organisationId: null,
+      hero: {
+        layout: 'DEFAULT',
+        theme: 'DEFAULT_DARK',
+        iconShape: 'CIRCLE',
+        primaryAccentColor: null,
+        secondaryAccentColor: null,
+      },
+      components: [],
+    };
+    const getByEndpoint = jest.fn().mockResolvedValue(card);
+    const recordEvent = jest.fn().mockResolvedValue({ id: 'event-1' });
+    const controller = new PublicEcardsController(
+      { getByEndpoint } as unknown as EcardsService,
+      {} as unknown as EcardVCardService,
+      {} as unknown as EcardOgPreviewService,
+      { recordEvent } as unknown as EcardAnalyticsService,
+      {} as unknown as LeadsService,
+      makeAvailablePolicyResolver(),
+      makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
+    );
+    const sref = '11111111-1111-4111-8111-111111111111';
+
+    await controller.get('my-card', { src: 'virtual-background', sref });
+
+    expect(recordEvent).toHaveBeenCalledWith('card-1', ECardEventType.VIEW, {
+      source: ECardTrafficSource.VIRTUAL_BACKGROUND,
+      sourceRefId: sref,
     });
   });
 
@@ -323,8 +367,42 @@ describe('PublicEcardsController', () => {
     expect(recordEvent).toHaveBeenCalledWith(
       'card-1',
       ECardEventType.EXCHANGE_CONTACT,
+      DEFAULT_ECARD_EVENT_ATTRIBUTION,
     );
     expect(result).toBe(lead);
+  });
+
+  it('exchangeContact attributes the EXCHANGE_CONTACT event from the payload traffic fields', async () => {
+    const createFromEcardExchangeContact = jest
+      .fn()
+      .mockResolvedValue({ id: 'lead-1' });
+    const getByEndpoint = jest.fn().mockResolvedValue({ id: 'card-1' });
+    const recordEvent = jest.fn().mockResolvedValue({ id: 'event-1' });
+    const controller = new PublicEcardsController(
+      { getByEndpoint } as unknown as EcardsService,
+      {} as unknown as EcardVCardService,
+      {} as unknown as EcardOgPreviewService,
+      { recordEvent } as unknown as EcardAnalyticsService,
+      { createFromEcardExchangeContact } as unknown as LeadsService,
+      {} as unknown as PlanPolicyResolverService,
+      makeOrganisationEcardTemplateService(),
+      makeExchangeContactFormResolutionService(),
+    );
+    const sref = '22222222-2222-4222-8222-222222222222';
+    const dto = {
+      name: 'Jane',
+      phoneNumber: '5551234567',
+      trafficSource: 'virtual-background',
+      trafficSourceRefId: sref,
+    } as never;
+
+    await controller.exchangeContact('my-card', dto);
+
+    expect(recordEvent).toHaveBeenCalledWith(
+      'card-1',
+      ECardEventType.EXCHANGE_CONTACT,
+      { source: ECardTrafficSource.VIRTUAL_BACKGROUND, sourceRefId: sref },
+    );
   });
 
   it('vcard builds the text from the assembled card, sends it inline, and records a CONTACT_SAVE event', async () => {

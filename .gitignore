@@ -5,3 +5,13 @@ dev-dist/
 !.env.template
 legacy-artifacts/
 .playwright-mcp/
+
+# Python (card-reader/)
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/

@@ -129,6 +129,11 @@ export const submitCustomFormExchangeContactSchema = z
     // never trusts this value as authoritative).
     formVersionId: z.uuid(),
     answers: z.array(exchangeContactFormAnswerSchema),
+    // Attribution carried over from the landing URL's `?src=&sref=` params so
+    // the resulting EXCHANGE_CONTACT event can be traced to its source (e.g. a
+    // virtual background). Not persisted on the Lead itself.
+    trafficSource: z.string().optional(),
+    trafficSourceRefId: z.uuid().optional(),
   })
   .strict();
 

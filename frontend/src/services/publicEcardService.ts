@@ -1,3 +1,8 @@
+import {
+  ECARD_TRAFFIC_SOURCE_PARAM,
+  ECARD_TRAFFIC_SOURCE_REF_PARAM,
+  type EcardTrafficAttribution,
+} from "@config/ecardTraffic";
 import { PUBLIC_ECARDS_BASE_PATH } from "@config/api";
 import { apiRequest } from "@services/apiClient";
 import type { GetPublicEcardResponse } from "@app-types/ecard";
@@ -6,9 +11,17 @@ import type { SubmitCustomFormExchangeContactPayload } from "@app-types/exchange
 
 export function getPublicEcard(
   endpoint: string,
+  attribution?: EcardTrafficAttribution,
 ): Promise<GetPublicEcardResponse> {
+  const query =
+    attribution?.trafficSource && attribution.trafficSourceRefId
+      ? `?${new URLSearchParams({
+          [ECARD_TRAFFIC_SOURCE_PARAM]: attribution.trafficSource,
+          [ECARD_TRAFFIC_SOURCE_REF_PARAM]: attribution.trafficSourceRefId,
+        }).toString()}`
+      : "";
   return apiRequest<GetPublicEcardResponse>(
-    `${PUBLIC_ECARDS_BASE_PATH}/${endpoint}`,
+    `${PUBLIC_ECARDS_BASE_PATH}/${endpoint}${query}`,
     { method: "GET" },
   );
 }

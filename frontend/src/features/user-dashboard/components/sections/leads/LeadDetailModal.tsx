@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import ConfirmActionModal from "@components/ConfirmActionModal";
 import { LocationMapEmbed } from "@components/LocationMapEmbed";
+import { WhatsAppIcon } from "@components/icons/BrandIcons";
+import { CONTACT_URI_SCHEMES } from "@config/contactChannels";
+import { buildWhatsAppChatLink } from "@utils/buildWhatsAppLink";
 import type {
   Lead,
   LeadFormAnswer,
@@ -29,6 +32,17 @@ interface LeadDetailModalProps {
 }
 
 type Tab = "details" | "notes" | "reminders";
+
+// One icon-only contact action in the hero card. Icon-only keeps four actions
+// comfortably tappable on a phone; each carries its own aria-label.
+const CONTACT_ACTION_CLASS =
+  "flex flex-1 items-center justify-center rounded-2xl border border-base-300 min-h-[44px] py-2.5 text-base-content transition-colors hover:bg-base-200";
+
+function contactActionClass(enabled: boolean): string {
+  return enabled
+    ? CONTACT_ACTION_CLASS
+    : `${CONTACT_ACTION_CLASS} pointer-events-none opacity-40`;
+}
 
 function formatUpdatedAt(dateStr: string): string {
   return new Date(dateStr).toLocaleString("en-GB", {
@@ -127,6 +141,10 @@ export default function LeadDetailModal({
   const phone = lead.phoneNumber
     ? `${lead.countryDialCode ?? ""}${lead.phoneNumber}`
     : null;
+  const whatsAppLink = buildWhatsAppChatLink(
+    lead.countryDialCode,
+    lead.phoneNumber,
+  );
 
   function startEdit() {
     setEditName(lead?.name ?? "");
@@ -336,35 +354,44 @@ export default function LeadDetailModal({
               )}
             </div>
 
-            {/* Call / Message / Mail */}
+            {/* Contact actions: call, text, WhatsApp, email */}
             <div className="flex gap-2 mb-3">
               <a
-                href={phone ? `tel:${phone}` : undefined}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-base-300 py-2.5 text-sm font-semibold text-base-content transition-colors hover:bg-base-200 ${!phone ? "pointer-events-none opacity-40" : ""}`}
+                href={phone ? `${CONTACT_URI_SCHEMES.tel}${phone}` : undefined}
+                aria-label="Call"
+                className={contactActionClass(Boolean(phone))}
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
                   <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.7A2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Call
               </a>
               <a
-                href={phone ? `sms:${phone}` : undefined}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-base-300 py-2.5 text-sm font-semibold text-base-content transition-colors hover:bg-base-200 ${!phone ? "pointer-events-none opacity-40" : ""}`}
+                href={phone ? `${CONTACT_URI_SCHEMES.sms}${phone}` : undefined}
+                aria-label="Send a text message"
+                className={contactActionClass(Boolean(phone))}
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Message
               </a>
               <a
-                href={lead.email ? `mailto:${lead.email}` : undefined}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-base-300 py-2.5 text-sm font-semibold text-base-content transition-colors hover:bg-base-200 ${!lead.email ? "pointer-events-none opacity-40" : ""}`}
+                href={whatsAppLink ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Message on WhatsApp"
+                className={contactActionClass(Boolean(whatsAppLink))}
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <WhatsAppIcon className="h-5 w-5" />
+              </a>
+              <a
+                href={lead.email ? `${CONTACT_URI_SCHEMES.mailto}${lead.email}` : undefined}
+                aria-label="Send an email"
+                className={contactActionClass(Boolean(lead.email))}
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                   <polyline points="22,6 12,13 2,6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Mail
               </a>
             </div>
 

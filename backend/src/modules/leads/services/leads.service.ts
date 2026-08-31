@@ -296,7 +296,7 @@ export class LeadsService {
     return this.prisma.lead.create({
       data: {
         customerId,
-        sourcedBy: LeadSourceType.MANUAL_ENTRY,
+        sourcedBy: dto.sourcedBy ?? LeadSourceType.MANUAL_ENTRY,
         name: dto.name,
         email: dto.email,
         countryDialCode: dto.countryDialCode,

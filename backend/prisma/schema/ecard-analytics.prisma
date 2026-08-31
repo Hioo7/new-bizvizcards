@@ -7,17 +7,35 @@ enum ECardEventType {
   @@map("ECardEventType")
 }
 
+// How a visitor arrived at the e-card for a given event. DIRECT covers every
+// pre-existing row and every visit that carried no recognised source token on
+// its URL. Deliberately generic — new channels (email signatures, campaigns…)
+// are added here rather than as bespoke columns.
+enum ECardTrafficSource {
+  DIRECT
+  VIRTUAL_BACKGROUND
+
+  @@map("ECardTrafficSource")
+}
+
 model ECardEvent {
-  id         String         @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
-  ecardId    String         @db.Uuid
-  ecard      ECard          @relation(fields: [ecardId], references: [id], onDelete: Cascade)
-  type       ECardEventType
+  id          String             @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  ecardId     String             @db.Uuid
+  ecard       ECard              @relation(fields: [ecardId], references: [id], onDelete: Cascade)
+  type        ECardEventType
+  source      ECardTrafficSource @default(DIRECT)
+  // Loose reference (no FK) to the row named by `source` — a
+  // VirtualBackground.id when source = VIRTUAL_BACKGROUND, null otherwise.
+  // Not a foreign key on purpose: the analytics row must outlive the
+  // virtual background it was attributed to.
+  sourceRefId String?            @db.Uuid
   // Only ever set for VIEW events, reported back by the public card page
   // after the fact (see EcardAnalyticsService.recordViewDuration) — null
   // until then, and for every other event type.
-  durationMs Int?
-  createdAt  DateTime       @default(now())
+  durationMs  Int?
+  createdAt   DateTime           @default(now())
 
   @@index([ecardId, type, createdAt])
+  @@index([sourceRefId, type, createdAt])
   @@map("ECardEvent")
 }

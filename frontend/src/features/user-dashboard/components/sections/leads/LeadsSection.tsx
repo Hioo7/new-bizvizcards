@@ -3,12 +3,14 @@ import type {
   Lead,
   LeadFolder,
   CreateLeadPayload,
+  ScanPrefill,
   UpdateLeadPayload,
 } from "@features/user-dashboard/types";
 import { RECENT_LEADS_MAX } from "@features/user-dashboard/config";
 import LeadCard from "./LeadCard";
 import FolderCard from "./FolderCard";
 import CreateLeadModal from "./CreateLeadModal";
+import ScanCardButton from "./ScanCardButton";
 import CreateFolderModal from "./CreateFolderModal";
 import RenameFolderModal from "./RenameFolderModal";
 import DeleteFolderModal from "./DeleteFolderModal";
@@ -23,6 +25,10 @@ interface LeadsSectionProps {
   loading: boolean;
   error: string | null;
   isAccessible: boolean;
+  /** Set (with a fresh `key`) right after a card scan — auto-opens the New
+   *  Lead modal prefilled with the extracted fields. */
+  scanPrefill?: ScanPrefill;
+  onScanPrefillConsumed: () => void;
   onCreateLead: (payload: CreateLeadPayload) => Promise<void>;
   onUpdateLead: (id: string, payload: UpdateLeadPayload) => Promise<void>;
   onDeleteLead: (id: string) => Promise<void>;
@@ -42,6 +48,8 @@ export default function LeadsSection({
   loading,
   error,
   isAccessible,
+  scanPrefill,
+  onScanPrefillConsumed,
   onCreateLead,
   onUpdateLead,
   onDeleteLead,
@@ -57,6 +65,14 @@ export default function LeadsSection({
   const [showAllLeads, setShowAllLeads] = useState(false);
   const [showFolderDropdown, setShowFolderDropdown] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
+  // A pending scan prefill (from the router state) opens the New Lead modal on
+  // its own — no effect needed, just derive it. Closing the modal clears the
+  // router state (onScanPrefillConsumed) so a refresh / back-nav can't re-open it.
+  const createLeadOpen = showCreateLeadModal || scanPrefill != null;
+  function closeCreateLead() {
+    setShowCreateLeadModal(false);
+    if (scanPrefill != null) onScanPrefillConsumed();
+  }
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -522,17 +538,20 @@ export default function LeadsSection({
                     </button>
                   )}
                   {leads.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateLeadModal(true)}
-                      className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                      Add Lead
-                    </button>
+                    <>
+                      <ScanCardButton />
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateLeadModal(true)}
+                        className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                          <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                        Add Lead
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -555,18 +574,21 @@ export default function LeadsSection({
                     </svg>
                   </div>
                   <p className="text-sm font-medium text-base-content/60">No leads yet</p>
-                  <p className="mt-1 text-xs text-base-content/40">Add your first lead to get started</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateLeadModal(true)}
-                    className="mt-4 flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                    Add your first lead
-                  </button>
+                  <p className="mt-1 text-xs text-base-content/40">Scan a card or add one manually</p>
+                  <div className="mt-4 flex items-center gap-2">
+                    <ScanCardButton />
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateLeadModal(true)}
+                      className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-content shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                      Add lead
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -597,6 +619,7 @@ export default function LeadsSection({
                     {allFilteredLeads.length === 1 ? "lead" : "leads"}
                   </span>
                 )}
+                <ScanCardButton />
                 <button
                   type="button"
                   onClick={() => setShowCreateLeadModal(true)}
@@ -652,10 +675,14 @@ export default function LeadsSection({
 
       {/* Modals */}
       <CreateLeadModal
-        open={showCreateLeadModal}
-        onClose={() => setShowCreateLeadModal(false)}
+        key={scanPrefill?.key ?? "manual"}
+        open={createLeadOpen}
+        onClose={closeCreateLead}
         onSubmit={onCreateLead}
         defaultFolderId={folderFilterId ?? defaultFolderId}
+        initialValues={scanPrefill?.initialValues}
+        sourcedBy={scanPrefill != null ? "CARD_SCANNER" : undefined}
+        hint={scanPrefill?.rawText}
       />
 
       <CreateFolderModal

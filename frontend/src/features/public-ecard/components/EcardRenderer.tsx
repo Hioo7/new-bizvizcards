@@ -25,6 +25,7 @@ import { LocationTileSection } from "@features/public-ecard/components/sections/
 import { ReviewLinkSection } from "@features/public-ecard/components/sections/ReviewLinkSection";
 import { TestimonialsSection } from "@features/public-ecard/components/sections/TestimonialsSection";
 import { ECARD_THEME_TO_DAISYUI_THEME } from "@features/public-ecard/config";
+import type { EcardTrafficAttribution } from "@config/ecardTraffic";
 import type { Ecard, EcardComponent } from "@app-types/ecard";
 import type { PublicExchangeContactForm } from "@app-types/exchangeContactForm";
 import type { CSSProperties } from "react";
@@ -130,12 +131,14 @@ interface EcardRendererProps {
   card: Ecard;
   exchangeContactAllowed: boolean;
   exchangeContactForm: PublicExchangeContactForm | null;
+  trafficAttribution?: EcardTrafficAttribution;
 }
 
 export function EcardRenderer({
   card,
   exchangeContactAllowed,
   exchangeContactForm,
+  trafficAttribution,
 }: EcardRendererProps) {
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
   const canExchangeContact =
@@ -195,7 +198,10 @@ export function EcardRenderer({
           form={exchangeContactForm}
           vcardUrl={ecardVCardUrl(card.endpoint)}
           onSubmit={(payload) =>
-            submitCustomFormExchangeContact(card.endpoint, payload)
+            submitCustomFormExchangeContact(card.endpoint, {
+              ...payload,
+              ...trafficAttribution,
+            })
           }
           onClose={() => setIsExchangeOpen(false)}
         />
@@ -203,7 +209,12 @@ export function EcardRenderer({
         <EcardExchangeContactPopup
           isOpen={isExchangeOpen}
           vcardUrl={ecardVCardUrl(card.endpoint)}
-          onSubmit={(payload) => submitEcardExchangeContact(card.endpoint, payload)}
+          onSubmit={(payload) =>
+            submitEcardExchangeContact(card.endpoint, {
+              ...payload,
+              ...trafficAttribution,
+            })
+          }
           onClose={() => setIsExchangeOpen(false)}
         />
       )}

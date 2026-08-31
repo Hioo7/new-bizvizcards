@@ -8,6 +8,7 @@ export const ROUTES = {
   userExchangeContactFormBuilder: "/user/apps/exchange-contact-forms/:formId",
   userEmailSignatures: "/user/apps/email-signatures",
   userVirtualBackgrounds: "/user/apps/virtual-backgrounds",
+  userScanCard: "/user/apps/scan-card",
   orgDashboard: "/org/dashboard",
   adminLogin: "/admin/login",
   adminHome: "/admin",
