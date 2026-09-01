@@ -1,0 +1,22 @@
+{
+  "pkg": "@bizvizcards/ui",
+  "globalName": "BizvizUI",
+  "shape": "package",
+  "projectId": "5fd6d72f-f5be-4798-ace3-c9b6ed28c2d3",
+  "buildCmd": "npm run build",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": "dist/styles.css",
+  "docsDir": "docs",
+  "guidelinesGlob": ["guides/**/*.md"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Sheet": { "cardMode": "single", "viewport": "390x640", "primaryStory": "ReviewScannedLead" },
+    "Button": { "cardMode": "column" },
+    "Badge": { "cardMode": "column" },
+    "Chip": { "cardMode": "column" },
+    "StatCard": { "cardMode": "column" },
+    "Toast": { "cardMode": "column" },
+    "BottomNav": { "cardMode": "column" }
+  }
+}

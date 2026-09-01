@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* The `bizviz` daisyUI theme + base plugin, GENERATED from @bizvizcards/tokens
+   (scripts/gen-theme-css.mjs, runs on `prebuild`). frontend/src/index.css stays
+   the upstream palette owner. `default: true` emits the tokens onto :root as
+   well as [data-theme="bizviz"], so components render themed without a wrapper. */
+@import "./theme.generated.css";
+
+/* Scan the library's own components and the design-sync preview cards so every
+   utility class they use is compiled into dist/styles.css (the single stylesheet
+   /design-sync ships to Claude Design). */
+@source "./src";
+@source "./.design-sync/previews";
+
+/* The app ships no custom webfont — it rides the platform UI stack. Stated
+   explicitly here so previews and generated designs match the app exactly. */
+:root {
+  --bizviz-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+}
+
+html,
+body {
+  font-family: var(--bizviz-font-sans);
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}

@@ -1,0 +1,10 @@
+{
+  "name": "bizvizcards-ui-workspace",
+  "private": true,
+  "description": "Workspace root for the shared BizViz UI packages. Hoists a single copy of react / react-native / reanimated / nativewind so Metro (ui-native + example) has one module graph. ui-web/ is intentionally NOT a member — it's a web package with its own toolchain.",
+  "workspaces": [
+    "tokens",
+    "ui-native",
+    "ui-native/example"
+  ]
+}

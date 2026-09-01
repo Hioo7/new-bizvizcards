@@ -1,0 +1,19 @@
+{
+  "name": "@bizvizcards/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "pretest": "npm run build",
+    "test": "node --test src/tokens.test.ts",
+    "check:frontend": "node scripts/check-against-frontend.mjs"
+  },
+  "devDependencies": { "typescript": "~6.0.2" }
+}

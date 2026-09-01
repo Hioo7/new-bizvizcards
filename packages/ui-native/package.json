@@ -1,0 +1,65 @@
+{
+  "name": "@bizvizcards/ui-native",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./global.css": "./src/global.css",
+    "./tailwind.config": "./tailwind.config.js",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "gen:css": "node scripts/gen-theme.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "test": "echo \"jest smoke tests deferred — see NOTES.md; per-component gate is 'npm run typecheck'\" && npm run typecheck",
+    "prestorybook": "npm run gen:css",
+    "storybook": "storybook dev -p 7007",
+    "prebuild-storybook": "npm run gen:css",
+    "build-storybook": "storybook build",
+    "review": "node scripts/screenshot-stories.mjs"
+  },
+  "peerDependencies": {
+    "lucide-react-native": "*",
+    "nativewind": "^4.1.0",
+    "react": "*",
+    "react-native": "*",
+    "react-native-reanimated": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-svg": "*"
+  },
+  "dependencies": {
+    "@bizvizcards/tokens": "*",
+    "@expo/html-elements": "^0.12.5",
+    "@gluestack-ui/core": "3.0.25",
+    "@gluestack-ui/utils": "3.0.21",
+    "@legendapp/motion": "^2.4.0",
+    "tailwind-variants": "^0.1.20"
+  },
+  "devDependencies": {
+    "@react-native/jest-preset": "^0.87.1",
+    "@storybook/react-native-web-vite": "9.1.20",
+    "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "~19.2.0",
+    "autoprefixer": "^10.4.20",
+    "babel-jest": "^30.5.0",
+    "babel-preset-expo": "^57.0.9",
+    "expo": "^57.0.18",
+    "jest": "^30.5.0",
+    "jest-expo": "^57.0.5",
+    "playwright": "^1.56.0",
+    "react-dom": "^19.2.3",
+    "react-native-css-interop": "^0.2.6",
+    "react-native-web": "^0.21.2",
+    "react-test-renderer": "^19.2.3",
+    "storybook": "9.1.20",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~5.9.0",
+    "vite": "^6.4.3"
+  }
+}

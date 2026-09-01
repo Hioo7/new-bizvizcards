@@ -1,0 +1,41 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@bizvizcards/tokens": "*",
+    "@bizvizcards/ui-native": "*",
+    "@expo/html-elements": "^0.12.5",
+    "@gluestack-ui/core": "3.0.25",
+    "@gluestack-ui/utils": "3.0.21",
+    "@legendapp/motion": "^2.4.0",
+    "expo": "~57.0.18",
+    "expo-status-bar": "~57.0.1",
+    "lucide-react-native": "^1.38.0",
+    "nativewind": "^4.2.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
+    "react-native-worklets": "0.10.1",
+    "semver": "^7.8.5",
+    "tailwind-variants": "^0.1.20"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@types/react": "~19.2.2",
+    "babel-preset-expo": "~57.0.0",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~5.9.0"
+  }
+}

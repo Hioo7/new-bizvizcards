@@ -1,0 +1,15 @@
+{
+  "extends": "./example/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "paths": {
+      "@bizvizcards/tokens": ["../tokens/src/index.ts"],
+      "@bizvizcards/ui-native": ["./src/index.ts"]
+    }
+  },
+  "include": ["src", "stories", ".storybook", "nativewind-env.d.ts"]
+}
