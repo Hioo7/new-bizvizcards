@@ -214,6 +214,22 @@ export default function PlanReviewStep({ value }: PlanReviewStepProps) {
           </>
         )}
       </div>
+
+      <div className="rounded-box border border-base-300 p-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+          Bulk Messenger policy
+        </p>
+        <SummaryRow
+          label="Available"
+          value={value.bulkMessengerPolicy.isAvailable ? "Yes" : "No"}
+        />
+        {value.bulkMessengerPolicy.isAvailable && (
+          <SummaryRow
+            label="Max message templates"
+            value={String(value.bulkMessengerPolicy.maxTemplates)}
+          />
+        )}
+      </div>
     </div>
   );
 }

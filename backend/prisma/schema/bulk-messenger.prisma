@@ -1,0 +1,116 @@
+// Bulk Messenger — a convenience wrapper for sending a templated WhatsApp
+// message to many leads at once. There is no server-side delivery: the app
+// resolves a template against each lead and the customer taps a `wa.me` deep
+// link per recipient.
+//
+// Two deliberately decoupled models: a reusable, editable BulkMessageTemplate
+// and an immutable BulkMessageSend. A Send snapshots everything it needs at
+// creation time (template name/body, linked-form name, per-recipient resolved
+// message + contact details) so later edits to the template — or deletion of
+// the template or a lead — never rewrite a past send's history. Same
+// "denormalized snapshot for history integrity" reasoning as
+// PlanPurchaseHistory.businessModelTypeAtPurchase in plan.prisma.
+
+enum BulkMessageRecipientStatus {
+  PENDING
+  MESSAGED
+
+  @@map("BulkMessageRecipientStatus")
+}
+
+// A reusable templated message. Stores only the raw body + the optional linked
+// form; the set of available placeholders is recomputed at read time from the
+// fixed core list plus the linked form's current version (see
+// BulkMessagePlaceholderService), never materialized here.
+model BulkMessageTemplate {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId String   @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Staff-facing label only.
+  name String
+  // Message text with {placeholders}. Tokens are validated against the
+  // available set at write time; any that slip through still degrade to '' at
+  // send time.
+  body String
+
+  // Optional link to ONE of the customer's own ExchangeContactForm "setups" —
+  // its untagged fields become additional {field.<slug>} placeholders.
+  // Restrict (not SetNull): a form a template depends on can't be hard-deleted
+  // out from under it. ExchangeContactFormsService.deleteForm carries an
+  // explicit friendly ConflictException guard; this FK is the DB-level
+  // backstop — same "friendly exception + DB Restrict" pairing as
+  // ExchangeContactFormSubmission.version and PlanPurchaseHistory.planId.
+  linkedFormId String?              @db.Uuid
+  linkedForm   ExchangeContactForm? @relation(fields: [linkedFormId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sends BulkMessageSend[]
+
+  @@index([customerId])
+  @@index([linkedFormId])
+  @@map("BulkMessageTemplate")
+}
+
+// A saved run. The live `template` relation is a convenience backref only —
+// everything needed to render or list this send later is snapshotted onto this
+// row and its recipients.
+model BulkMessageSend {
+  id         String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  customerId String   @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // SetNull: a Send outlives its template's deletion.
+  templateId String?              @db.Uuid
+  template   BulkMessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  // Snapshots as of creation — never rewritten.
+  templateNameSnapshot String
+  bodySnapshot         String
+  // Pure historical reference — no FK, so form deletion never touches history.
+  linkedFormIdSnapshot   String? @db.Uuid
+  linkedFormNameSnapshot String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipients BulkMessageSendRecipient[]
+
+  @@index([customerId])
+  @@index([templateId])
+  @@map("BulkMessageSend")
+}
+
+model BulkMessageSendRecipient {
+  id     String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  sendId String          @db.Uuid
+  send   BulkMessageSend @relation(fields: [sendId], references: [id], onDelete: Cascade)
+
+  // Nullable + SetNull: recipient history survives lead deletion.
+  leadId String? @db.Uuid
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  // Per-recipient snapshot. Every recipient is guaranteed a usable phone at
+  // creation time (leads without one can't be selected in the wizard), so the
+  // dial code + number columns are non-null.
+  recipientNameSnapshot   String
+  recipientEmailSnapshot  String?
+  countryDialCodeSnapshot String
+  phoneNumberSnapshot     String
+  // Fully placeholder-resolved text for this lead, computed at creation from
+  // bodySnapshot + this lead's scalar fields + this lead's form answers.
+  // Missing placeholder values were substituted with ''.
+  resolvedMessage String
+
+  status     BulkMessageRecipientStatus @default(PENDING)
+  messagedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sendId])
+  @@index([leadId])
+  @@map("BulkMessageSendRecipient")
+}

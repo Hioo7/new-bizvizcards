@@ -19,6 +19,7 @@ import {
   ECARD_GATED_THEMES,
 } from '../../src/modules/ecards/ecards.constants';
 import {
+  PLAN_FALLBACK_MAX_BULK_MESSAGE_TEMPLATES,
   PLAN_FALLBACK_MAX_CUSTOM_FORMS,
   PLAN_FALLBACK_MAX_ECARDS,
   PLAN_FALLBACK_MAX_EMAIL_SIGNATURES,
@@ -152,6 +153,12 @@ async function main() {
               isAvailable: false,
               maxVirtualBackgrounds: PLAN_FALLBACK_MAX_VIRTUAL_BACKGROUNDS,
               allowCustomBackground: false,
+            },
+          },
+          bulkMessengerPolicy: {
+            create: {
+              isAvailable: false,
+              maxTemplates: PLAN_FALLBACK_MAX_BULK_MESSAGE_TEMPLATES,
             },
           },
         },

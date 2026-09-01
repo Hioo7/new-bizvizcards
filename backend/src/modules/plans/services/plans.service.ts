@@ -25,6 +25,7 @@ import type { OrganisationPolicyDto } from '../dto/organisation-policy.dto';
 import type { SmartCardPolicyDto } from '../dto/smart-card-policy.dto';
 import type { UpdatePlanDto } from '../dto/update-plan.dto';
 import type { VirtualBackgroundPolicyDto } from '../dto/virtual-background-policy.dto';
+import type { BulkMessengerPolicyDto } from '../dto/bulk-messenger-policy.dto';
 import {
   PLAN_DELETE_ORPHAN_ONLY_MESSAGE,
   PLAN_LIST_DEFAULT_PAGE,
@@ -57,6 +58,7 @@ export interface PlanDetail extends PlanSummary {
   eventPolicy: EventPolicyDto;
   emailSignaturePolicy: EmailSignaturePolicyDto;
   virtualBackgroundPolicy: VirtualBackgroundPolicyDto;
+  bulkMessengerPolicy: BulkMessengerPolicyDto;
 }
 
 export interface PlanListResult {
@@ -120,6 +122,12 @@ export class PlansService {
               create: this.buildVirtualBackgroundPolicyCreateData(
                 dto.virtualBackgroundPolicy,
               ),
+            },
+            bulkMessengerPolicy: {
+              create: {
+                isAvailable: dto.bulkMessengerPolicy.isAvailable,
+                maxTemplates: dto.bulkMessengerPolicy.maxTemplates,
+              },
             },
           },
         },
@@ -193,6 +201,10 @@ export class PlansService {
       virtualBackgroundPolicy: this.toVirtualBackgroundPolicyDto(
         plan.policy.virtualBackgroundPolicy,
       ),
+      bulkMessengerPolicy: {
+        isAvailable: plan.policy.bulkMessengerPolicy.isAvailable,
+        maxTemplates: plan.policy.bulkMessengerPolicy.maxTemplates,
+      },
     };
   }
 
@@ -208,6 +220,7 @@ export class PlansService {
             eventPolicyId: true,
             emailSignaturePolicyId: true,
             virtualBackgroundPolicyId: true,
+            bulkMessengerPolicyId: true,
           },
         },
       },
@@ -303,6 +316,15 @@ export class PlansService {
           plan.policy!.virtualBackgroundPolicyId,
           dto.virtualBackgroundPolicy,
         );
+      }
+      if (dto.bulkMessengerPolicy) {
+        await tx.bulkMessengerPolicy.update({
+          where: { id: plan.policy!.bulkMessengerPolicyId },
+          data: {
+            isAvailable: dto.bulkMessengerPolicy.isAvailable,
+            maxTemplates: dto.bulkMessengerPolicy.maxTemplates,
+          },
+        });
       }
     });
 

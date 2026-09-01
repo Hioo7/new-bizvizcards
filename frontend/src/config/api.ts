@@ -80,6 +80,8 @@ export const EMPLOYEE_VIRTUAL_BACKGROUND_TEMPLATES_BASE_PATH =
 export const VIRTUAL_BACKGROUNDS_BASE_PATH = "/api/customer/virtual-backgrounds";
 export const VIRTUAL_BACKGROUNDS_ANALYTICS_PATH = `${VIRTUAL_BACKGROUNDS_BASE_PATH}/analytics`;
 
+export const BULK_MESSENGER_BASE_PATH = "/api/bulk-messenger";
+
 // Business-card OCR microservice — proxied to the card-reader container by
 // nginx in prod, to localhost:8000 by the Vite dev proxy. Not under /api.
 export const SCANNER_BASE_PATH = "/scanner";

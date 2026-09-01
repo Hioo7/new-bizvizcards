@@ -73,6 +73,8 @@ interface PlanOverrides {
   virtualBackgroundIsAvailable?: boolean;
   maxVirtualBackgrounds?: number;
   allowCustomBackground?: boolean;
+  bulkMessengerIsAvailable?: boolean;
+  maxBulkMessageTemplates?: number;
 }
 
 describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () => {
@@ -281,6 +283,12 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
                 allowCustomBackground: overrides.allowCustomBackground ?? false,
               },
             },
+            bulkMessengerPolicy: {
+              create: {
+                isAvailable: overrides.bulkMessengerIsAvailable ?? true,
+                maxTemplates: overrides.maxBulkMessageTemplates ?? 2,
+              },
+            },
           },
         },
       },
@@ -418,6 +426,24 @@ describe('PlanPolicyResolverService (integration, TEST_DATABASE_URL only)', () =
         maxVirtualBackgrounds: 3,
         allowCustomBackground: true,
         availableTemplates: [],
+      });
+    });
+
+    it('resolves the bulk messenger policy', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({
+        bulkMessengerIsAvailable: true,
+        maxBulkMessageTemplates: 7,
+      });
+      await assignPlan(customer.id, plan.id);
+
+      const effective = await service.getEffectivePolicyForCustomer(
+        customer.id,
+      );
+
+      expect(effective.bulkMessenger).toEqual({
+        isAvailable: true,
+        maxTemplates: 7,
       });
     });
 

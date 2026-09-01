@@ -127,6 +127,9 @@ export const DEFAULT_MAX_CUSTOM_FORMS = 5;
 // Same starting-point convention, for a new plan's email signature cap.
 export const DEFAULT_MAX_EMAIL_SIGNATURES = 5;
 
+// Same starting-point convention, for a new plan's bulk message template cap.
+export const DEFAULT_MAX_BULK_MESSAGE_TEMPLATES = 5;
+
 export const PLAN_FORM_STEPS = [
   { id: "basics", label: "Basics" },
   { id: "ecard", label: "E-card" },
@@ -135,5 +138,6 @@ export const PLAN_FORM_STEPS = [
   { id: "event", label: "Events" },
   { id: "email-signature", label: "Email Signatures" },
   { id: "virtual-background", label: "Virtual Backgrounds" },
+  { id: "bulk-messenger", label: "Bulk Messenger" },
   { id: "review", label: "Review" },
 ] as const;

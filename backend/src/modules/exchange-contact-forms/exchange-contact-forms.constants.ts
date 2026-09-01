@@ -61,6 +61,8 @@ export const EXCHANGE_CONTACT_FORM_VERSION_DELETE_CURRENT_MESSAGE =
   'The current version cannot be deleted on its own — delete the whole form instead';
 export const EXCHANGE_CONTACT_FORM_DELETE_HAS_SUBMISSIONS_MESSAGE =
   'This form cannot be deleted because one or more of its versions already has submissions';
+export const EXCHANGE_CONTACT_FORM_DELETE_LINKED_TO_BULK_MESSAGE_TEMPLATE_MESSAGE =
+  'This form cannot be deleted because one or more bulk message templates depend on it';
 export const EXCHANGE_CONTACT_FORM_ECARD_OWNERSHIP_MISMATCH_MESSAGE =
   'One or more e-cards do not belong to this form’s customer';
 export const EXCHANGE_CONTACT_FORM_ORGANISATION_TEMPLATE_NOT_FOUND_MESSAGE =

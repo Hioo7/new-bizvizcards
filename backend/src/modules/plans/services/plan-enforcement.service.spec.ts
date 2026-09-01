@@ -75,6 +75,8 @@ interface PlanOverrides {
   maxVirtualBackgrounds?: number;
   allowCustomBackground?: boolean;
   virtualBackgroundWhitelistedTemplateIds?: string[];
+  bulkMessengerIsAvailable?: boolean;
+  maxBulkMessageTemplates?: number;
 }
 
 describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
@@ -382,6 +384,12 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
                     overrides.virtualBackgroundWhitelistedTemplateIds ?? []
                   ).map((templateId) => ({ templateId })),
                 },
+              },
+            },
+            bulkMessengerPolicy: {
+              create: {
+                isAvailable: overrides.bulkMessengerIsAvailable ?? true,
+                maxTemplates: overrides.maxBulkMessageTemplates ?? 2,
               },
             },
           },
@@ -1026,6 +1034,49 @@ describe('PlanEnforcementService (integration, TEST_DATABASE_URL only)', () => {
         service.assertCanCreateEmailSignature(customer.id),
       ).rejects.toThrow(
         "This customer's plan does not include email signatures",
+      );
+    });
+  });
+
+  describe('assertCanCreateBulkMessageTemplate', () => {
+    it('passes when under the bulk message template cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ maxBulkMessageTemplates: 2 });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateBulkMessageTemplate(customer.id),
+      ).resolves.toBeUndefined();
+    });
+
+    it('blocks once at the bulk message template cap', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ maxBulkMessageTemplates: 1 });
+      await assignPlan(customer.id, plan.id);
+      await prisma.bulkMessageTemplate.create({
+        data: {
+          customerId: customer.id,
+          name: 'Existing Template',
+          body: 'Hi {name}',
+        },
+      });
+
+      await expect(
+        service.assertCanCreateBulkMessageTemplate(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan has reached its bulk message template limit",
+      );
+    });
+
+    it('blocks entirely when the bulk messenger is not available on the plan', async () => {
+      const customer = await seedCustomer();
+      const plan = await seedPlan({ bulkMessengerIsAvailable: false });
+      await assignPlan(customer.id, plan.id);
+
+      await expect(
+        service.assertCanCreateBulkMessageTemplate(customer.id),
+      ).rejects.toThrow(
+        "This customer's plan does not include the bulk messenger",
       );
     });
   });

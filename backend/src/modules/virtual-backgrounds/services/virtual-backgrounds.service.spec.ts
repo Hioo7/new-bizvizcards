@@ -221,6 +221,9 @@ describe('VirtualBackgroundsService (integration, TEST_DATABASE_URL only)', () =
                 },
               },
             },
+            bulkMessengerPolicy: {
+              create: { isAvailable: false, maxTemplates: 0 },
+            },
           },
         },
       },

@@ -34,6 +34,8 @@ import UserExchangeContactFormsPage from "@pages/UserExchangeContactFormsPage";
 import UserExchangeContactFormBuilderPage from "@pages/UserExchangeContactFormBuilderPage";
 import UserEmailSignaturesPage from "@pages/UserEmailSignaturesPage";
 import UserVirtualBackgroundsPage from "@pages/UserVirtualBackgroundsPage";
+import UserBulkMessengerPage from "@pages/UserBulkMessengerPage";
+import UserBulkMessengerSendPage from "@pages/UserBulkMessengerSendPage";
 import UserScanCardPage from "@pages/UserScanCardPage";
 import OrgDashboardPage from "@pages/OrgDashboardPage";
 import DataMigrationPage from "@pages/DataMigrationPage";
@@ -71,6 +73,14 @@ function App() {
         <Route
           path={ROUTES.userVirtualBackgrounds}
           element={<UserVirtualBackgroundsPage />}
+        />
+        <Route
+          path={ROUTES.userBulkMessenger}
+          element={<UserBulkMessengerPage />}
+        />
+        <Route
+          path={ROUTES.userBulkMessengerSend}
+          element={<UserBulkMessengerSendPage />}
         />
         <Route path={ROUTES.userScanCard} element={<UserScanCardPage />} />
         <Route path={ROUTES.orgDashboard} element={<OrgDashboardPage />} />

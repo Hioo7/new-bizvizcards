@@ -264,6 +264,7 @@ describe('Business Events (e2e, TEST_DATABASE_URL only)', () => {
           allowCustomBackground: false,
           whitelistedTemplateIds: [],
         },
+        bulkMessengerPolicy: { isAvailable: false, maxTemplates: 0 },
       })
       .expect(201);
     const id = (response.body as { id: string }).id;

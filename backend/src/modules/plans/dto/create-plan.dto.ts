@@ -12,6 +12,7 @@ import { organisationPolicySchema } from './organisation-policy.dto';
 import { eventPolicySchema } from './event-policy.dto';
 import { emailSignaturePolicySchema } from './email-signature-policy.dto';
 import { virtualBackgroundPolicySchema } from './virtual-background-policy.dto';
+import { bulkMessengerPolicySchema } from './bulk-messenger-policy.dto';
 
 export const createPlanShape = {
   name: z.string().trim().min(1).max(PLAN_NAME_MAX_LENGTH),
@@ -32,6 +33,7 @@ export const createPlanShape = {
   eventPolicy: eventPolicySchema,
   emailSignaturePolicy: emailSignaturePolicySchema,
   virtualBackgroundPolicy: virtualBackgroundPolicySchema,
+  bulkMessengerPolicy: bulkMessengerPolicySchema,
 };
 
 export const createPlanSchema = z

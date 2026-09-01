@@ -12,6 +12,7 @@ import OrganisationPolicyFields from "@features/plans/components/policy-fields/O
 import EventPolicyFields from "@features/plans/components/policy-fields/EventPolicyFields";
 import EmailSignaturePolicyFields from "@features/plans/components/policy-fields/EmailSignaturePolicyFields";
 import VirtualBackgroundPolicyFields from "@features/plans/components/policy-fields/VirtualBackgroundPolicyFields";
+import BulkMessengerPolicyFields from "@features/plans/components/policy-fields/BulkMessengerPolicyFields";
 
 interface PlanFormModalProps {
   mode: "create" | "edit";
@@ -36,6 +37,7 @@ function planToDraft(plan: PlanDetail): CreatePlanPayload {
     eventPolicy: plan.eventPolicy,
     emailSignaturePolicy: plan.emailSignaturePolicy,
     virtualBackgroundPolicy: plan.virtualBackgroundPolicy,
+    bulkMessengerPolicy: plan.bulkMessengerPolicy,
   };
 }
 
@@ -167,6 +169,14 @@ export default function PlanFormModal({
               value={draft.virtualBackgroundPolicy}
               onChange={(virtualBackgroundPolicy) =>
                 setDraft({ ...draft, virtualBackgroundPolicy })
+              }
+            />
+          )}
+          {stepId === "bulk-messenger" && (
+            <BulkMessengerPolicyFields
+              value={draft.bulkMessengerPolicy}
+              onChange={(bulkMessengerPolicy) =>
+                setDraft({ ...draft, bulkMessengerPolicy })
               }
             />
           )}

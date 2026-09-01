@@ -92,6 +92,12 @@ model ExchangeContactForm {
   versions     ExchangeContactFormVersion[]
   linkedEcards ECard[]
 
+  // Bulk-messenger templates that inherit this form's untagged fields as
+  // placeholders. Restrict on delete — a form referenced by a template can't
+  // be hard-deleted (ExchangeContactFormsService.deleteForm guards this with a
+  // friendly ConflictException).
+  bulkMessageTemplates BulkMessageTemplate[]
+
   @@index([customerId])
   @@map("ExchangeContactForm")
 }

@@ -17,6 +17,7 @@ import type { UpdateExchangeContactFormDto } from '../dto/update-exchange-contac
 import type { UpsertOrganisationExchangeContactFormTemplateDto } from '../dto/upsert-organisation-exchange-contact-form-template.dto';
 import {
   EXCHANGE_CONTACT_FORM_DELETE_HAS_SUBMISSIONS_MESSAGE,
+  EXCHANGE_CONTACT_FORM_DELETE_LINKED_TO_BULK_MESSAGE_TEMPLATE_MESSAGE,
   EXCHANGE_CONTACT_FORM_ECARD_OWNERSHIP_MISMATCH_MESSAGE,
   EXCHANGE_CONTACT_FORM_NOT_FOUND_MESSAGE,
   EXCHANGE_CONTACT_FORM_VERSION_DELETE_CURRENT_MESSAGE,
@@ -215,6 +216,17 @@ export class ExchangeContactFormsService {
     if (submissionCount > 0) {
       throw new ConflictException(
         EXCHANGE_CONTACT_FORM_DELETE_HAS_SUBMISSIONS_MESSAGE,
+      );
+    }
+    // A bulk-messenger template that inherits this form's fields as
+    // placeholders holds an onDelete: Restrict FK to it — surface a friendly
+    // 409 before the DB rejects the delete.
+    const linkedTemplateCount = await this.prisma.bulkMessageTemplate.count({
+      where: { linkedFormId: formId },
+    });
+    if (linkedTemplateCount > 0) {
+      throw new ConflictException(
+        EXCHANGE_CONTACT_FORM_DELETE_LINKED_TO_BULK_MESSAGE_TEMPLATE_MESSAGE,
       );
     }
     await this.prisma.exchangeContactForm.delete({ where: { id: formId } });

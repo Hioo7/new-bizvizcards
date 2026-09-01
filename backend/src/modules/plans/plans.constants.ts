@@ -32,6 +32,7 @@ export const PLAN_FALLBACK_MAX_GUESTS_PER_EVENT = 500;
 export const PLAN_FALLBACK_MAX_CUSTOM_FORMS = 0;
 export const PLAN_FALLBACK_MAX_EMAIL_SIGNATURES = 0;
 export const PLAN_FALLBACK_MAX_VIRTUAL_BACKGROUNDS = 0;
+export const PLAN_FALLBACK_MAX_BULK_MESSAGE_TEMPLATES = 0;
 
 // An empty VirtualBackgroundPolicy.whitelistedTemplates means no shared-
 // library templates are offered (strict allowlist) — not "no restriction".
@@ -119,3 +120,7 @@ export const PLAN_VIRTUAL_BACKGROUND_TEMPLATE_NOT_ALLOWED_MESSAGE =
   "This customer's plan does not include this virtual background template";
 export const PLAN_VIRTUAL_BACKGROUND_CUSTOM_NOT_ALLOWED_MESSAGE =
   "This customer's plan does not allow uploading a custom virtual background";
+export const PLAN_BULK_MESSENGER_NOT_AVAILABLE_MESSAGE =
+  "This customer's plan does not include the bulk messenger";
+export const PLAN_BULK_MESSENGER_LIMIT_REACHED_MESSAGE =
+  "This customer's plan has reached its bulk message template limit";

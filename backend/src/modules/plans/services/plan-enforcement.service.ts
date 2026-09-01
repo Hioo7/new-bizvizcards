@@ -13,6 +13,8 @@ import {
 } from '../../../generated/prisma/client';
 import {
   PLAN_ACCENT_COLOR_CUSTOMIZATION_NOT_ALLOWED_MESSAGE,
+  PLAN_BULK_MESSENGER_LIMIT_REACHED_MESSAGE,
+  PLAN_BULK_MESSENGER_NOT_AVAILABLE_MESSAGE,
   PLAN_CUSTOM_FORM_LIMIT_REACHED_MESSAGE,
   PLAN_CUSTOM_FORM_NOT_AVAILABLE_MESSAGE,
   PLAN_ECARD_LIMIT_REACHED_MESSAGE,
@@ -559,6 +561,21 @@ export class PlanEnforcementService {
     });
     if (currentCount >= policy.emailSignature.maxEmailSignatures) {
       throw new ConflictException(PLAN_EMAIL_SIGNATURE_LIMIT_REACHED_MESSAGE);
+    }
+  }
+
+  async assertCanCreateBulkMessageTemplate(customerId: string): Promise<void> {
+    const policy =
+      await this.policyResolver.getEffectivePolicyForCustomer(customerId);
+    if (!policy.bulkMessenger.isAvailable) {
+      throw new ForbiddenException(PLAN_BULK_MESSENGER_NOT_AVAILABLE_MESSAGE);
+    }
+
+    const currentCount = await this.prisma.bulkMessageTemplate.count({
+      where: { customerId },
+    });
+    if (currentCount >= policy.bulkMessenger.maxTemplates) {
+      throw new ConflictException(PLAN_BULK_MESSENGER_LIMIT_REACHED_MESSAGE);
     }
   }
 

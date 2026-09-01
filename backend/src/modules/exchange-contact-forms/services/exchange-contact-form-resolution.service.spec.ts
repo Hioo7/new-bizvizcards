@@ -160,6 +160,9 @@ describe('ExchangeContactFormResolutionService (integration, TEST_DATABASE_URL o
                 allowCustomBackground: false,
               },
             },
+            bulkMessengerPolicy: {
+              create: { isAvailable: false, maxTemplates: 0 },
+            },
           },
         },
       },

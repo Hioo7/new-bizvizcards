@@ -18,6 +18,7 @@ import type { EventPolicyDto } from '../dto/event-policy.dto';
 import type { EmailSignaturePolicyDto } from '../dto/email-signature-policy.dto';
 import type { SmartCardPolicyDto } from '../dto/smart-card-policy.dto';
 import type { VirtualBackgroundPolicyDto } from '../dto/virtual-background-policy.dto';
+import type { BulkMessengerPolicyDto } from '../dto/bulk-messenger-policy.dto';
 import { PlansService } from './plans.service';
 
 describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
@@ -162,6 +163,16 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
     };
   }
 
+  function buildBulkMessengerPolicyDto(
+    overrides: Partial<BulkMessengerPolicyDto> = {},
+  ): BulkMessengerPolicyDto {
+    return {
+      isAvailable: false,
+      maxTemplates: 0,
+      ...overrides,
+    };
+  }
+
   function buildCreatePlanDto(
     overrides: Partial<CreatePlanDto> = {},
   ): CreatePlanDto {
@@ -182,6 +193,7 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
       eventPolicy: buildEventPolicyDto(),
       emailSignaturePolicy: buildEmailSignaturePolicyDto(),
       virtualBackgroundPolicy: buildVirtualBackgroundPolicyDto(),
+      bulkMessengerPolicy: buildBulkMessengerPolicyDto(),
       ...overrides,
     };
   }
@@ -403,6 +415,38 @@ describe('PlansService (integration, TEST_DATABASE_URL only)', () => {
         maxVirtualBackgrounds: 10,
         allowCustomBackground: true,
         whitelistedTemplateIds: [templateB.id],
+      });
+    });
+  });
+
+  describe('bulkMessengerPolicy', () => {
+    it('creates a plan with the bulk messenger policy', async () => {
+      const plan = await createPlan({
+        bulkMessengerPolicy: buildBulkMessengerPolicyDto({
+          isAvailable: true,
+          maxTemplates: 5,
+        }),
+      });
+
+      expect(plan.bulkMessengerPolicy).toEqual({
+        isAvailable: true,
+        maxTemplates: 5,
+      });
+    });
+
+    it('updates the bulk messenger policy on update', async () => {
+      const plan = await createPlan();
+
+      const updated = await service.update(plan.id, {
+        bulkMessengerPolicy: buildBulkMessengerPolicyDto({
+          isAvailable: true,
+          maxTemplates: 9,
+        }),
+      });
+
+      expect(updated.bulkMessengerPolicy).toEqual({
+        isAvailable: true,
+        maxTemplates: 9,
       });
     });
   });

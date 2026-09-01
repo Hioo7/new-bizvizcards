@@ -8,6 +8,8 @@ export const ROUTES = {
   userExchangeContactFormBuilder: "/user/apps/exchange-contact-forms/:formId",
   userEmailSignatures: "/user/apps/email-signatures",
   userVirtualBackgrounds: "/user/apps/virtual-backgrounds",
+  userBulkMessenger: "/user/apps/bulk-messenger",
+  userBulkMessengerSend: "/user/apps/bulk-messenger/sends/:sendId",
   userScanCard: "/user/apps/scan-card",
   orgDashboard: "/org/dashboard",
   adminLogin: "/admin/login",
@@ -122,6 +124,10 @@ export function userNewExchangeContactFormPath(): string {
 
 export function userExchangeContactFormBuilderPath(formId: string): string {
   return `/user/apps/exchange-contact-forms/${formId}`;
+}
+
+export function userBulkMessengerSendPath(sendId: string): string {
+  return `/user/apps/bulk-messenger/sends/${sendId}`;
 }
 
 export function adminEventDetailPath(eventId: string): string {

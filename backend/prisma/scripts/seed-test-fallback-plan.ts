@@ -146,6 +146,12 @@ async function main() {
               allowCustomBackground: true,
             },
           },
+          bulkMessengerPolicy: {
+            create: {
+              isAvailable: true,
+              maxTemplates: GENEROUS_LIMIT,
+            },
+          },
         },
       },
     },

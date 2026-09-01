@@ -139,6 +139,34 @@ function emailSignaturePolicyPayload(
   };
 }
 
+function virtualBackgroundPolicyPayload(
+  overrides: Partial<{
+    isAvailable: boolean;
+    maxVirtualBackgrounds: number;
+    allowCustomBackground: boolean;
+    whitelistedTemplateIds: string[];
+  }> = {},
+) {
+  return {
+    isAvailable: overrides.isAvailable ?? false,
+    maxVirtualBackgrounds: overrides.maxVirtualBackgrounds ?? 0,
+    allowCustomBackground: overrides.allowCustomBackground ?? false,
+    whitelistedTemplateIds: overrides.whitelistedTemplateIds ?? [],
+  };
+}
+
+function bulkMessengerPolicyPayload(
+  overrides: Partial<{
+    isAvailable: boolean;
+    maxTemplates: number;
+  }> = {},
+) {
+  return {
+    isAvailable: overrides.isAvailable ?? true,
+    maxTemplates: overrides.maxTemplates ?? 3,
+  };
+}
+
 function createPlanPayload(
   overrides: Partial<{
     name: string;
@@ -150,6 +178,8 @@ function createPlanPayload(
     organisationPolicy: ReturnType<typeof organisationPolicyPayload>;
     eventPolicy: ReturnType<typeof eventPolicyPayload>;
     emailSignaturePolicy: ReturnType<typeof emailSignaturePolicyPayload>;
+    virtualBackgroundPolicy: ReturnType<typeof virtualBackgroundPolicyPayload>;
+    bulkMessengerPolicy: ReturnType<typeof bulkMessengerPolicyPayload>;
   }> = {},
 ) {
   return {
@@ -167,6 +197,10 @@ function createPlanPayload(
     eventPolicy: overrides.eventPolicy ?? eventPolicyPayload(),
     emailSignaturePolicy:
       overrides.emailSignaturePolicy ?? emailSignaturePolicyPayload(),
+    virtualBackgroundPolicy:
+      overrides.virtualBackgroundPolicy ?? virtualBackgroundPolicyPayload(),
+    bulkMessengerPolicy:
+      overrides.bulkMessengerPolicy ?? bulkMessengerPolicyPayload(),
   };
 }
 

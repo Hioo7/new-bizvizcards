@@ -25,6 +25,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { MigrationModule } from './modules/migration/migration.module';
 import { VirtualBackgroundsModule } from './modules/virtual-backgrounds/virtual-backgrounds.module';
+import { BulkMessengerModule } from './modules/bulk-messenger/bulk-messenger.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { VirtualBackgroundsModule } from './modules/virtual-backgrounds/virtual-
     PaymentsModule,
     MigrationModule,
     VirtualBackgroundsModule,
+    BulkMessengerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

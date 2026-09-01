@@ -1,4 +1,4 @@
-import { ClipboardList, ImageIcon, Mail } from "lucide-react";
+import { ClipboardList, ImageIcon, Mail, Send } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { EffectivePolicy } from "@app-types/plan";
 import { ROUTES } from "@config/routes";
@@ -34,5 +34,12 @@ export const USER_APP_TILES: UserAppTile[] = [
     icon: ImageIcon,
     route: ROUTES.userVirtualBackgrounds,
     isLocked: (policy) => !policy.virtualBackground.isAvailable,
+  },
+  {
+    id: "bulk-messenger",
+    label: "Bulk Messenger",
+    icon: Send,
+    route: ROUTES.userBulkMessenger,
+    isLocked: (policy) => !policy.bulkMessenger.isAvailable,
   },
 ];

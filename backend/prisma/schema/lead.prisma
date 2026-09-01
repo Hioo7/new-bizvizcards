@@ -86,6 +86,10 @@ model Lead {
   // that don't map to one of this model's own columns.
   formSubmission ExchangeContactFormSubmission?
 
+  // Bulk-messenger send recipients pointing at this lead. SetNull on delete —
+  // a past send keeps its snapshot rows even after the lead is removed.
+  bulkMessageRecipients BulkMessageSendRecipient[]
+
   @@index([customerId])
   @@index([folderId])
   @@index([ecardId])

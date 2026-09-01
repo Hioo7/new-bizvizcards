@@ -97,6 +97,11 @@ export interface EffectiveVirtualBackgroundPolicy {
   availableTemplates: EffectiveVirtualBackgroundTemplate[];
 }
 
+export interface EffectiveBulkMessengerPolicy {
+  isAvailable: boolean;
+  maxTemplates: number;
+}
+
 export interface EffectivePolicy {
   planId: string;
   isFallback: boolean;
@@ -106,6 +111,7 @@ export interface EffectivePolicy {
   event: EffectiveEventPolicy;
   emailSignature: EffectiveEmailSignaturePolicy;
   virtualBackground: EffectiveVirtualBackgroundPolicy;
+  bulkMessenger: EffectiveBulkMessengerPolicy;
 }
 
 // Exported for reuse by PlansService, which needs the identical nested
@@ -153,6 +159,7 @@ export const planPolicyInclude = {
   eventPolicy: true,
   emailSignaturePolicy: true,
   virtualBackgroundPolicy: { include: virtualBackgroundPolicyInclude },
+  bulkMessengerPolicy: true,
 } satisfies Prisma.PlanPolicyInclude;
 
 /**
@@ -322,6 +329,10 @@ export class PlanPolicyResolverService {
       virtualBackground: this.mapVirtualBackgroundPolicy(
         policy.virtualBackgroundPolicy,
       ),
+      bulkMessenger: {
+        isAvailable: policy.bulkMessengerPolicy.isAvailable,
+        maxTemplates: policy.bulkMessengerPolicy.maxTemplates,
+      },
     };
   }
 

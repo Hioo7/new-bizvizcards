@@ -71,6 +71,13 @@ model PlanPolicy {
   virtualBackgroundPolicyId String                  @unique @db.Uuid
   virtualBackgroundPolicy   VirtualBackgroundPolicy @relation(fields: [virtualBackgroundPolicyId], references: [id], onDelete: Cascade)
 
+  // Added after PlanPolicy already had rows in production — backfilled with raw
+  // SQL directly inside the same migration that adds this column and sets it
+  // NOT NULL (current backend/CLAUDE.md convention), same as
+  // virtualBackgroundPolicyId above.
+  bulkMessengerPolicyId String              @unique @db.Uuid
+  bulkMessengerPolicy   BulkMessengerPolicy @relation(fields: [bulkMessengerPolicyId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -313,6 +320,24 @@ model EmailSignaturePolicy {
   planPolicy PlanPolicy?
 
   @@map("EmailSignaturePolicy")
+}
+
+// A plan's bulk-messenger policy — same standalone shape as
+// EmailSignaturePolicy/EventPolicy (a toggle + one numeric limit, no child
+// collections). Only ever owned by a PlanPolicy directly, no
+// OrganisationPolicy-level boost. Defaults off — a new paid-tier feature, same
+// convention as VirtualBackgroundPolicy (not EmailSignaturePolicy's legacy
+// default-on).
+model BulkMessengerPolicy {
+  id           String   @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
+  isAvailable  Boolean  @default(false)
+  maxTemplates Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  planPolicy PlanPolicy?
+
+  @@map("BulkMessengerPolicy")
 }
 
 // Every plan assign/renew/switch/cancel event, per customer. Never mutated

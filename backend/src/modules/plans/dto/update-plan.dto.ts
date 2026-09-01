@@ -12,6 +12,7 @@ import { organisationPolicySchema } from './organisation-policy.dto';
 import { eventPolicySchema } from './event-policy.dto';
 import { emailSignaturePolicySchema } from './email-signature-policy.dto';
 import { virtualBackgroundPolicySchema } from './virtual-background-policy.dto';
+import { bulkMessengerPolicySchema } from './bulk-messenger-policy.dto';
 
 export const updatePlanSchema = z
   .object({
@@ -31,6 +32,7 @@ export const updatePlanSchema = z
     eventPolicy: eventPolicySchema.optional(),
     emailSignaturePolicy: emailSignaturePolicySchema.optional(),
     virtualBackgroundPolicy: virtualBackgroundPolicySchema.optional(),
+    bulkMessengerPolicy: bulkMessengerPolicySchema.optional(),
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0, {

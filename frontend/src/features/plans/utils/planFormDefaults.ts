@@ -1,4 +1,5 @@
 import type {
+  BulkMessengerPolicy,
   CreatePlanPayload,
   EcardPolicy,
   EmailSignaturePolicy,
@@ -10,6 +11,7 @@ import type {
 import {
   DEFAULT_ECARD_ACCENT_COLOR_PRESETS,
   DEFAULT_GALLERY_LIMITS,
+  DEFAULT_MAX_BULK_MESSAGE_TEMPLATES,
   DEFAULT_MAX_CUSTOM_FORMS,
   DEFAULT_MAX_EMAIL_SIGNATURES,
   DEFAULT_VIDEO_GALLERY_LIMITS,
@@ -96,6 +98,13 @@ export function createDefaultVirtualBackgroundPolicy(): VirtualBackgroundPolicy 
   };
 }
 
+export function createDefaultBulkMessengerPolicy(): BulkMessengerPolicy {
+  return {
+    isAvailable: false,
+    maxTemplates: DEFAULT_MAX_BULK_MESSAGE_TEMPLATES,
+  };
+}
+
 export function createDefaultPlanDraft(): CreatePlanPayload {
   return {
     name: "",
@@ -108,5 +117,6 @@ export function createDefaultPlanDraft(): CreatePlanPayload {
     eventPolicy: createDefaultEventPolicy(),
     emailSignaturePolicy: createDefaultEmailSignaturePolicy(),
     virtualBackgroundPolicy: createDefaultVirtualBackgroundPolicy(),
+    bulkMessengerPolicy: createDefaultBulkMessengerPolicy(),
   };
 }

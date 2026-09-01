@@ -109,6 +109,11 @@ export interface EmailSignaturePolicy {
   maxEmailSignatures: number;
 }
 
+export interface BulkMessengerPolicy {
+  isAvailable: boolean;
+  maxTemplates: number;
+}
+
 export type VirtualBackgroundQrCorner =
   | "TOP_LEFT"
   | "TOP_RIGHT"
@@ -143,6 +148,7 @@ export interface PlanDetail extends PlanSummary {
   eventPolicy: EventPolicy;
   emailSignaturePolicy: EmailSignaturePolicy;
   virtualBackgroundPolicy: VirtualBackgroundPolicy;
+  bulkMessengerPolicy: BulkMessengerPolicy;
 }
 
 export interface PlanListResponse {
@@ -165,6 +171,7 @@ export interface PlanPolicyPayload {
   eventPolicy: EventPolicy;
   emailSignaturePolicy: EmailSignaturePolicy;
   virtualBackgroundPolicy: VirtualBackgroundPolicy;
+  bulkMessengerPolicy: BulkMessengerPolicy;
 }
 
 export interface CreatePlanPayload extends PlanPolicyPayload {
@@ -229,6 +236,11 @@ export interface EffectiveEmailSignaturePolicy {
   maxEmailSignatures: number;
 }
 
+export interface EffectiveBulkMessengerPolicy {
+  isAvailable: boolean;
+  maxTemplates: number;
+}
+
 export interface EffectiveVirtualBackgroundTemplate {
   id: string;
   name: string;
@@ -250,6 +262,7 @@ export interface EffectivePolicy {
   event: EffectiveEventPolicy;
   emailSignature: EffectiveEmailSignaturePolicy;
   virtualBackground: EffectiveVirtualBackgroundPolicy;
+  bulkMessenger: EffectiveBulkMessengerPolicy;
   leadsViewAccess: boolean;
 }
 

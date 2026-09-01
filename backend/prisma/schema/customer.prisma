@@ -27,6 +27,9 @@ model Customer {
   exchangeContactForms ExchangeContactForm[]
   emailSignatures      EmailSignature[]
 
+  bulkMessageTemplates BulkMessageTemplate[]
+  bulkMessageSends     BulkMessageSend[]
+
   organisationMemberships OrganisationMember[]
   createdOrganisations    Organisation[]       @relation("OrganisationCreatedBy")
   sentInvites             OrganisationInvite[] @relation("OrganisationInvitesSent")

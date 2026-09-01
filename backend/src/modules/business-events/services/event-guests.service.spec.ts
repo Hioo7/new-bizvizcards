@@ -149,6 +149,9 @@ describe('EventGuestsService (integration, TEST_DATABASE_URL only)', () => {
                 allowCustomBackground: false,
               },
             },
+            bulkMessengerPolicy: {
+              create: { isAvailable: false, maxTemplates: 0 },
+            },
           },
         },
       },
