@@ -44,3 +44,28 @@ export interface SocialSignInResponse {
   url: string;
   redirect: boolean;
 }
+
+// GET /oauth2/public-client — better-auth's OAuth-provider client metadata,
+// snake_case per RFC 7591 (distinct casing from OAuthConsent below, which is
+// better-auth's own internal consent-record shape).
+export interface OAuthPublicClient {
+  client_id: string;
+  client_name: string;
+  logo_uri?: string;
+  contacts: string[];
+  redirect_uris: string[];
+}
+
+// GET /oauth2/get-consents — one row per app the customer has granted
+// access to. Carries the client's id but not its display name/logo — pair
+// with a GET /oauth2/public-client call per clientId to show one (see
+// features/connected-apps).
+export interface OAuthConsent {
+  id: string;
+  clientId: string;
+  userId: string | null;
+  resources: string[];
+  scopes: string[];
+  createdAt: string;
+  updatedAt: string;
+}

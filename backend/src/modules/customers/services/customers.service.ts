@@ -1,5 +1,6 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import {
+  CREDENTIAL_ISSUER,
   CREDENTIAL_PROVIDER_ID,
   CUSTOMER_AUTH,
 } from '../../../common/auth/auth.constants';
@@ -304,6 +305,7 @@ export class CustomersService {
           userId: customer.accountId,
           accountId: customer.accountId,
           providerId: CREDENTIAL_PROVIDER_ID,
+          issuer: CREDENTIAL_ISSUER,
           password: hashed,
         },
       });

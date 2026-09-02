@@ -3,11 +3,16 @@ import AuthLayout from "@layouts/AuthLayout";
 import { LoginForm } from "@features/auth";
 import { useInviteLookup } from "@features/organisation-invite/hooks/useInviteLookup";
 import { userDashboardService } from "@features/user-dashboard/services/UserDashboardService";
-import { ROUTES, INVITE_TOKEN_QUERY_PARAM } from "@config/routes";
+import {
+  ROUTES,
+  INVITE_TOKEN_QUERY_PARAM,
+  REDIRECT_QUERY_PARAM,
+} from "@config/routes";
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get(INVITE_TOKEN_QUERY_PARAM);
+  const redirectTo = searchParams.get(REDIRECT_QUERY_PARAM);
 
   return (
     <AuthLayout
@@ -20,7 +25,11 @@ export default function LoginPage() {
       }
       promoSubtext="A modern platform for managing professional profiles, contact sharing, and business networking."
     >
-      {inviteToken ? <InviteAwareLoginForm token={inviteToken} /> : <LoginForm />}
+      {inviteToken ? (
+        <InviteAwareLoginForm token={inviteToken} />
+      ) : (
+        <LoginForm redirectTo={redirectTo ?? undefined} />
+      )}
     </AuthLayout>
   );
 }

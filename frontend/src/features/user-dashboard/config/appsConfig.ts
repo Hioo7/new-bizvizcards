@@ -1,4 +1,4 @@
-import { ClipboardList, ImageIcon, Mail, Send } from "lucide-react";
+import { ClipboardList, ImageIcon, Mail, PlugZap, Send } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { EffectivePolicy } from "@app-types/plan";
 import { ROUTES } from "@config/routes";
@@ -41,5 +41,13 @@ export const USER_APP_TILES: UserAppTile[] = [
     icon: Send,
     route: ROUTES.userBulkMessenger,
     isLocked: (policy) => !policy.bulkMessenger.isAvailable,
+  },
+  {
+    id: "connected-apps",
+    label: "Connected AI Apps",
+    icon: PlugZap,
+    route: ROUTES.userConnectedApps,
+    // Not a paid feature — always available regardless of plan.
+    isLocked: () => false,
   },
 ];

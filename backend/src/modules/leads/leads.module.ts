@@ -29,6 +29,6 @@ import { RemindersService } from './services/reminders.service';
     LeadReferenceNotesService,
     RemindersService,
   ],
-  exports: [LeadsService],
+  exports: [LeadsService, LeadReferenceNotesService, RemindersService],
 })
 export class LeadsModule {}

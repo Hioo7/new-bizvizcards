@@ -33,6 +33,7 @@ describe('applyCustomerCredentialStrategy', () => {
         accountId: 'account-1',
         userId: 'account-1',
         providerId: 'credential',
+        issuer: 'local:credential',
         password: legacyHash,
       },
     });
@@ -58,6 +59,7 @@ describe('applyCustomerCredentialStrategy', () => {
         accountId: 'account-1',
         userId: 'account-1',
         providerId: 'credential',
+        issuer: 'local:credential',
         password: '$2a$10$hash-one',
       },
     });
@@ -66,6 +68,7 @@ describe('applyCustomerCredentialStrategy', () => {
         accountId: 'account-2',
         userId: 'account-2',
         providerId: 'credential',
+        issuer: 'local:credential',
         password: '$2a$10$hash-two',
       },
     });

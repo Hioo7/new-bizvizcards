@@ -86,6 +86,7 @@ describe('OrganisationInvitesService (integration, TEST_DATABASE_URL only)', () 
     const customerAuth: CustomerAuth = createCustomerAuth({
       secret: appConfig.betterAuthCustomerSecret,
       baseUrl: appConfig.betterAuthUrl,
+      publicAppBaseUrl: appConfig.publicAppBaseUrl,
       trustedFrontendOrigins: appConfig.corsAllowedOrigins,
       prisma,
     });

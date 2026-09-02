@@ -37,6 +37,8 @@ import UserVirtualBackgroundsPage from "@pages/UserVirtualBackgroundsPage";
 import UserBulkMessengerPage from "@pages/UserBulkMessengerPage";
 import UserBulkMessengerSendPage from "@pages/UserBulkMessengerSendPage";
 import UserScanCardPage from "@pages/UserScanCardPage";
+import UserConnectedAppsPage from "@pages/UserConnectedAppsPage";
+import OAuthAuthorizePage from "@pages/OAuthAuthorizePage";
 import OrgDashboardPage from "@pages/OrgDashboardPage";
 import DataMigrationPage from "@pages/DataMigrationPage";
 import RequireStaffAuth from "@components/RequireStaffAuth";
@@ -55,6 +57,7 @@ function App() {
       <Route path={ROUTES.adminLogin} element={<AdminLoginPage />} />
       <Route path={ROUTES.smartCardPublic} element={<SmartCardPublicPage />} />
       <Route path={ROUTES.ecardPublic} element={<EcardPublicPage />} />
+      <Route path={ROUTES.oauthAuthorize} element={<OAuthAuthorizePage />} />
 
       <Route element={<RequireAuth />}>
         <Route path={ROUTES.userDashboard} element={<UserDashboardPage />} />
@@ -83,6 +86,10 @@ function App() {
           element={<UserBulkMessengerSendPage />}
         />
         <Route path={ROUTES.userScanCard} element={<UserScanCardPage />} />
+        <Route
+          path={ROUTES.userConnectedApps}
+          element={<UserConnectedAppsPage />}
+        />
         <Route path={ROUTES.orgDashboard} element={<OrgDashboardPage />} />
       </Route>
 

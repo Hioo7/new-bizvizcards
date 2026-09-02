@@ -32,6 +32,7 @@ describe('applyGoogleOAuthCredential', () => {
         accountId: 'google-sub-12345',
         userId: 'account-1',
         providerId: 'google',
+        issuer: 'https://accounts.google.com',
       },
     });
   });

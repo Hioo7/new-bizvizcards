@@ -1,4 +1,7 @@
-import { GOOGLE_PROVIDER_ID } from '../../../../common/auth/auth.constants';
+import {
+  GOOGLE_ISSUER,
+  GOOGLE_PROVIDER_ID,
+} from '../../../../common/auth/auth.constants';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
 
 // Always applied (not swappable, unlike customer-credential-strategy.ts) —
@@ -26,6 +29,7 @@ export async function applyGoogleOAuthCredential(
       accountId: params.legacyGoogleId,
       userId: params.customerAccountId,
       providerId: GOOGLE_PROVIDER_ID,
+      issuer: GOOGLE_ISSUER,
     },
   });
 }

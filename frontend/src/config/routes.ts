@@ -11,6 +11,8 @@ export const ROUTES = {
   userBulkMessenger: "/user/apps/bulk-messenger",
   userBulkMessengerSend: "/user/apps/bulk-messenger/sends/:sendId",
   userScanCard: "/user/apps/scan-card",
+  userConnectedApps: "/user/apps/connected-apps",
+  oauthAuthorize: "/oauth/authorize",
   orgDashboard: "/org/dashboard",
   adminLogin: "/admin/login",
   adminHome: "/admin",
@@ -51,6 +53,11 @@ export const LANDING_CONTACT_ANCHOR = `${ROUTES.landing}#contact`;
  * /signup when reached via the invite landing page's "Log in"/"Sign up"
  * buttons — see features/organisation-invite. */
 export const INVITE_TOKEN_QUERY_PARAM = "invite";
+
+/** Query param carrying a full return path (e.g. /oauth/authorize?...) through
+ * /login when a not-yet-authenticated user is redirected there from a public
+ * route that needs a session first — see features/oauth-authorize. */
+export const REDIRECT_QUERY_PARAM = "redirect";
 
 /** Literal `:ecardId` segment used in place of a real id when creating a new
  * e-card — the builder page branches on this to know it's in create mode. */

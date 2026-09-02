@@ -1,4 +1,7 @@
-import { CREDENTIAL_PROVIDER_ID } from '../../../../common/auth/auth.constants';
+import {
+  CREDENTIAL_ISSUER,
+  CREDENTIAL_PROVIDER_ID,
+} from '../../../../common/auth/auth.constants';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
 
 // The one isolated, swappable function for the customer password migration
@@ -26,6 +29,7 @@ export async function applyCustomerCredentialStrategy(
       accountId: params.customerAccountId,
       userId: params.customerAccountId,
       providerId: CREDENTIAL_PROVIDER_ID,
+      issuer: CREDENTIAL_ISSUER,
       password: params.legacyPasswordHash,
     },
   });

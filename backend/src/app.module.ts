@@ -26,6 +26,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { MigrationModule } from './modules/migration/migration.module';
 import { VirtualBackgroundsModule } from './modules/virtual-backgrounds/virtual-backgrounds.module';
 import { BulkMessengerModule } from './modules/bulk-messenger/bulk-messenger.module';
+import { McpModule } from './modules/mcp/mcp.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { BulkMessengerModule } from './modules/bulk-messenger/bulk-messenger.mod
     MigrationModule,
     VirtualBackgroundsModule,
     BulkMessengerModule,
+    McpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

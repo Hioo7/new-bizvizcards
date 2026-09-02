@@ -176,6 +176,7 @@ describe('CustomerIdentityMigrator', () => {
         accountId: 'account-1',
         userId: 'account-1',
         providerId: 'credential',
+        issuer: 'local:credential',
         password: '$2a$10$hash',
       },
     });
@@ -197,6 +198,7 @@ describe('CustomerIdentityMigrator', () => {
         accountId: 'google-sub-1',
         userId: 'account-1',
         providerId: 'google',
+        issuer: 'https://accounts.google.com',
       },
     });
   });

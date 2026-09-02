@@ -45,6 +45,11 @@ model EmployeeCredential {
   id                    String          @id @default(dbgenerated("pg_catalog.gen_random_uuid()")) @db.Uuid
   accountId             String
   providerId            String
+  // Added by better-auth 1.7's account-identity change. This table has no
+  // rows today (employees sign in via OTP only, which never creates a
+  // credential row — see the file header) so this is a plain additive
+  // column, no backfill needed, unlike CustomerCredential.
+  issuer                String
   userId                String          @db.Uuid
   employeeaccount       EmployeeAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
@@ -57,6 +62,7 @@ model EmployeeCredential {
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
+  @@unique([issuer, accountId], map: "EmployeeCredential_issuer_accountId_uidx")
   @@index([userId])
   @@map("EmployeeCredential")
 }

@@ -1,4 +1,6 @@
 import { APIError, betterAuth } from 'better-auth';
+import { jwt } from 'better-auth/plugins';
+import { mcp } from '@better-auth/mcp';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '../../generated/prisma/client';
 import {
@@ -6,6 +8,8 @@ import {
   CUSTOMER_AUTH_BASE_PATH,
   CUSTOMER_AUTH_COOKIE_PREFIX,
   CUSTOMER_BANNED_MESSAGE,
+  MCP_BASE_PATH,
+  MCP_LEADS_SCOPES,
 } from './auth.constants';
 import { linkAccountWithRetry } from './link-account-with-retry';
 import { buildSocialProviders } from './social-providers.builder';
@@ -18,6 +22,10 @@ import {
 export interface CreateCustomerAuthDeps extends SocialProvidersDeps {
   secret: string;
   baseUrl: string;
+  // The public frontend origin — used to build the MCP `resource` (RFC 8707
+  // audience) identifier below, and as the `loginPage`/`consentPage` redirect
+  // target for the mcp() plugin's browser-facing flows.
+  publicAppBaseUrl: string;
   prisma: PrismaClient;
   // The frontend origin(s) — social sign-in's `callbackURL` parameter (set
   // by the frontend to where it wants to land post-OAuth, e.g. the dashboard)
@@ -29,11 +37,17 @@ export interface CreateCustomerAuthDeps extends SocialProvidersDeps {
 }
 
 export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
+  const mcpResource = `${deps.publicAppBaseUrl}${MCP_BASE_PATH}`;
+
   return betterAuth({
     secret: deps.secret,
     baseURL: deps.baseUrl,
     basePath: CUSTOMER_AUTH_BASE_PATH,
     database: prismaAdapter(deps.prisma, { provider: 'postgresql' }),
+    // Required by the mcp() plugin (built on the OAuth provider): OAuth token
+    // issuance goes through /oauth2/token, so better-auth's own generic
+    // /token endpoint must be disabled to avoid a conflicting route.
+    disabledPaths: ['/token'],
     advanced: {
       cookiePrefix: CUSTOMER_AUTH_COOKIE_PREFIX,
       database: {
@@ -132,6 +146,43 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
     trustedOrigins: [
       APPLE_SIGN_IN_TRUSTED_ORIGIN,
       ...deps.trustedFrontendOrigins,
+    ],
+    plugins: [
+      // Signs OAuth access/ID tokens asymmetrically; disableSettingJwtHeader
+      // stops it from also setting its own set-auth-jwt response header,
+      // which the mcp/oauth2 flow doesn't use (its own /oauth2/userinfo does
+      // the equivalent job).
+      jwt({ disableSettingJwtHeader: true }),
+      mcp({
+        loginPage: '/login',
+        consentPage: '/oauth/authorize',
+        resource: mcpResource,
+        // ChatGPT and Claude both support Dynamic Client Registration as
+        // their fallback client-registration mechanism (per the MCP
+        // authorization spec) — enabled since this app has no pre-existing
+        // relationship with either platform's client_id. Registration
+        // happens before any user is signed in (the connector registers
+        // itself with the AS first), so it must also be reachable
+        // unauthenticated — allowDynamicClientRegistration alone only
+        // authorizes session- or token-backed registration requests.
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+        scopes: [...MCP_LEADS_SCOPES],
+        // mcp() auto-appends a bare `{ identifier: resource }` entry to
+        // `resources` for boot-time seeding UNLESS one with a matching
+        // identifier is already present (see appendProtectedResource in
+        // @better-auth/mcp). Its own bare-entry seed always inserts
+        // allowedScopes: null (its "inherit everything" sentinel), which
+        // Prisma's typed String[] column rejects outright
+        // (PrismaClientValidationError: "Argument allowedScopes must not be
+        // null") — a real incompatibility between the plugin's Kysely-style
+        // null-means-unrestricted convention and Prisma's typed adapter.
+        // Supplying our own entry for the same identifier, with a concrete
+        // (non-null) allowedScopes, sidesteps that broken default entirely.
+        resources: [
+          { identifier: mcpResource, allowedScopes: [...MCP_LEADS_SCOPES] },
+        ],
+      }),
     ],
   });
 }

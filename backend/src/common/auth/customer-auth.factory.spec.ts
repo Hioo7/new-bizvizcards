@@ -22,6 +22,7 @@ describe('createCustomerAuth — ban enforcement (integration, TEST_DATABASE_URL
     customerAuth = createCustomerAuth({
       secret: appConfig.betterAuthCustomerSecret,
       baseUrl: appConfig.betterAuthUrl,
+      publicAppBaseUrl: appConfig.publicAppBaseUrl,
       trustedFrontendOrigins: appConfig.corsAllowedOrigins,
       prisma,
     });
@@ -136,5 +137,48 @@ describe('createCustomerAuth — ban enforcement (integration, TEST_DATABASE_URL
       headers: new Headers({ cookie: setCookie ?? '' }),
     });
     expect(session).toBeNull();
+  });
+});
+
+describe('createCustomerAuth — MCP/OAuth plugin wiring', () => {
+  let prisma: PrismaService;
+  let originalDatabaseUrl: string | undefined;
+
+  beforeAll(() => {
+    originalDatabaseUrl = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+    prisma = new PrismaService(new AppConfigService());
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+    process.env.DATABASE_URL = originalDatabaseUrl;
+  });
+
+  // The mcp() plugin eagerly registers its configured `resource` row against
+  // the oauthResource table at construction time, so this needs the real,
+  // migrated TEST_DATABASE_URL — a bare object literal isn't enough (unlike
+  // most other plugins, which stay lazy about the database until a request
+  // actually needs it).
+  function buildAuth() {
+    return createCustomerAuth({
+      secret: 'a'.repeat(32),
+      baseUrl: 'http://localhost:3000',
+      publicAppBaseUrl: 'http://localhost:5173',
+      trustedFrontendOrigins: [],
+      prisma,
+    });
+  }
+
+  it('exposes the oauth2 authorize endpoint (mcp plugin mounted)', () => {
+    const auth = buildAuth();
+    const paths = Object.keys(auth.api);
+    expect(paths.some((p) => p.toLowerCase().includes('oauth'))).toBe(true);
+  });
+
+  it('exposes a jwks endpoint (jwt plugin mounted)', () => {
+    const auth = buildAuth();
+    const paths = Object.keys(auth.api);
+    expect(paths.some((p) => p.toLowerCase().includes('jwks'))).toBe(true);
   });
 });

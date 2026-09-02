@@ -7,6 +7,10 @@ export const AUTH_ENDPOINTS = {
   signOut: `${AUTH_BASE_PATH}/sign-out`,
   session: `${AUTH_BASE_PATH}/get-session`,
   updateUser: `${AUTH_BASE_PATH}/update-user`,
+  oauthPublicClient: `${AUTH_BASE_PATH}/oauth2/public-client`,
+  oauthConsent: `${AUTH_BASE_PATH}/oauth2/consent`,
+  oauthGetConsents: `${AUTH_BASE_PATH}/oauth2/get-consents`,
+  oauthDeleteConsent: `${AUTH_BASE_PATH}/oauth2/delete-consent`,
 } as const;
 
 export const STAFF_AUTH_BASE_PATH = "/api/auth/staff";

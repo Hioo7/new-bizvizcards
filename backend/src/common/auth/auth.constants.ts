@@ -4,6 +4,26 @@ export const CUSTOMER_AUTH = Symbol('CUSTOMER_AUTH');
 export const EMPLOYEE_AUTH_BASE_PATH = '/api/auth/staff';
 export const CUSTOMER_AUTH_BASE_PATH = '/api/auth/customers';
 
+// Canonical MCP server endpoint — also used as the OAuth `resource` (RFC 8707
+// audience) identifier for the customer-auth mcp() plugin. See
+// customer-auth.factory.ts and modules/mcp/mcp-http-handler.ts.
+export const MCP_BASE_PATH = '/api/mcp';
+
+// RFC 9728 Protected Resource Metadata path the mcp() plugin serves via a
+// root-relative onRequest hook (checked against the raw request path,
+// independent of CUSTOMER_AUTH_BASE_PATH) — so it must be mounted to the
+// customer-auth handler as its own route in main.ts, alongside the
+// CUSTOMER_AUTH_BASE_PATH wildcard mount, or a request to it never reaches
+// the auth instance at all.
+export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
+  '/.well-known/oauth-protected-resource';
+
+// Single bundled scope granted to every MCP/OAuth connection (ChatGPT/Claude)
+// — per the brainstormed design, the consent screen shows one combined grant
+// ("view and manage your leads, notes, and reminders") rather than granular
+// toggles, matching how MCP clients request access today.
+export const MCP_LEADS_SCOPES = ['leads'] as const;
+
 export const EMPLOYEE_AUTH_COOKIE_PREFIX = 'staff';
 export const CUSTOMER_AUTH_COOKIE_PREFIX = 'customer';
 
@@ -25,6 +45,16 @@ export const CUSTOMER_BANNED_MESSAGE =
 // reused here (customers.service.ts) when hand-writing a CustomerCredential
 // row outside of better-auth's own account-linking flow.
 export const CREDENTIAL_PROVIDER_ID = 'credential';
+
+// better-auth 1.7's account-identity change (see the 1.7 upgrade guide) added
+// a required `issuer` column to CustomerCredential/EmployeeCredential,
+// scoping account identity by issuer rather than provider config alone.
+// These are the exact values better-auth's own local-auth code uses for each
+// account type — reused here whenever this app hand-writes a credential row
+// outside of better-auth's own account-linking flow, so hand-written and
+// better-auth-written rows stay indistinguishable.
+export const CREDENTIAL_ISSUER = 'local:credential';
+export const GOOGLE_ISSUER = 'https://accounts.google.com';
 
 // The providerId better-auth's Google social provider uses for the
 // CustomerCredential row it creates on a Google sign-in — matches the

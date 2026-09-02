@@ -5,6 +5,8 @@ import type {
   AuthSession,
   AuthUser,
   CustomerProfile,
+  OAuthConsent,
+  OAuthPublicClient,
   SessionResponse,
   SignInPayload,
   SignUpPayload,
@@ -92,4 +94,49 @@ export function updateProfilePicture(
     CUSTOMER_ENDPOINTS.updateProfilePicture,
     { method: "PATCH", body: formData },
   );
+}
+
+export function getOAuthPublicClient(
+  clientId: string,
+): Promise<OAuthPublicClient> {
+  return apiRequest<OAuthPublicClient>(
+    `${AUTH_ENDPOINTS.oauthPublicClient}?client_id=${encodeURIComponent(clientId)}`,
+    { method: "GET" },
+  );
+}
+
+// oauth_query is the exact, unmodified query string from the /oauth/authorize
+// redirect this page loaded with — better-auth signs it and re-verifies that
+// signature here (see @better-auth/oauth-provider's consent "before" hook).
+// On success the response carries the client's own redirect_uri (with the
+// issued code attached) to hand the browser back to — same pattern as
+// signInSocial above.
+export async function submitOAuthConsent(payload: {
+  accept: boolean;
+  oauthQuery: string;
+}): Promise<void> {
+  const { url } = await apiRequest<{ redirect: boolean; url: string }>(
+    AUTH_ENDPOINTS.oauthConsent,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        accept: payload.accept,
+        oauth_query: payload.oauthQuery,
+      }),
+    },
+  );
+  window.location.href = url;
+}
+
+export function getOAuthConsents(): Promise<OAuthConsent[]> {
+  return apiRequest<OAuthConsent[]>(AUTH_ENDPOINTS.oauthGetConsents, {
+    method: "GET",
+  });
+}
+
+export function revokeOAuthConsent(id: string): Promise<void> {
+  return apiRequest<void>(AUTH_ENDPOINTS.oauthDeleteConsent, {
+    method: "POST",
+    body: JSON.stringify({ id }),
+  });
 }
