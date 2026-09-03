@@ -60,8 +60,20 @@ function toLeadDetailSummary(lead: LeadDetailResponse) {
   };
 }
 
-const listLeadsInputSchema = z.object({
-  folderId: z.string().uuid().optional(),
+// LLM tool callers frequently send an empty string for an unset optional
+// field rather than omitting it outright (observed in practice: ChatGPT
+// calling list_leads with folderId: "" when it means "no folder filter").
+// Without this, that empty string fails z.string().uuid() and the whole
+// call errors out instead of behaving like folderId was never provided.
+const optionalUuid = z.preprocess(
+  (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+  z.string().uuid().optional(),
+);
+
+// Exported for leads.tools.spec.ts to verify the empty-string tolerance
+// above directly, without going through the SDK's own tool-call plumbing.
+export const listLeadsInputSchema = z.object({
+  folderId: optionalUuid,
   limit: z.number().int().min(1).max(MCP_LEADS_LIST_MAX_LIMIT).optional(),
   offset: z.number().int().min(0).optional(),
 });

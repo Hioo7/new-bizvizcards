@@ -4,10 +4,35 @@ import {
   createLeadHandler,
   getLeadHandler,
   listLeadsHandler,
+  listLeadsInputSchema,
   updateLeadHandler,
 } from './leads.tools';
 
 describe('leads MCP tool handlers', () => {
+  describe('listLeadsInputSchema', () => {
+    it('treats an empty-string folderId as unset, not an invalid UUID', () => {
+      // LLM tool callers (observed: ChatGPT) sometimes send folderId: "" to
+      // mean "no filter" instead of omitting the field.
+      const parsed = listLeadsInputSchema.parse({ folderId: '' });
+
+      expect(parsed.folderId).toBeUndefined();
+    });
+
+    it('still rejects a genuinely invalid, non-empty folderId', () => {
+      expect(() =>
+        listLeadsInputSchema.parse({ folderId: 'not-a-uuid' }),
+      ).toThrow();
+    });
+
+    it('accepts a real folderId unchanged', () => {
+      const folderId = '11111111-1111-4111-8111-111111111111';
+
+      const parsed = listLeadsInputSchema.parse({ folderId });
+
+      expect(parsed.folderId).toBe(folderId);
+    });
+  });
+
   describe('listLeadsHandler', () => {
     it('scopes the list to the given customerId and applies the default page size', async () => {
       const list = jest.fn().mockResolvedValue([]);

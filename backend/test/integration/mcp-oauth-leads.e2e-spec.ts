@@ -190,6 +190,10 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     cookie: string,
     clientId: string,
     pkce: PkcePair,
+    // Real clients (ChatGPT/Claude) also request offline_access so they get
+    // a refresh token — see MCP_OFFLINE_ACCESS_SCOPE. Defaulted here so the
+    // existing tool-call tests below don't need to change.
+    scope = 'leads',
   ): Promise<string> {
     const authorizeResponse = await request(app.getHttpServer())
       .get(`${CUSTOMER_AUTH_BASE_PATH}/oauth2/authorize`)
@@ -201,7 +205,7 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
         code_challenge: pkce.codeChallenge,
         code_challenge_method: 'S256',
         resource: mcpResource,
-        scope: 'leads',
+        scope,
       })
       .expect(302);
 
@@ -244,6 +248,32 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
       })
       .expect(200);
     return (tokenResponse.body as { access_token: string }).access_token;
+  }
+
+  // Same exchange as exchangeToken, but returns the full token response —
+  // used only by the offline_access/refresh_token test below, which needs
+  // to see whether refresh_token was actually issued.
+  async function exchangeTokenFull(
+    clientId: string,
+    code: string,
+    pkce: PkcePair,
+  ): Promise<{ access_token: string; refresh_token?: string }> {
+    const tokenResponse = await request(app.getHttpServer())
+      .post(`${CUSTOMER_AUTH_BASE_PATH}/oauth2/token`)
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'http://localhost:9999/callback',
+        client_id: clientId,
+        code_verifier: pkce.codeVerifier,
+        resource: mcpResource,
+      })
+      .expect(200);
+    return tokenResponse.body as {
+      access_token: string;
+      refresh_token?: string;
+    };
   }
 
   interface McpToolCallResult {
@@ -301,6 +331,26 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
       .expect(401);
   });
 
+  it('issues a refresh_token when the client requests the offline_access scope', async () => {
+    // Regression test: MCP_LEADS_SCOPES alone (no offline_access) meant no
+    // client ever received a refresh token, so every connection died with
+    // the calling host (ChatGPT/Claude) reporting a "reconnect" failure once
+    // the ~1hr access token expired. See MCP_OFFLINE_ACCESS_SCOPE.
+    const { cookie } = await signUpAndSignIn();
+    const clientId = await registerClient();
+    const pkce = generatePkce();
+
+    const code = await authorizeAndConsent(
+      cookie,
+      clientId,
+      pkce,
+      'leads offline_access',
+    );
+    const token = await exchangeTokenFull(clientId, code, pkce);
+
+    expect(token.refresh_token).toEqual(expect.any(String));
+  });
+
   it('registers a client, completes authorize+consent+PKCE+token, and calls a tool end-to-end', async () => {
     const { cookie } = await signUpAndSignIn();
     const clientId = await registerClient();
@@ -320,10 +370,16 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     expect(createdLead.name).toBe('Ada Lovelace');
 
     const listResult = await callTool(accessToken, 'list_leads', {});
-    const leads = JSON.parse(listResult.content[0].text) as Array<{
-      id: string;
-    }>;
-    expect(leads.some((lead) => lead.id === createdLead.id)).toBe(true);
+    const listPayload = JSON.parse(listResult.content[0].text) as {
+      leads: Array<{ id: string }>;
+      total: number;
+      hasMore: boolean;
+    };
+    expect(listPayload.leads.some((lead) => lead.id === createdLead.id)).toBe(
+      true,
+    );
+    expect(listPayload.total).toBeGreaterThanOrEqual(1);
+    expect(listPayload.hasMore).toBe(false);
   });
 
   it('a lead created by one customer is never visible to another over MCP', async () => {
@@ -346,10 +402,10 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     const lead = JSON.parse(createResult.content[0].text) as { id: string };
 
     const listResultB = await callTool(tokenB, 'list_leads', {});
-    const leadsForB = JSON.parse(listResultB.content[0].text) as Array<{
-      id: string;
-    }>;
-    expect(leadsForB.some((l) => l.id === lead.id)).toBe(false);
+    const listPayloadB = JSON.parse(listResultB.content[0].text) as {
+      leads: Array<{ id: string }>;
+    };
+    expect(listPayloadB.leads.some((l) => l.id === lead.id)).toBe(false);
 
     await expect(
       callTool(tokenB, 'get_lead', { leadId: lead.id }),

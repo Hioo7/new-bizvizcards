@@ -24,6 +24,19 @@ export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
 // toggles, matching how MCP clients request access today.
 export const MCP_LEADS_SCOPES = ['leads'] as const;
 
+// better-auth's oauth-provider only issues a refresh token for a grant whose
+// scope includes "offline_access" (its DEFAULT_OAUTH_SCOPES already includes
+// it, but that default is entirely replaced — not merged — once a plugin
+// config supplies its own `scopes` array, as ours does via MCP_LEADS_SCOPES
+// above). Without this, every MCP/OAuth connection is access-token-only:
+// once the ~1hr access token expires, the client (ChatGPT/Claude) has
+// nothing to silently refresh with, and the connection goes dead — surfaced
+// to the user as "Your connection stopped working. Reconnect to continue."
+// Must be included in both the mcp() plugin's `scopes` and the MCP
+// resource's own `allowedScopes` in customer-auth.factory.ts, or a client
+// requesting it is still refused.
+export const MCP_OFFLINE_ACCESS_SCOPE = 'offline_access';
+
 export const EMPLOYEE_AUTH_COOKIE_PREFIX = 'staff';
 export const CUSTOMER_AUTH_COOKIE_PREFIX = 'customer';
 
