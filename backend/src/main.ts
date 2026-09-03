@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { NestFactory } from '@nestjs/core';
@@ -56,11 +57,38 @@ async function bootstrap() {
 
   const httpAdapter = app.getHttpAdapter().getInstance();
 
-  // These two mounts (oauth2/* under the customer-auth base path, and the
-  // MCP endpoint itself) are the new public-facing, sensitive-data surface
-  // this app didn't have before — rate-limited since neither goes through
-  // Nest's own routing/guard pipeline (both are raw Express mounts, like the
-  // auth handlers below), so a Nest ThrottlerGuard couldn't reach them.
+  // Unlike the rest of the app, this OAuth/MCP surface (oauth2/* discovery +
+  // registration + token endpoints, the RFC 9728 well-known metadata, and
+  // the MCP endpoint itself) is meant to be called cross-origin by arbitrary
+  // third-party MCP clients' own browser-side JS (ChatGPT, Claude, future
+  // connectors) — it's protected by bearer tokens/PKCE, not same-origin
+  // trust, so that's safe by design. app.enableCors() further below only
+  // allows this app's own frontend origins (corsAllowedOrigins) and, worse,
+  // is registered after every route below — Express dispatches middleware
+  // in registration order, so it never even got a chance to run for these
+  // paths. Together this meant every one of these endpoints sent zero CORS
+  // headers, and a preflight OPTIONS request (required by any non-simple
+  // cross-origin call, e.g. oauth2/register's application/json POST) hit a
+  // flat 404 since nothing here handles OPTIONS either — the browser blocks
+  // the real request before it's ever sent. ChatGPT's connector apparently
+  // proxies these calls server-side (unaffected by browser CORS), which is
+  // why this only ever surfaced as Claude's web client failing with a vague
+  // "issue with the authentication server" and no useful detail — that's
+  // exactly what a silently CORS-blocked fetch looks like from the caller's
+  // side. `origin: true` reflects whatever Origin the caller sends (there's
+  // no fixed allowlist to maintain for a surface meant to be called by any
+  // client); `credentials: false` since nothing on this surface relies on
+  // cookies cross-origin (the one cookie-authenticated step, oauth2/authorize,
+  // is a top-level browser navigation, not a script-initiated fetch, so
+  // CORS doesn't gate it either way).
+  const publicOAuthMcpCors = cors({ origin: true, credentials: false });
+  httpAdapter.use(`${CUSTOMER_AUTH_BASE_PATH}/oauth2`, publicOAuthMcpCors);
+  httpAdapter.use(OAUTH_PROTECTED_RESOURCE_METADATA_PATH, publicOAuthMcpCors);
+  httpAdapter.use(MCP_BASE_PATH, publicOAuthMcpCors);
+
+  // Rate-limited too, since neither of these two mounts goes through Nest's
+  // own routing/guard pipeline (both are raw Express mounts, like the auth
+  // handlers below), so a Nest ThrottlerGuard couldn't reach them.
   const oauthMcpRateLimiter = rateLimit({
     windowMs: OAUTH_MCP_RATE_LIMIT_WINDOW_MS,
     limit: OAUTH_MCP_RATE_LIMIT_MAX_REQUESTS,
