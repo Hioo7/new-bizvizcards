@@ -29,6 +29,27 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
+  // Exactly one reverse proxy sits in front of this app (nginx — see
+  // nginx/default.conf's `proxy_pass` to the backend container) and sets
+  // X-Forwarded-For on every request. Without this, Express's default
+  // req.ip falls back to the raw TCP peer address, which behind nginx is
+  // the proxy container's own internal Docker IP — the SAME value for
+  // every request regardless of the real client. That silently broke
+  // oauthMcpRateLimiter below: its default IP-based keyGenerator was
+  // keying every customer's OAuth/MCP request (plus ChatGPT's, Claude's,
+  // and any other caller) under one shared bucket, so the "100 requests
+  // per 60s" limit was actually a single global budget for the entire
+  // app's OAuth/MCP traffic — trivially exhausted by ordinary usage, and
+  // surfaced to users as unpredictable "couldn't register" / "connection
+  // stopped working" failures that had nothing to do with their own
+  // request volume. (express-rate-limit does detect this misconfiguration
+  // via its xForwardedForHeader validation, but only logs it once to the
+  // server's own console — it never fails the request, so this went
+  // unnoticed without reading server logs.) `1` trusts exactly the
+  // nearest hop (nginx), which is the correct value for this single-proxy
+  // topology — not `true`, which would trust the full chain and let a
+  // client forge its own X-Forwarded-For to bypass rate limiting entirely.
+  app.set('trust proxy', 1);
   const appConfig = app.get(AppConfigService);
   const employeeAuth = app.get<EmployeeAuth>(EMPLOYEE_AUTH);
   const customerAuth = app.get<CustomerAuth>(CUSTOMER_AUTH);
