@@ -1,12 +1,14 @@
 import { McpServerService } from './mcp-server.service';
 import type { LeadsService } from '../../leads/services/leads.service';
+import type { LeadFoldersService } from '../../leads/services/lead-folders.service';
 import type { LeadReferenceNotesService } from '../../leads/services/lead-reference-notes.service';
 import type { RemindersService } from '../../leads/services/reminders.service';
 
 describe('McpServerService', () => {
-  it('creates a connectable server with every leads/notes/reminders tool registered', () => {
+  it('creates a connectable server with every leads/folders/notes/reminders tool registered', () => {
     const service = new McpServerService(
       {} as LeadsService,
+      {} as LeadFoldersService,
       {} as LeadReferenceNotesService,
       {} as RemindersService,
     );
@@ -26,6 +28,7 @@ describe('McpServerService', () => {
         'get_lead',
         'create_lead',
         'update_lead',
+        'list_lead_folders',
         'list_lead_notes',
         'add_lead_note',
         'list_lead_reminders',

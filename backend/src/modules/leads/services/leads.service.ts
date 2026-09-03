@@ -259,14 +259,39 @@ export class LeadsService {
     });
   }
 
-  list(customerId: string, query: ListLeadsQueryDto): Promise<LeadModel[]> {
+  // pagination is optional and additive: the REST controller never passes
+  // it, so GET /api/leads keeps returning the full unbounded list exactly as
+  // before. Only the MCP list_leads tool supplies it, to avoid ever
+  // serializing an unbounded lead list into a single tool-call response (see
+  // MCP_LEADS_LIST_DEFAULT_LIMIT).
+  list(
+    customerId: string,
+    query: ListLeadsQueryDto,
+    pagination?: { limit: number; offset: number },
+  ): Promise<LeadModel[]> {
     return this.prisma.lead.findMany({
-      where: {
-        customerId,
-        ...(query.folderId !== undefined && { folderId: query.folderId }),
-      },
+      where: this.buildListWhere(customerId, query),
       orderBy: { createdAt: 'desc' },
+      ...(pagination && { take: pagination.limit, skip: pagination.offset }),
     });
+  }
+
+  // Shares list()'s filter with count() below, so the MCP list_leads tool
+  // can report an accurate total/hasMore without duplicating this logic.
+  count(customerId: string, query: ListLeadsQueryDto): Promise<number> {
+    return this.prisma.lead.count({
+      where: this.buildListWhere(customerId, query),
+    });
+  }
+
+  private buildListWhere(
+    customerId: string,
+    query: ListLeadsQueryDto,
+  ): Prisma.LeadWhereInput {
+    return {
+      customerId,
+      ...(query.folderId !== undefined && { folderId: query.folderId }),
+    };
   }
 
   async getUnseenCount(customerId: string): Promise<{ count: number }> {

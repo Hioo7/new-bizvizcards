@@ -21,6 +21,10 @@ import type { CreateLeadDto } from '../../../leads/dto/create-lead.dto';
 import type { ListLeadsQueryDto } from '../../../leads/dto/list-leads-query.dto';
 import type { UpdateLeadDto } from '../../../leads/dto/update-lead.dto';
 import type { LeadModel } from '../../../../generated/prisma/models';
+import {
+  MCP_LEADS_LIST_DEFAULT_LIMIT,
+  MCP_LEADS_LIST_MAX_LIMIT,
+} from '../../mcp.constants';
 import { textResult } from '../../mcp-tool-result.util';
 
 // Trims the full Prisma row down to what an AI agent actually needs to draft
@@ -58,6 +62,8 @@ function toLeadDetailSummary(lead: LeadDetailResponse) {
 
 const listLeadsInputSchema = z.object({
   folderId: z.string().uuid().optional(),
+  limit: z.number().int().min(1).max(MCP_LEADS_LIST_MAX_LIMIT).optional(),
+  offset: z.number().int().min(0).optional(),
 });
 
 const getLeadInputSchema = z.object({
@@ -106,10 +112,24 @@ const updateLeadInputSchema = z.object({
 export async function listLeadsHandler(
   leadsService: LeadsService,
   customerId: string,
-  args: ListLeadsQueryDto,
+  args: z.infer<typeof listLeadsInputSchema>,
 ) {
-  const leads = await leadsService.list(customerId, args);
-  return textResult(leads.map(toLeadSummary));
+  const limit = args.limit ?? MCP_LEADS_LIST_DEFAULT_LIMIT;
+  const offset = args.offset ?? 0;
+  const query: ListLeadsQueryDto = { folderId: args.folderId };
+
+  const [leads, total] = await Promise.all([
+    leadsService.list(customerId, query, { limit, offset }),
+    leadsService.count(customerId, query),
+  ]);
+
+  return textResult({
+    leads: leads.map(toLeadSummary),
+    total,
+    limit,
+    offset,
+    hasMore: offset + leads.length < total,
+  });
 }
 
 export async function getLeadHandler(
@@ -149,7 +169,14 @@ export function registerLeadsTools(
     'list_leads',
     {
       title: 'List Leads',
-      description: "List the caller's leads, optionally filtered by folder.",
+      description:
+        `List the caller's leads, optionally filtered by folder (use ` +
+        `list_lead_folders to find a folder's id). Results are paginated: ` +
+        `at most ${MCP_LEADS_LIST_MAX_LIMIT} per call (default ` +
+        `${MCP_LEADS_LIST_DEFAULT_LIMIT}). The response includes "total" ` +
+        `and "hasMore" — when "hasMore" is true, call again with ` +
+        `offset += the number of leads just returned to fetch the next ` +
+        `page. Never assume a single call returned every lead.`,
       inputSchema: listLeadsInputSchema,
       annotations: {
         title: 'List Leads',

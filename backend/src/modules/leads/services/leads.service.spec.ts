@@ -9,6 +9,7 @@ import {
 import { ExchangeContactFormResolutionService } from '../../exchange-contact-forms/services/exchange-contact-form-resolution.service';
 import { PlanEnforcementService } from '../../plans/services/plan-enforcement.service';
 import { PlanPolicyResolverService } from '../../plans/services/plan-policy-resolver.service';
+import type { LeadModel } from '../../../generated/prisma/models';
 import { LeadsService } from './leads.service';
 
 describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
@@ -234,6 +235,65 @@ describe('LeadsService (integration, TEST_DATABASE_URL only)', () => {
       const result = await service.list(customer.id, { folderId: folder.id });
 
       expect(result.map((l) => l.id)).toEqual([inFolder.id]);
+    });
+
+    it('returns every lead when no pagination is given, matching the REST controller', async () => {
+      const customer = await seedCustomer();
+      for (let i = 0; i < 3; i += 1) {
+        await service.create(customer.id, { name: `Lead ${i}` });
+      }
+
+      const result = await service.list(customer.id, {});
+
+      expect(result).toHaveLength(3);
+    });
+
+    it('applies limit/offset when pagination is given, newest first', async () => {
+      const customer = await seedCustomer();
+      const leads: LeadModel[] = [];
+      for (let i = 0; i < 5; i += 1) {
+        leads.push(await service.create(customer.id, { name: `Lead ${i}` }));
+      }
+
+      const page1 = await service.list(
+        customer.id,
+        {},
+        { limit: 2, offset: 0 },
+      );
+      const page2 = await service.list(
+        customer.id,
+        {},
+        { limit: 2, offset: 2 },
+      );
+
+      expect(page1.map((l) => l.id)).toEqual(
+        [leads[4], leads[3]].map((l) => l.id),
+      );
+      expect(page2.map((l) => l.id)).toEqual(
+        [leads[2], leads[1]].map((l) => l.id),
+      );
+    });
+  });
+
+  describe('count', () => {
+    it('counts only the given customer, scoped by folderId when provided', async () => {
+      const customerA = await seedCustomer();
+      const customerB = await seedCustomer();
+      const folder = await prisma.leadFolder.create({
+        data: { customerId: customerA.id, name: 'Folder' },
+      });
+      await service.create(customerA.id, {
+        name: 'In folder',
+        folderId: folder.id,
+      });
+      await service.create(customerA.id, { name: 'At root' });
+      await service.create(customerB.id, { name: 'Other customer' });
+
+      expect(await service.count(customerA.id, {})).toBe(2);
+      expect(await service.count(customerA.id, { folderId: folder.id })).toBe(
+        1,
+      );
+      expect(await service.count(customerB.id, {})).toBe(1);
     });
   });
 

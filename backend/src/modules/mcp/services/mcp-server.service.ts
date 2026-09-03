@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { LeadsService } from '../../leads/services/leads.service';
+import { LeadFoldersService } from '../../leads/services/lead-folders.service';
 import { LeadReferenceNotesService } from '../../leads/services/lead-reference-notes.service';
 import { RemindersService } from '../../leads/services/reminders.service';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../mcp.constants';
 import { registerLeadsTools } from './mcp-tools/leads.tools';
+import { registerLeadFolderTools } from './mcp-tools/lead-folders.tools';
 import { registerLeadNoteTools } from './mcp-tools/lead-notes.tools';
 import { registerLeadReminderTools } from './mcp-tools/lead-reminders.tools';
 
@@ -12,6 +14,7 @@ import { registerLeadReminderTools } from './mcp-tools/lead-reminders.tools';
 export class McpServerService {
   constructor(
     private readonly leadsService: LeadsService,
+    private readonly leadFoldersService: LeadFoldersService,
     private readonly leadReferenceNotesService: LeadReferenceNotesService,
     private readonly remindersService: RemindersService,
   ) {}
@@ -27,6 +30,11 @@ export class McpServerService {
     });
 
     registerLeadsTools(server, { leadsService: this.leadsService }, customerId);
+    registerLeadFolderTools(
+      server,
+      { leadFoldersService: this.leadFoldersService },
+      customerId,
+    );
     registerLeadNoteTools(
       server,
       { leadReferenceNotesService: this.leadReferenceNotesService },

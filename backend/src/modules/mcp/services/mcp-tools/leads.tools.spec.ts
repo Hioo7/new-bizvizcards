@@ -9,13 +9,76 @@ import {
 
 describe('leads MCP tool handlers', () => {
   describe('listLeadsHandler', () => {
-    it('scopes the list to the given customerId', async () => {
+    it('scopes the list to the given customerId and applies the default page size', async () => {
       const list = jest.fn().mockResolvedValue([]);
-      const leadsService = { list } as unknown as LeadsService;
+      const count = jest.fn().mockResolvedValue(0);
+      const leadsService = { list, count } as unknown as LeadsService;
 
       await listLeadsHandler(leadsService, 'customer-1', {});
 
-      expect(list).toHaveBeenCalledWith('customer-1', {});
+      expect(list).toHaveBeenCalledWith(
+        'customer-1',
+        { folderId: undefined },
+        { limit: 50, offset: 0 },
+      );
+      expect(count).toHaveBeenCalledWith('customer-1', { folderId: undefined });
+    });
+
+    it('passes through an explicit limit/offset and folderId', async () => {
+      const list = jest.fn().mockResolvedValue([]);
+      const count = jest.fn().mockResolvedValue(0);
+      const leadsService = { list, count } as unknown as LeadsService;
+
+      await listLeadsHandler(leadsService, 'customer-1', {
+        folderId: 'folder-1',
+        limit: 10,
+        offset: 20,
+      });
+
+      expect(list).toHaveBeenCalledWith(
+        'customer-1',
+        { folderId: 'folder-1' },
+        { limit: 10, offset: 20 },
+      );
+      expect(count).toHaveBeenCalledWith('customer-1', {
+        folderId: 'folder-1',
+      });
+    });
+
+    it('reports hasMore true when more leads remain past this page', async () => {
+      const list = jest.fn().mockResolvedValue([{ id: 'lead-1', name: 'Ada' }]);
+      const count = jest.fn().mockResolvedValue(5);
+      const leadsService = { list, count } as unknown as LeadsService;
+
+      const result = await listLeadsHandler(leadsService, 'customer-1', {
+        limit: 1,
+        offset: 0,
+      });
+
+      const parsed = JSON.parse(result.content[0].text) as {
+        total: number;
+        hasMore: boolean;
+      };
+      expect(parsed.total).toBe(5);
+      expect(parsed.hasMore).toBe(true);
+    });
+
+    it('reports hasMore false once the last page is reached', async () => {
+      const list = jest.fn().mockResolvedValue([{ id: 'lead-1', name: 'Ada' }]);
+      const count = jest.fn().mockResolvedValue(1);
+      const leadsService = { list, count } as unknown as LeadsService;
+
+      const result = await listLeadsHandler(leadsService, 'customer-1', {
+        limit: 50,
+        offset: 0,
+      });
+
+      const parsed = JSON.parse(result.content[0].text) as {
+        total: number;
+        hasMore: boolean;
+      };
+      expect(parsed.total).toBe(1);
+      expect(parsed.hasMore).toBe(false);
     });
   });
 
