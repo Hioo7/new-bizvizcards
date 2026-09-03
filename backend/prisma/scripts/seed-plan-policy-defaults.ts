@@ -20,6 +20,7 @@ import {
   ECardComponentType,
   PrismaClient,
 } from '../../src/generated/prisma/client';
+import { MCP_OFFLINE_ACCESS_SCOPE } from '../../src/common/auth/auth.constants';
 import { DEFAULT_ECARD_ACCENT_COLOR_PRESETS } from '../../src/modules/ecards/ecards.constants';
 import {
   PLAN_FALLBACK_MAX_EVENTS,
@@ -257,6 +258,45 @@ async function backfillAboutUsAvailability(): Promise<void> {
   );
 }
 
+// Backfills the offline_access scope onto every existing OauthResource row
+// missing it. The mcp() plugin only seeds an OauthResource row into the DB
+// lazily, the first time it's actually needed (see customer-auth.factory.ts's
+// own comment on `resources`) — it never re-syncs an existing row's
+// allowedScopes when the code's config changes on a later deploy. The row
+// backing the MCP resource was seeded back when MCP_LEADS_SCOPES was the
+// only allowed scope, so even after offline_access was added to that
+// config, the persisted row stayed stuck at ["leads"] — meaning no client
+// could ever actually be granted offline_access against that resource, no
+// matter what the AS-level config said. Without this, ChatGPT/Claude keep
+// failing to get a refresh token and their connections keep dying once the
+// access token expires (see MCP_OFFLINE_ACCESS_SCOPE).
+async function backfillOauthResourceOfflineAccessScope(): Promise<void> {
+  const resources = await prisma.oauthResource.findMany({
+    where: { NOT: { allowedScopes: { has: MCP_OFFLINE_ACCESS_SCOPE } } },
+    select: { id: true, allowedScopes: true },
+  });
+
+  if (resources.length === 0) {
+    console.log(
+      'No OauthResource rows are missing the offline_access scope; skipping.',
+    );
+    return;
+  }
+
+  for (const resource of resources) {
+    await prisma.oauthResource.update({
+      where: { id: resource.id },
+      data: {
+        allowedScopes: [...resource.allowedScopes, MCP_OFFLINE_ACCESS_SCOPE],
+      },
+    });
+  }
+
+  console.log(
+    `Backfilled offline_access scope for ${resources.length} OauthResource row(s).`,
+  );
+}
+
 async function main() {
   await backfillEventPolicy();
   await backfillEmailSignaturePolicy();
@@ -264,6 +304,7 @@ async function main() {
   await backfillVideoGalleryAvailability();
   await backfillLocationReviewTestimonialsAvailability();
   await backfillAboutUsAvailability();
+  await backfillOauthResourceOfflineAccessScope();
 }
 
 main()
