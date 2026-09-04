@@ -2,7 +2,6 @@ import { randomUUID, randomBytes, createHash } from 'crypto';
 import express from 'express';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { toNodeHandler } from 'better-auth/node';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/common/prisma/prisma.service';
@@ -10,9 +9,14 @@ import { AppConfigService } from '../../src/common/config/app-config.service';
 import {
   CUSTOMER_AUTH,
   CUSTOMER_AUTH_BASE_PATH,
+  MCP_ALL_SCOPES,
   MCP_BASE_PATH,
+  OAUTH_AUTHORIZATION_SERVER_METADATA_PATH,
+  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
+  OPENID_CONFIGURATION_METADATA_PATH,
 } from '../../src/common/auth/auth.constants';
 import type { CustomerAuth } from '../../src/common/auth/customer-auth.factory';
+import { registerAuthHttpMounts } from '../../src/common/auth/register-auth-http-mounts';
 import { BetterAuthApiErrorFilter } from '../../src/common/filters/better-auth-api-error.filter';
 import { createMcpFetchHandler } from '../../src/modules/mcp/mcp-http-handler';
 import { McpServerService } from '../../src/modules/mcp/services/mcp-server.service';
@@ -25,7 +29,8 @@ const MCP_E2E_TEST_PORT = 3987;
 
 // Converts the Fetch-standard (Request) => Promise<Response> handler used in
 // production (see main.ts) into a plain Node handler for this test's Express
-// app — mirrors toNodeHandler(customerAuth) below, just for our own handler.
+// app — re-stringifies req.body since express.json() has already run here
+// (unlike production, where the MCP handler reads the raw stream).
 function toExpressHandler(
   fetchHandler: (request: Request) => Promise<Response>,
 ) {
@@ -78,10 +83,12 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
 
     const customerAuth = app.get<CustomerAuth>(CUSTOMER_AUTH);
     const httpAdapter = app.getHttpAdapter().getInstance();
-    httpAdapter.all(
-      `${CUSTOMER_AUTH_BASE_PATH}/*splat`,
-      toNodeHandler(customerAuth),
-    );
+    // Same shared wiring main.ts uses (CORS, rate limiting, the better-auth
+    // `all()` handler, the root-relative discovery-document routes) so this
+    // test exercises the real mount surface. The MCP POST is mounted below,
+    // after express.json(), because this test parses the body first (see
+    // toExpressHandler) unlike production.
+    registerAuthHttpMounts(httpAdapter, { customerAuth });
     httpAdapter.use(express.json());
     // requireMcpAuth's token verification does a real network fetch back to
     // the auth server's own JWKS endpoint — supertest's default in-memory
@@ -111,6 +118,16 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
 
     await app.listen(MCP_E2E_TEST_PORT);
     prisma = app.get(PrismaService);
+
+    // The mcp() plugin seeds its OauthResource row once (at construction) and
+    // never re-syncs allowedScopes on a later config change — prod handles that
+    // via backfillOauthResourceAllowedScopes on startup. Do the equivalent here
+    // so a stale row left by an earlier run (e.g. before `openid` was added)
+    // can't make the scope-grant assertions flaky.
+    await prisma.oauthResource.updateMany({
+      where: { identifier: mcpResource },
+      data: { allowedScopes: [...MCP_ALL_SCOPES] },
+    });
   });
 
   afterAll(async () => {
@@ -250,14 +267,17 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     return (tokenResponse.body as { access_token: string }).access_token;
   }
 
-  // Same exchange as exchangeToken, but returns the full token response —
-  // used only by the offline_access/refresh_token test below, which needs
-  // to see whether refresh_token was actually issued.
+  // Same exchange as exchangeToken, but returns the full token response — used
+  // by the tests that need to see whether refresh_token / id_token were issued.
   async function exchangeTokenFull(
     clientId: string,
     code: string,
     pkce: PkcePair,
-  ): Promise<{ access_token: string; refresh_token?: string }> {
+  ): Promise<{
+    access_token: string;
+    refresh_token?: string;
+    id_token?: string;
+  }> {
     const tokenResponse = await request(app.getHttpServer())
       .post(`${CUSTOMER_AUTH_BASE_PATH}/oauth2/token`)
       .type('form')
@@ -273,6 +293,7 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     return tokenResponse.body as {
       access_token: string;
       refresh_token?: string;
+      id_token?: string;
     };
   }
 
@@ -351,6 +372,26 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     expect(token.refresh_token).toEqual(expect.any(String));
   });
 
+  it('issues an id_token when the client requests the openid scope', async () => {
+    // openid is in the mcp() plugin's scopes purely so oauth-provider serves
+    // /.well-known/openid-configuration (see MCP_OPENID_SCOPE); this confirms a
+    // client can actually be granted it against the MCP resource — i.e. the
+    // resource's allowedScopes include openid, not just the AS-level config.
+    const { cookie } = await signUpAndSignIn();
+    const clientId = await registerClient();
+    const pkce = generatePkce();
+
+    const code = await authorizeAndConsent(
+      cookie,
+      clientId,
+      pkce,
+      'openid leads offline_access',
+    );
+    const token = await exchangeTokenFull(clientId, code, pkce);
+
+    expect(token.id_token).toEqual(expect.any(String));
+  });
+
   it('registers a client, completes authorize+consent+PKCE+token, and calls a tool end-to-end', async () => {
     const { cookie } = await signUpAndSignIn();
     const clientId = await registerClient();
@@ -410,5 +451,98 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     await expect(
       callTool(tokenB, 'get_lead', { leadId: lead.id }),
     ).rejects.toThrow();
+  });
+
+  // These assert the raw mount surface registerAuthHttpMounts wires up — the
+  // root-relative OAuth discovery documents an MCP client (Claude/ChatGPT)
+  // fetches before it can register or authorize. The regression these guard
+  // against: nginx + the backend mount list previously only covered
+  // /.well-known/oauth-protected-resource, so Claude's RFC 8414 path-insertion
+  // fetch of the authorization-server metadata got the SPA shell instead of
+  // JSON and client registration failed ("Couldn't register with the sign-in
+  // service").
+  describe('OAuth discovery documents', () => {
+    const asMetadataPath = `${OAUTH_AUTHORIZATION_SERVER_METADATA_PATH}${CUSTOMER_AUTH_BASE_PATH}`;
+    const oidcMetadataPath = `${CUSTOMER_AUTH_BASE_PATH}${OPENID_CONFIGURATION_METADATA_PATH}`;
+    const prmMetadataPath = `${OAUTH_PROTECTED_RESOURCE_METADATA_PATH}${MCP_BASE_PATH}`;
+
+    it('serves RFC 8414 authorization-server metadata as JSON at the path-insertion URL', async () => {
+      const res = await request(app.getHttpServer())
+        .get(asMetadataPath)
+        .expect(200);
+
+      expect(res.type).toBe('application/json');
+      const body = res.body as {
+        issuer: string;
+        registration_endpoint: string;
+        code_challenge_methods_supported: string[];
+        token_endpoint_auth_methods_supported: string[];
+        scopes_supported: string[];
+      };
+      expect(body.issuer).toBe(
+        `${appConfig.betterAuthUrl}${CUSTOMER_AUTH_BASE_PATH}`,
+      );
+      expect(body.registration_endpoint).toBe(
+        `${appConfig.betterAuthUrl}${CUSTOMER_AUTH_BASE_PATH}/oauth2/register`,
+      );
+      expect(body.code_challenge_methods_supported).toEqual(['S256']);
+      expect(body.token_endpoint_auth_methods_supported).toContain('none');
+      expect(body.scopes_supported).toEqual(
+        expect.arrayContaining(['leads', 'offline_access', 'openid']),
+      );
+    });
+
+    it('serves OpenID Connect discovery metadata as JSON', async () => {
+      const res = await request(app.getHttpServer())
+        .get(oidcMetadataPath)
+        .expect(200);
+
+      expect(res.type).toBe('application/json');
+      const body = res.body as {
+        issuer: string;
+        userinfo_endpoint: string;
+        jwks_uri: string;
+        code_challenge_methods_supported: string[];
+      };
+      expect(body.issuer).toBe(
+        `${appConfig.betterAuthUrl}${CUSTOMER_AUTH_BASE_PATH}`,
+      );
+      expect(body.userinfo_endpoint).toBe(
+        `${appConfig.betterAuthUrl}${CUSTOMER_AUTH_BASE_PATH}/oauth2/userinfo`,
+      );
+      expect(body.code_challenge_methods_supported).toEqual(['S256']);
+    });
+
+    it('still serves RFC 9728 protected-resource metadata (regression)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(prmMetadataPath)
+        .expect(200);
+
+      expect(res.type).toBe('application/json');
+      const body = res.body as {
+        resource: string;
+        authorization_servers: string[];
+      };
+      expect(body.resource).toBe(mcpResource);
+      expect(body.authorization_servers).toContain(
+        `${appConfig.betterAuthUrl}${CUSTOMER_AUTH_BASE_PATH}`,
+      );
+    });
+
+    it('reflects a cross-origin preflight for the discovery documents', async () => {
+      const res = await request(app.getHttpServer())
+        .options(asMetadataPath)
+        .set('Origin', 'https://claude.ai')
+        .set('Access-Control-Request-Method', 'GET');
+
+      expect(res.status).toBeLessThan(300);
+      expect(res.headers['access-control-allow-origin']).toBe(
+        'https://claude.ai',
+      );
+    });
+
+    it('rejects a non-GET to the authorization-server metadata with 405', async () => {
+      await request(app.getHttpServer()).post(asMetadataPath).expect(405);
+    });
   });
 });

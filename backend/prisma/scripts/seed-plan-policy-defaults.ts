@@ -20,7 +20,7 @@ import {
   ECardComponentType,
   PrismaClient,
 } from '../../src/generated/prisma/client';
-import { MCP_OFFLINE_ACCESS_SCOPE } from '../../src/common/auth/auth.constants';
+import { MCP_ALL_SCOPES } from '../../src/common/auth/auth.constants';
 import { DEFAULT_ECARD_ACCENT_COLOR_PRESETS } from '../../src/modules/ecards/ecards.constants';
 import {
   PLAN_FALLBACK_MAX_EVENTS,
@@ -258,42 +258,44 @@ async function backfillAboutUsAvailability(): Promise<void> {
   );
 }
 
-// Backfills the offline_access scope onto every existing OauthResource row
-// missing it. The mcp() plugin only seeds an OauthResource row into the DB
-// lazily, the first time it's actually needed (see customer-auth.factory.ts's
-// own comment on `resources`) — it never re-syncs an existing row's
-// allowedScopes when the code's config changes on a later deploy. The row
-// backing the MCP resource was seeded back when MCP_LEADS_SCOPES was the
-// only allowed scope, so even after offline_access was added to that
-// config, the persisted row stayed stuck at ["leads"] — meaning no client
-// could ever actually be granted offline_access against that resource, no
-// matter what the AS-level config said. Without this, ChatGPT/Claude keep
-// failing to get a refresh token and their connections keep dying once the
-// access token expires (see MCP_OFFLINE_ACCESS_SCOPE).
-async function backfillOauthResourceOfflineAccessScope(): Promise<void> {
+// Re-syncs every existing OauthResource row's allowedScopes to be a superset of
+// MCP_ALL_SCOPES (leads + offline_access + openid). The mcp() plugin only seeds
+// an OauthResource row into the DB lazily, the first time it's actually needed
+// (see customer-auth.factory.ts's own comment on `resources`) — it never
+// re-syncs an existing row's allowedScopes when the code's config changes on a
+// later deploy. The row backing the MCP resource was seeded back when
+// MCP_LEADS_SCOPES was the only allowed scope, so a scope added to the config
+// afterwards (offline_access, then openid) stayed absent from the persisted
+// row — meaning no client could ever be granted it against that resource, no
+// matter what the AS-level config said. Without this: no refresh token for
+// ChatGPT/Claude (offline_access), and no openid grant.
+async function backfillOauthResourceAllowedScopes(): Promise<void> {
   const resources = await prisma.oauthResource.findMany({
-    where: { NOT: { allowedScopes: { has: MCP_OFFLINE_ACCESS_SCOPE } } },
     select: { id: true, allowedScopes: true },
   });
 
-  if (resources.length === 0) {
+  const updated: string[] = [];
+  for (const resource of resources) {
+    const missing = MCP_ALL_SCOPES.filter(
+      (scope) => !resource.allowedScopes.includes(scope),
+    );
+    if (missing.length === 0) continue;
+    await prisma.oauthResource.update({
+      where: { id: resource.id },
+      data: { allowedScopes: [...resource.allowedScopes, ...missing] },
+    });
+    updated.push(resource.id);
+  }
+
+  if (updated.length === 0) {
     console.log(
-      'No OauthResource rows are missing the offline_access scope; skipping.',
+      'All OauthResource rows already allow every MCP scope; skipping.',
     );
     return;
   }
 
-  for (const resource of resources) {
-    await prisma.oauthResource.update({
-      where: { id: resource.id },
-      data: {
-        allowedScopes: [...resource.allowedScopes, MCP_OFFLINE_ACCESS_SCOPE],
-      },
-    });
-  }
-
   console.log(
-    `Backfilled offline_access scope for ${resources.length} OauthResource row(s).`,
+    `Backfilled missing MCP scopes for ${updated.length} OauthResource row(s).`,
   );
 }
 
@@ -304,7 +306,7 @@ async function main() {
   await backfillVideoGalleryAvailability();
   await backfillLocationReviewTestimonialsAvailability();
   await backfillAboutUsAvailability();
-  await backfillOauthResourceOfflineAccessScope();
+  await backfillOauthResourceAllowedScopes();
 }
 
 main()

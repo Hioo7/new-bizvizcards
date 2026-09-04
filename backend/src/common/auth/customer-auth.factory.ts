@@ -8,9 +8,8 @@ import {
   CUSTOMER_AUTH_BASE_PATH,
   CUSTOMER_AUTH_COOKIE_PREFIX,
   CUSTOMER_BANNED_MESSAGE,
+  MCP_ALL_SCOPES,
   MCP_BASE_PATH,
-  MCP_LEADS_SCOPES,
-  MCP_OFFLINE_ACCESS_SCOPE,
 } from './auth.constants';
 import { linkAccountWithRetry } from './link-account-with-retry';
 import { buildSocialProviders } from './social-providers.builder';
@@ -168,12 +167,12 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
         // authorizes session- or token-backed registration requests.
         allowDynamicClientRegistration: true,
         allowUnauthenticatedClientRegistration: true,
-        // offline_access alongside the leads scope: without it, no client
-        // (ChatGPT/Claude) ever receives a refresh token — see
-        // MCP_OFFLINE_ACCESS_SCOPE's own comment in auth.constants.ts for
-        // why, and the "reconnect" failure this otherwise causes once the
-        // ~1hr access token expires.
-        scopes: [...MCP_LEADS_SCOPES, MCP_OFFLINE_ACCESS_SCOPE],
+        // MCP_ALL_SCOPES = leads + offline_access + openid. offline_access:
+        // without it no client (ChatGPT/Claude) ever receives a refresh token,
+        // so the connection dies once the ~1hr access token expires. openid:
+        // makes oauth-provider serve /.well-known/openid-configuration. See
+        // each scope constant's comment in auth.constants.ts.
+        scopes: [...MCP_ALL_SCOPES],
         // mcp() auto-appends a bare `{ identifier: resource }` entry to
         // `resources` for boot-time seeding UNLESS one with a matching
         // identifier is already present (see appendProtectedResource in
@@ -188,7 +187,7 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
         resources: [
           {
             identifier: mcpResource,
-            allowedScopes: [...MCP_LEADS_SCOPES, MCP_OFFLINE_ACCESS_SCOPE],
+            allowedScopes: [...MCP_ALL_SCOPES],
           },
         ],
       }),

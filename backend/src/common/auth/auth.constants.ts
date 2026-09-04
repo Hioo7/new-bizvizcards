@@ -18,6 +18,26 @@ export const MCP_BASE_PATH = '/api/mcp';
 export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
   '/.well-known/oauth-protected-resource';
 
+// RFC 8414 Authorization Server Metadata / OpenID Connect Discovery paths.
+// @better-auth/oauth-provider serves both via a root-relative onRequest hook
+// that matches the raw request path against
+// `/.well-known/oauth-authorization-server<issuerPath>` and
+// `<issuerPath>/.well-known/openid-configuration` (issuerPath =
+// CUSTOMER_AUTH_BASE_PATH, since better-auth appends basePath to baseURL to
+// form the issuer) — same situation as OAUTH_PROTECTED_RESOURCE_METADATA_PATH:
+// the request never carries CUSTOMER_AUTH_BASE_PATH-relative routing, so each
+// must be mounted to the customer-auth handler as its own root route in
+// register-auth-http-mounts.ts AND proxied to the backend by nginx, or the
+// request falls through to the SPA shell (HTTP 200 text/html) instead.
+// Claude.ai's web connector fetches the RFC 8414 path-insertion URL
+// (`/.well-known/oauth-authorization-server/api/auth/customers`) during OAuth
+// discovery; without it, Dynamic Client Registration never starts and the
+// connector fails with "Couldn't register with the sign-in service".
+export const OAUTH_AUTHORIZATION_SERVER_METADATA_PATH =
+  '/.well-known/oauth-authorization-server';
+export const OPENID_CONFIGURATION_METADATA_PATH =
+  '/.well-known/openid-configuration';
+
 // Single bundled scope granted to every MCP/OAuth connection (ChatGPT/Claude)
 // — per the brainstormed design, the consent screen shows one combined grant
 // ("view and manage your leads, notes, and reminders") rather than granular
@@ -36,6 +56,32 @@ export const MCP_LEADS_SCOPES = ['leads'] as const;
 // resource's own `allowedScopes` in customer-auth.factory.ts, or a client
 // requesting it is still refused.
 export const MCP_OFFLINE_ACCESS_SCOPE = 'offline_access';
+
+// Included in the mcp() plugin's `scopes` purely so @better-auth/oauth-provider
+// serves the OpenID Connect discovery document at
+// `/.well-known/openid-configuration` — both its onRequest hook and its
+// `getOpenIdConfig` handler are gated on `opts.scopes.includes('openid')` and
+// otherwise 404. Claude tries RFC 8414 (oauth-authorization-server) metadata
+// first and only falls back to openid-configuration, so this is discovery
+// hardening rather than strictly required. Like MCP_OFFLINE_ACCESS_SCOPE, it
+// must appear in BOTH the mcp() `scopes` array and the MCP resource's own
+// `allowedScopes` (see customer-auth.factory.ts), and existing OauthResource
+// rows are re-synced on startup by backfillOauthResourceAllowedScopes in
+// prisma/scripts/seed-plan-policy-defaults.ts.
+export const MCP_OPENID_SCOPE = 'openid';
+
+// The full scope set the customer-auth mcp() plugin advertises and allows for
+// its MCP resource. Used as the single source of truth in three places that
+// must agree or a client requesting a scope is refused: the mcp() plugin's
+// `scopes`, the MCP resource's `allowedScopes` (both in customer-auth.factory.ts),
+// and backfillOauthResourceAllowedScopes in
+// prisma/scripts/seed-plan-policy-defaults.ts, which re-syncs the persisted
+// OauthResource row (seeded once by mcp() and never updated on later deploys).
+export const MCP_ALL_SCOPES = [
+  ...MCP_LEADS_SCOPES,
+  MCP_OFFLINE_ACCESS_SCOPE,
+  MCP_OPENID_SCOPE,
+] as const;
 
 export const EMPLOYEE_AUTH_COOKIE_PREFIX = 'staff';
 export const CUSTOMER_AUTH_COOKIE_PREFIX = 'customer';
