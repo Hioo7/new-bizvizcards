@@ -345,6 +345,34 @@ describe('MCP + OAuth leads integration (e2e, TEST_DATABASE_URL only)', () => {
     return parsed.result!;
   }
 
+  it('redirects an unauthenticated /oauth2/authorize to the consent page, not the bare login page', async () => {
+    // loginPage is set to /oauth/authorize (the same page as consentPage) so
+    // the no-session redirect keeps the signed OAuth query string and returns
+    // the user to the consent flow after login. Pointing it at /login instead
+    // dropped the continuation — the user logged in, landed on the dashboard,
+    // and had to restart the connect flow for consent to appear.
+    const clientId = await registerClient();
+    const pkce = generatePkce();
+
+    const res = await request(app.getHttpServer())
+      .get(`${CUSTOMER_AUTH_BASE_PATH}/oauth2/authorize`)
+      .query({
+        client_id: clientId,
+        redirect_uri: 'http://localhost:9999/callback',
+        response_type: 'code',
+        code_challenge: pkce.codeChallenge,
+        code_challenge_method: 'S256',
+        resource: mcpResource,
+        scope: 'leads',
+      })
+      .expect(302);
+
+    const location = res.headers.location;
+    expect(location.split('?')[0]).toBe('/oauth/authorize');
+    expect(location).toContain(`client_id=${clientId}`);
+    expect(location).toContain('sig=');
+  });
+
   it('rejects an unauthenticated MCP request with 401', async () => {
     await request(app.getHttpServer())
       .post(MCP_BASE_PATH)

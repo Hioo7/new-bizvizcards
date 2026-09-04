@@ -154,7 +154,16 @@ export function createCustomerAuth(deps: CreateCustomerAuthDeps) {
       // the equivalent job).
       jwt({ disableSettingJwtHeader: true }),
       mcp({
-        loginPage: '/login',
+        // Both the "no session" (login) and "needs consent" redirects target
+        // the same frontend page. OAuthAuthorizePage is built for this: with no
+        // session it bounces to /login?redirect=<this url> and React-Router
+        // navigates back here post-login with the signed query string intact;
+        // with a session it renders the consent screen. Pointing loginPage at
+        // the bare /login page instead (its previous value) dropped the OAuth
+        // continuation entirely — the user logged in, landed on the customer
+        // dashboard, and had to return to Claude and click Connect again for
+        // the consent step to appear.
+        loginPage: '/oauth/authorize',
         consentPage: '/oauth/authorize',
         resource: mcpResource,
         // ChatGPT and Claude both support Dynamic Client Registration as
